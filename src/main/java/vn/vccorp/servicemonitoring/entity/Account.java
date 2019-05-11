@@ -6,24 +6,35 @@
 package vn.vccorp.servicemonitoring.entity;
 
 import lombok.*;
-import org.springframework.data.annotation.Id;
-
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
+import vn.vccorp.servicemonitoring.enumtype.Role;
+import javax.persistence.*;
+import javax.validation.constraints.Email;
+import java.util.List;
 
 @Getter
 @Setter
-@Entity
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@Entity
+@Table(name = "account", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {
+                "username"
+        }),
+        @UniqueConstraint(columnNames = {
+                "email"
+        })
+})
 public class Account {
     @Id
-    @GeneratedValue(strategy= GenerationType.IDENTITY)
-    protected Integer id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+    @Email
     private String email;
     private String name;
+    private String username;
+    @ElementCollection
+    private List<Role> roles;
     private String password;
     private String phone;
     private String token;

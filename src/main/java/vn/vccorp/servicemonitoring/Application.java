@@ -10,6 +10,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.ComponentScans;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.scheduling.annotation.EnableAsync;
@@ -23,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.ModelAndView;
 import springfox.documentation.annotations.ApiIgnore;
+import vn.vccorp.servicemonitoring.logic.service.AccountService;
 import vn.vccorp.servicemonitoring.utils.AppConstants;
 
 import javax.annotation.PostConstruct;
@@ -36,7 +39,7 @@ import java.util.TimeZone;
  * Date: 08/05/2019.
  * Time: 12:48.
  */
-@SpringBootApplication()
+@SpringBootApplication(scanBasePackages = "vn.vccorp.servicemonitoring")
 @EnableScheduling
 @Configuration
 @EnableTransactionManagement
@@ -47,6 +50,8 @@ public class Application implements CommandLineRunner {
 
     @Autowired
     private Environment env;
+    @Autowired
+    AccountService accountService;
 
     public static void main(String[] args) {
         SpringApplication.run(Application.class, args);
@@ -82,7 +87,7 @@ public class Application implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-
+        accountService.initRootAccount();
     }
 
     @ApiIgnore
