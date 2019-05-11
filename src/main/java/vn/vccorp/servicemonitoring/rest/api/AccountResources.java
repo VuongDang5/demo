@@ -1,22 +1,37 @@
 package vn.vccorp.servicemonitoring.rest.api;
 
+import com.google.common.collect.ImmutableMap;
 import io.swagger.annotations.ApiOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
+import org.springframework.security.web.savedrequest.RequestCache;
+import org.springframework.security.web.savedrequest.SavedRequest;
+import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.*;
+import vn.vccorp.servicemonitoring.dto.AccountDTO;
 import vn.vccorp.servicemonitoring.enumtype.ApplicationError;
+import vn.vccorp.servicemonitoring.enumtype.Role;
 import vn.vccorp.servicemonitoring.exception.ApplicationException;
+import vn.vccorp.servicemonitoring.logic.service.AccountService;
 import vn.vccorp.servicemonitoring.message.Messages;
 import vn.vccorp.servicemonitoring.rest.response.BaseResponse;
 import vn.vccorp.servicemonitoring.rest.response.RestResponseBuilder;
+import vn.vccorp.servicemonitoring.security.*;
 import vn.vccorp.servicemonitoring.utils.AppConstants;
-import vn.vccorp.servicemonitoring.utils.AppUtils;
+import vn.vccorp.servicemonitoring.utils.BeanUtils;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * Name: tuyennta
@@ -31,16 +46,65 @@ public class AccountResources {
     @Autowired
     private Messages messages;
 
+    @Autowired
+    AuthenticationManager authenticationManager;
+    @Autowired
+    AccountService accountService;
+
     @RequestMapping(value = "/login", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ApiOperation(value = "Login account", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity<Object> login(@RequestParam String email, @RequestParam String password) {
+    public ResponseEntity<Object> login(@RequestParam String email, @RequestParam String password, HttpServletRequest req, HttpServletResponse res) {
         LOGGER.info("Receive request to login with email: {}, password: {}", email, password);
-        if (!AppUtils.isValidEmailAddress(email)) {
+        if (StringUtils.isEmpty(email) || StringUtils.isEmpty(password)) {
             throw new ApplicationException(ApplicationError.INVALID_EMAIL_OR_PASSWORD);
         }
         BaseResponse.Builder builder = new BaseResponse.Builder();
-        builder.setSuccessObject(messages.get("login.msg.response"));
+
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            email,
+                            password
+                    )
+            );
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+
+            String token = BeanUtils.getBean(JwtTokenProvider.class).generateToken(authentication);
+            RequestCache requestCache = new HttpSessionRequestCache();
+            SavedRequest savedRequest = requestCache.getRequest(req, res);
+            if (authentication != null) {
+                builder.setSuccessObject(ImmutableMap.of("token", token, "success", true, "prevUrl", savedRequest == null ? "" : savedRequest.getRedirectUrl()));
+                builder.setCode(HttpStatus.OK.value());
+            } else {
+                throw new ApplicationException(ApplicationError.UNEXPECTED_EXCEPTION);
+            }
+
+        } catch (Exception e) {
+            LOGGER.info("Login fail");
+            builder.setCode(HttpStatus.UNAUTHORIZED.value());
+            builder.setErrorMessage(e.getMessage());
+            builder.setFailObject(ImmutableMap.of("success", false));
+        }
         return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
     }
 
+    @RequestMapping(value = "/add", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @ApiOperation(value = "Add new account", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @AdminAuthorize
+    public ResponseEntity<Object> addAccount(@RequestBody AccountDTO newUser) {
+        LOGGER.info("Receive request to add new user: {}, mail: {}, roles: {}", newUser.getName(), newUser.getEmail(), newUser.getRoles());
+        accountService.addAccount(newUser);
+        BaseResponse.Builder builder = new BaseResponse.Builder();
+        builder.setSuccessObject(true);
+        return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
+    }
+
+    @RequestMapping(value = "/test1", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @ApiOperation(value = "Login account", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @UserAuthorize
+    public ResponseEntity<Object> test1(@CurrentUser UserPrincipal currentUser) {
+        LOGGER.info("Receive request of user: {}, mail: {}, roles: {}", currentUser.getName(), currentUser.getEmail(), currentUser.getAuthorities());
+        BaseResponse.Builder builder = new BaseResponse.Builder();
+        return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
+    }
 }
