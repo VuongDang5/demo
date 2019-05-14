@@ -7,9 +7,11 @@ package vn.vccorp.servicemonitoring.entity;
 
 import lombok.*;
 import vn.vccorp.servicemonitoring.enumtype.Role;
+
 import javax.persistence.*;
 import javax.validation.constraints.Email;
-import java.util.List;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Size;
 
 @Getter
 @Setter
@@ -17,7 +19,7 @@ import java.util.List;
 @NoArgsConstructor
 @Builder
 @Entity
-@Table(name = "account", uniqueConstraints = {
+@Table(name = "user", uniqueConstraints = {
         @UniqueConstraint(columnNames = {
                 "username"
         }),
@@ -25,17 +27,28 @@ import java.util.List;
                 "email"
         })
 })
-public class Account {
+public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
-    @Email
+    @NotBlank(message = "{user.email.not-empty}")
+    @Size(max = 50, message = "{user.email.max}")
     private String email;
+
+    @NotBlank(message = "{user.name.not-empty}")
+    @Size(max = 50, message = "{user.name.max}")
     private String name;
+
+    @Size(max = 10, message = "{user.username.max}")
     private String username;
-    @ElementCollection
-    private List<Role> roles;
+
+    @Enumerated(EnumType.STRING)
+    private Role role;
+
+    @Size(max = 61, message = "{user.password.max}")
     private String password;
+
+    @Size(max = 15, message = "{user.phone.max}")
+    @NotBlank(message = "{user.phone.not-empty}")
     private String phone;
-    private String token;
 }

@@ -17,7 +17,7 @@ import org.springframework.security.web.savedrequest.RequestCache;
 import org.springframework.security.web.savedrequest.SavedRequest;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
-import vn.vccorp.servicemonitoring.dto.AccountDTO;
+import vn.vccorp.servicemonitoring.dto.UserDTO;
 import vn.vccorp.servicemonitoring.enumtype.ApplicationError;
 import vn.vccorp.servicemonitoring.exception.ApplicationException;
 import vn.vccorp.servicemonitoring.logic.service.AccountService;
@@ -30,6 +30,7 @@ import vn.vccorp.servicemonitoring.utils.BeanUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.validation.Valid;
 
 /**
  * Name: tuyennta
@@ -89,8 +90,8 @@ public class AccountResources {
     @RequestMapping(value = "/add", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ApiOperation(value = "Add new account", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @AdminAuthorize
-    public ResponseEntity<Object> addAccount(@RequestBody AccountDTO newUser) {
-        LOGGER.info("Receive request to add new user: {}, mail: {}, roles: {}", newUser.getName(), newUser.getEmail(), newUser.getRoles());
+    public ResponseEntity<Object> addAccount(@RequestBody @Valid UserDTO newUser) {
+        LOGGER.info("Receive request to add new user: {}, mail: {}, role: {}", newUser.getName(), newUser.getEmail(), newUser.getRole());
         accountService.addAccount(newUser);
         BaseResponse.Builder builder = new BaseResponse.Builder();
         builder.setSuccessObject(true);
@@ -101,7 +102,7 @@ public class AccountResources {
     @ApiOperation(value = "Login account", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @UserAuthorize
     public ResponseEntity<Object> test1(@CurrentUser UserPrincipal currentUser) {
-        LOGGER.info("Receive request of user: {}, mail: {}, roles: {}", currentUser.getName(), currentUser.getEmail(), currentUser.getAuthorities());
+        LOGGER.info("Receive request of user: {}, mail: {}, role: {}", currentUser.getName(), currentUser.getEmail(), currentUser.getAuthorities());
         BaseResponse.Builder builder = new BaseResponse.Builder();
         return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
     }

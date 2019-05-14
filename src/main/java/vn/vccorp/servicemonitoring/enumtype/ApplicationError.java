@@ -10,9 +10,9 @@ import org.springframework.http.HttpStatus;
 public enum ApplicationError {
 
     UNEXPECTED_EXCEPTION(10000, "Unexpected error", HttpStatus.INTERNAL_SERVER_ERROR),
-    ACCOUNT_TYPE_IS_NOT_NULL(10001, "Account type is not null", HttpStatus.BAD_REQUEST),
-    INVALID_ACCOUNT_TYPE(10002, "Invalid Account type", HttpStatus.BAD_REQUEST),
-    ACCOUNT_EXISTED(10003, "Account Existed", HttpStatus.BAD_REQUEST),
+    ACCOUNT_TYPE_IS_NOT_NULL(10001, "User type is not null", HttpStatus.BAD_REQUEST),
+    INVALID_ACCOUNT_TYPE(10002, "Invalid User type", HttpStatus.BAD_REQUEST),
+    ACCOUNT_EXISTED(10003, "User Existed", HttpStatus.BAD_REQUEST),
     NOT_FOUND(10004, "Not found", HttpStatus.BAD_REQUEST),
     NOT_FOUND_OR_INVALID_ACCOUNT_ID(10005, "Not found or invalid AccountId", HttpStatus.BAD_REQUEST),
     EXISTING_EMAIL(10006, "This email has already been used", HttpStatus.BAD_REQUEST),

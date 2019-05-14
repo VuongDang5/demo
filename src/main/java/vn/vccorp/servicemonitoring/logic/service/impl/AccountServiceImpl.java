@@ -9,8 +9,8 @@ import org.dozer.DozerBeanMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import vn.vccorp.servicemonitoring.dto.AccountDTO;
-import vn.vccorp.servicemonitoring.entity.Account;
+import vn.vccorp.servicemonitoring.dto.UserDTO;
+import vn.vccorp.servicemonitoring.entity.User;
 import vn.vccorp.servicemonitoring.logic.repository.AccountRepository;
 import vn.vccorp.servicemonitoring.logic.service.AccountService;
 import vn.vccorp.servicemonitoring.security.RootUser;
@@ -27,9 +27,9 @@ public class AccountServiceImpl implements AccountService {
     PasswordEncoder passwordEncoder;
 
     @Override
-    public void addAccount(AccountDTO accountDTO) {
-        accountDTO.setPassword(passwordEncoder.encode(accountDTO.getPassword()));
-        accountRepository.save(dozerBeanMapper.map(accountDTO, Account.class));
+    public void addAccount(UserDTO userDTO) {
+        userDTO.setPassword(passwordEncoder.encode(userDTO.getPassword()));
+        accountRepository.save(dozerBeanMapper.map(userDTO, User.class));
     }
 
     @Override
@@ -37,7 +37,7 @@ public class AccountServiceImpl implements AccountService {
         RootUser root = BeanUtils.getBean(RootUser.class);
         if (!accountRepository.findByUsernameOrEmail(root.getUsername(), root.getEmail()).isPresent()) {
             root.setPassword(passwordEncoder.encode(root.getPassword()));
-            accountRepository.save(dozerBeanMapper.map(root, Account.class));
+            accountRepository.save(dozerBeanMapper.map(root, User.class));
         }
     }
 }

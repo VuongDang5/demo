@@ -7,11 +7,11 @@ package vn.vccorp.servicemonitoring.logic.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-import vn.vccorp.servicemonitoring.entity.Account;
+import vn.vccorp.servicemonitoring.entity.User;
 
 import java.util.Optional;
 
 @Repository
-public interface AccountRepository extends JpaRepository<Account, Integer> {
-    Optional<Account> findByUsernameOrEmail(String username, String email);
+public interface AccountRepository extends JpaRepository<User, Integer> {
+    Optional<User> findByUsernameOrEmail(String username, String email);
 }

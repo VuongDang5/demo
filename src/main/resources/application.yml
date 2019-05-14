@@ -25,4 +25,5 @@ default:
     name: root
     email: root@root.com
     password: root
-    roles: ['ADMIN']
+    role: ADMIN
+    phone: 0357990xxx
