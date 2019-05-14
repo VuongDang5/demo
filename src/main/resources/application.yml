@@ -25,4 +25,4 @@ default:
     name: root
     email: root@root.com
     password: root
-    roles: ['ADMIN']
+    role: ADMIN

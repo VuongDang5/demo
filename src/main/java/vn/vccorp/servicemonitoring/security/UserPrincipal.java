@@ -9,12 +9,12 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-import vn.vccorp.servicemonitoring.entity.Account;
+import vn.vccorp.servicemonitoring.entity.User;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 public class UserPrincipal implements UserDetails {
     private Integer id;
@@ -40,17 +40,17 @@ public class UserPrincipal implements UserDetails {
         this.authorities = authorities;
     }
 
-    public static UserPrincipal create(Account account) {
-        List<GrantedAuthority> authorities = account.getRoles().stream().map(role ->
-                new SimpleGrantedAuthority(role.name())
-        ).collect(Collectors.toList());
+    public static UserPrincipal create(User user) {
+        List<GrantedAuthority> authorities = Collections.singletonList(
+                new SimpleGrantedAuthority(user.getRole().name())
+        );
 
         return new UserPrincipal(
-                account.getId(),
-                account.getName(),
-                account.getUsername(),
-                account.getEmail(),
-                account.getPassword(),
+                user.getId(),
+                user.getName(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getPassword(),
                 authorities
         );
     }

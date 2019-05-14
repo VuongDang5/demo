@@ -5,10 +5,10 @@
 
 package vn.vccorp.servicemonitoring.logic.service;
 
-import vn.vccorp.servicemonitoring.dto.AccountDTO;
+import vn.vccorp.servicemonitoring.dto.UserDTO;
 
 public interface AccountService {
-    void addAccount(AccountDTO accountDTO);
+    void addAccount(UserDTO userDTO);
 
     void initRootAccount();
 }

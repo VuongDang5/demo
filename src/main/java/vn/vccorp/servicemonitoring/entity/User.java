@@ -7,9 +7,9 @@ package vn.vccorp.servicemonitoring.entity;
 
 import lombok.*;
 import vn.vccorp.servicemonitoring.enumtype.Role;
+
 import javax.persistence.*;
 import javax.validation.constraints.Email;
-import java.util.List;
 
 @Getter
 @Setter
@@ -17,7 +17,7 @@ import java.util.List;
 @NoArgsConstructor
 @Builder
 @Entity
-@Table(name = "account", uniqueConstraints = {
+@Table(name = "user", uniqueConstraints = {
         @UniqueConstraint(columnNames = {
                 "username"
         }),
@@ -25,7 +25,7 @@ import java.util.List;
                 "email"
         })
 })
-public class Account {
+public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
@@ -33,9 +33,8 @@ public class Account {
     private String email;
     private String name;
     private String username;
-    @ElementCollection
-    private List<Role> roles;
+    @Enumerated(EnumType.STRING)
+    private Role role;
     private String password;
     private String phone;
-    private String token;
 }

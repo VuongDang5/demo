@@ -11,8 +11,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 import vn.vccorp.servicemonitoring.enumtype.Role;
 
-import java.util.List;
-
 @Component
 @ConfigurationProperties(prefix = "default.account")
 @Getter
@@ -22,5 +20,5 @@ public class RootUser {
     private String name;
     private String email;
     private String password;
-    private List<Role> roles;
+    private Role role;
 }
