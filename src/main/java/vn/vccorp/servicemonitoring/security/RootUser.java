@@ -21,4 +21,5 @@ public class RootUser {
     private String email;
     private String password;
     private Role role;
+    private String phone;
 }
