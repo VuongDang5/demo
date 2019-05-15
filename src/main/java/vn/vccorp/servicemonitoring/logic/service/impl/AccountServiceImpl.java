@@ -11,6 +11,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import vn.vccorp.servicemonitoring.dto.UserDTO;
 import vn.vccorp.servicemonitoring.entity.User;
+import vn.vccorp.servicemonitoring.enumtype.ApplicationError;
+import vn.vccorp.servicemonitoring.exception.ApplicationException;
 import vn.vccorp.servicemonitoring.logic.repository.AccountRepository;
 import vn.vccorp.servicemonitoring.logic.service.AccountService;
 import vn.vccorp.servicemonitoring.security.RootUser;
@@ -39,5 +41,12 @@ public class AccountServiceImpl implements AccountService {
             root.setPassword(passwordEncoder.encode(root.getPassword()));
             accountRepository.save(dozerBeanMapper.map(root, User.class));
         }
+    }
+
+    @Override
+    public void updatePassword(int userId, String password) {
+        User user = accountRepository.findById(userId).orElseThrow(() -> new ApplicationException(ApplicationError.NOT_FOUND_OR_INVALID_ACCOUNT_ID));
+        user.setPassword(passwordEncoder.encode(password));
+        accountRepository.save(user);
     }
 }

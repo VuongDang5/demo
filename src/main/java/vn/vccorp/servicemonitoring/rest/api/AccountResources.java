@@ -53,7 +53,7 @@ public class AccountResources {
     @RequestMapping(value = "/login", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ApiOperation(value = "Login account", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity<Object> login(@RequestParam String email, @RequestParam String password, HttpServletRequest req, HttpServletResponse res) {
-        LOGGER.info("Receive request to login with email: {}, password: {}", email, password);
+        LOGGER.info("Receive request to login with email: {}, password: ******", email);
         if (StringUtils.isEmpty(email) || StringUtils.isEmpty(password)) {
             throw new ApplicationException(ApplicationError.INVALID_EMAIL_OR_PASSWORD);
         }
@@ -98,12 +98,13 @@ public class AccountResources {
         return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
     }
 
-    @RequestMapping(value = "/test1", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    @ApiOperation(value = "Login account", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @RequestMapping(value = "/change-pass", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @ApiOperation(value = "Change password", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @UserAuthorize
-    public ResponseEntity<Object> test1(@CurrentUser UserPrincipal currentUser) {
+    public ResponseEntity<Object> updatePassword(@CurrentUser UserPrincipal currentUser, @RequestBody String password) {
         LOGGER.info("Receive request of user: {}, mail: {}, role: {}", currentUser.getName(), currentUser.getEmail(), currentUser.getAuthorities());
         BaseResponse.Builder builder = new BaseResponse.Builder();
+        accountService.updatePassword(currentUser.getId(), password);
         return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
     }
 }

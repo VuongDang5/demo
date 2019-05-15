@@ -2,6 +2,8 @@ package vn.vccorp.servicemonitoring.exception;
 
 import vn.vccorp.servicemonitoring.enumtype.ApplicationError;
 
+import java.util.function.Supplier;
+
 /**
  * Name: tuyennta
  * Date: 08/05/2019.
@@ -31,4 +33,5 @@ public class ApplicationException extends RuntimeException {
     public void setApplicationError(ApplicationError applicationError) {
         this.applicationError = applicationError;
     }
+
 }

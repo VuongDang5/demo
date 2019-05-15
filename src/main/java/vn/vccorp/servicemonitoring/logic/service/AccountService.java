@@ -11,4 +11,6 @@ public interface AccountService {
     void addAccount(UserDTO userDTO);
 
     void initRootAccount();
+
+    void updatePassword(int userId, String password);
 }
