@@ -9,9 +9,10 @@ import lombok.*;
 import vn.vccorp.servicemonitoring.enumtype.Role;
 
 import javax.persistence.*;
-import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
+import java.util.List;
 
 @Getter
 @Setter
@@ -19,14 +20,21 @@ import javax.validation.constraints.Size;
 @NoArgsConstructor
 @Builder
 @Entity
-@Table(name = "user", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {
-                "username"
-        }),
-        @UniqueConstraint(columnNames = {
-                "email"
-        })
-})
+@Table(
+        uniqueConstraints = {
+                @UniqueConstraint(columnNames = {
+                        "username"
+                }),
+                @UniqueConstraint(columnNames = {
+                        "email"
+                })
+        },
+        indexes = {
+                @Index(columnList = "email"),
+                @Index(columnList = "username"),
+                @Index(columnList = "role")
+        }
+)
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -51,4 +59,13 @@ public class User {
     @Size(max = 15, message = "{user.phone.max}")
     @NotBlank(message = "{user.phone.not-empty}")
     private String phone;
+
+    @OneToMany(mappedBy = "user")
+    private List<ServerManagement> servers;
+
+    @OneToMany(mappedBy = "user")
+    private List<ServiceManagement> services;
+
+    @OneToMany(mappedBy = "user")
+    private List<IssueTracking> issues;
 }
