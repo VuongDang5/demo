@@ -16,7 +16,7 @@ This is the source code for Service Monitoring System - APIs server.
       For eclipse: https://projectlombok.org/setup/eclipse  
       For intellij: https://projectlombok.org/setup/intellij      
     + Run Application.java to start our application. (Remember to start mysqld service in advance)
-    + Link to explore swagger-ui: http://localhost:8081/swagger-ui.html
+    + Link to explore swagger-ui: http://localhost:8082/swagger-ui.html
  - DBSchema and description about entity relationship:
     https://drive.google.com/open?id=1PzWudOa3KHBhIyCn7ZJABn3sg3rjmJpm
 
