@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.*;
 import vn.vccorp.servicemonitoring.dto.UserDTO;
 import vn.vccorp.servicemonitoring.enumtype.ApplicationError;
 import vn.vccorp.servicemonitoring.exception.ApplicationException;
-import vn.vccorp.servicemonitoring.logic.service.AccountService;
+import vn.vccorp.servicemonitoring.logic.service.UserService;
 import vn.vccorp.servicemonitoring.message.Messages;
 import vn.vccorp.servicemonitoring.rest.response.BaseResponse;
 import vn.vccorp.servicemonitoring.rest.response.RestResponseBuilder;
@@ -38,9 +38,9 @@ import javax.validation.Valid;
  * Time: 12:48.
  */
 @RestController
-@RequestMapping(value = AppConstants.API_MAPPING + "/account")
-public class AccountResources {
-    private static final Logger LOGGER = LoggerFactory.getLogger(AccountResources.class);
+@RequestMapping(value = AppConstants.API_MAPPING + "/system")
+public class SystemController {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SystemController.class);
 
     @Autowired
     private Messages messages;
@@ -48,7 +48,7 @@ public class AccountResources {
     @Autowired
     AuthenticationManager authenticationManager;
     @Autowired
-    AccountService accountService;
+    UserService userService;
 
     @RequestMapping(value = "/login", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ApiOperation(value = "Login account", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
@@ -87,12 +87,12 @@ public class AccountResources {
         return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
     }
 
-    @RequestMapping(value = "/add", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    @ApiOperation(value = "Add new account", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @RequestMapping(value = "/add-user", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @ApiOperation(value = "Add new user", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @AdminAuthorize
     public ResponseEntity<Object> addAccount(@RequestBody @Valid UserDTO newUser) {
         LOGGER.info("Receive request to add new user: {}, mail: {}, role: {}", newUser.getName(), newUser.getEmail(), newUser.getRole());
-        accountService.addAccount(newUser);
+        userService.addAccount(newUser);
         BaseResponse.Builder builder = new BaseResponse.Builder();
         builder.setSuccessObject(true);
         return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
@@ -104,7 +104,17 @@ public class AccountResources {
     public ResponseEntity<Object> updatePassword(@CurrentUser UserPrincipal currentUser, @RequestBody String password) {
         LOGGER.info("Receive request of user: {}, mail: {}, role: {}", currentUser.getName(), currentUser.getEmail(), currentUser.getAuthorities());
         BaseResponse.Builder builder = new BaseResponse.Builder();
-        accountService.updatePassword(currentUser.getId(), password);
+        userService.updatePassword(currentUser.getId(), password);
+        return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
+    }
+
+    @RequestMapping(value = "/delete-user", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @ApiOperation(value = "Delete user", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @AdminAuthorize
+    public ResponseEntity<Object> deleteUser(@CurrentUser UserPrincipal currentUser, @RequestBody int deleteUserId) {
+        LOGGER.info("Receive request of user: {}, mail: {}, role: {}", currentUser.getName(), currentUser.getEmail(), currentUser.getAuthorities());
+        BaseResponse.Builder builder = new BaseResponse.Builder();
+        userService.deleteAccount(deleteUserId);
         return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
     }
 }

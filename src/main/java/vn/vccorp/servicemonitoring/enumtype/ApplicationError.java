@@ -26,10 +26,8 @@ public enum ApplicationError {
     MODEL_NOT_SET(100014, "Model has not been set", HttpStatus.BAD_REQUEST),
     INVALID_TOKEN(100015, "Token is invalid", HttpStatus.BAD_REQUEST),
     EXPIRED_TOKEN(100017, "Token is expired or invalid", HttpStatus.BAD_REQUEST),
-    NOT_FOUND_OR_INVALID_ACCOUNT_SOCIAL_ID(100018, "Not fount or invalid account social id", HttpStatus.BAD_REQUEST),
     NOT_FOUND_OR_INVALID_EMAIL(100019, "Not fount or invalid email", HttpStatus.BAD_REQUEST),
     OVER_TIMES_TO_GET_TOKEN(100020, "Over times to get a token. Please check your email to activate your account or use another email to register again", HttpStatus.BAD_REQUEST),
-    NOT_FOUND_ACCOUNT_SOCIAL(100021, "Not fount account social", HttpStatus.BAD_REQUEST),
     INVALID_EMAIL_OR_PASSWORD(100022, "Invalid email or password", HttpStatus.BAD_REQUEST),
     NOT_FOUND_OR_INVALID_NOTIFICATION_ID(100023, "Not found or invalid notification id", HttpStatus.BAD_REQUEST),
     INVALID_NOTIFY_STATUS(100024, "Invalid notify status", HttpStatus.BAD_REQUEST);
