@@ -35,7 +35,7 @@ public class CustomUserDetailsService implements UserDetailsService {
     // This method is used by JWTAuthenticationFilter
     @Transactional
     public UserDetails loadUserById(Integer id) {
-        User user = userRepository.findById(id).orElseThrow(
+        User user = userRepository.findByIdAndIsDeleted(id, false).orElseThrow(
                 () -> new UsernameNotFoundException("User not found with id : " + id)
         );
 
