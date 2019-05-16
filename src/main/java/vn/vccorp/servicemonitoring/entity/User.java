@@ -60,6 +60,8 @@ public class User {
     @NotBlank(message = "{user.phone.not-empty}")
     private String phone;
 
+    private boolean isDeleted;
+
     @OneToMany(mappedBy = "user")
     private List<ServerManagement> servers;
 

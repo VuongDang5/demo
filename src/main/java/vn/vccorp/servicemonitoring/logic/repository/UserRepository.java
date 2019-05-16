@@ -8,10 +8,14 @@ package vn.vccorp.servicemonitoring.logic.repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import vn.vccorp.servicemonitoring.entity.User;
+import vn.vccorp.servicemonitoring.enumtype.Role;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface AccountRepository extends JpaRepository<User, Integer> {
-    Optional<User> findByUsernameOrEmail(String username, String email);
+public interface UserRepository extends JpaRepository<User, Integer> {
+    Optional<User> findByUsernameOrEmailAndIsDeleted(String username, String email, boolean isDeleted);
+
+    List<User> findAllByRoleAndIsDeleted(Role role, boolean isDeleted);
 }

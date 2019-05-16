@@ -12,20 +12,20 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.vccorp.servicemonitoring.entity.User;
-import vn.vccorp.servicemonitoring.logic.repository.AccountRepository;
+import vn.vccorp.servicemonitoring.logic.repository.UserRepository;
 
 @Service
 public class CustomUserDetailsService implements UserDetailsService {
 
     @Autowired
-    AccountRepository accountRepository;
+    UserRepository userRepository;
 
     @Override
     @Transactional
     public UserDetails loadUserByUsername(String usernameOrEmail)
             throws UsernameNotFoundException {
         // Let people login with either username or email
-        User user = accountRepository.findByUsernameOrEmail(usernameOrEmail, usernameOrEmail).orElseThrow(
+        User user = userRepository.findByUsernameOrEmailAndIsDeleted(usernameOrEmail, usernameOrEmail, false).orElseThrow(
                 () -> new UsernameNotFoundException("User not found with username or email : " + usernameOrEmail)
         );
 
@@ -35,7 +35,7 @@ public class CustomUserDetailsService implements UserDetailsService {
     // This method is used by JWTAuthenticationFilter
     @Transactional
     public UserDetails loadUserById(Integer id) {
-        User user = accountRepository.findById(id).orElseThrow(
+        User user = userRepository.findById(id).orElseThrow(
                 () -> new UsernameNotFoundException("User not found with id : " + id)
         );
 
