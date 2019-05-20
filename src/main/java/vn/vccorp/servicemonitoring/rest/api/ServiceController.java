@@ -1,0 +1,39 @@
+/**
+ * Created by: tuyennta
+ * Created on: 20/05/2019 09:59
+ */
+
+package vn.vccorp.servicemonitoring.rest.api;
+
+import io.swagger.annotations.ApiOperation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
+import vn.vccorp.servicemonitoring.dto.ServiceDTO;
+import vn.vccorp.servicemonitoring.message.Messages;
+import vn.vccorp.servicemonitoring.utils.AppConstants;
+
+@RequestMapping(value = AppConstants.API_MAPPING + "/service")
+@RestController
+public class ServiceController {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ServiceController.class);
+
+    @Autowired
+    private Messages messages;
+
+    @RequestMapping(value = "/register", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @ApiOperation(value = "Register old service to monitor on this system", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public ResponseEntity<Object> registerOldService(@RequestBody ServiceDTO serviceDTO){
+        LOGGER.info("Receive request to register old service to monitor on this system");
+
+
+    }
+
+}
