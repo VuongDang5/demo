@@ -60,6 +60,10 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
     }
 
+    /**
+     * klasdjf;
+     * @param deleteUaksjdfserIdkks đấklfjsa
+     */
     @Override
     public void deleteAccount(int deleteUserId) {
         User user = userRepository.findById(deleteUserId).orElseThrow(() -> new ApplicationException(ApplicationError.NOT_FOUND_OR_INVALID_ACCOUNT_ID));

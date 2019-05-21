@@ -1,10 +1,11 @@
 /**
  * Created by: tuyennta
- * Created on: 14/05/2019 17:20
+ * Created on: 20/05/2019 10:03
  */
 
-package vn.vccorp.servicemonitoring.entity;
+package vn.vccorp.servicemonitoring.dto;
 
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import vn.vccorp.servicemonitoring.enumtype.Status;
@@ -18,18 +19,9 @@ import java.util.List;
 
 @Getter
 @Setter
-@Entity
-@Table(indexes = {
-        @Index(columnList = "name"),
-        @Index(columnList = "serverId"),
-        @Index(columnList = "serverPort"),
-        @Index(columnList = "project"),
-        @Index(columnList = "status")
-})
-public class Service {
+@Builder
+public class ServiceDTO {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
     @NotBlank
@@ -58,6 +50,10 @@ public class Service {
     @NotBlank
     @Size(max = 200)
     private String logDir;
+
+    public String getLogDir(){
+        return logDir.endsWith("/") ? logDir : logDir + "/";
+    }
 
     @NotBlank
     @Size(max = 100)
@@ -109,12 +105,5 @@ public class Service {
     @Size(max = 2000)
     private String note;
 
-    @OneToMany(mappedBy = "service")
-    private List<ServiceManagement> services;
-
-    @OneToMany(mappedBy = "service")
-    private List<Snapshot> snapshots;
-
-    @OneToMany(mappedBy = "service")
-    private List<IssueTracking> issues;
+    private List<Integer> maintainerIds;
 }

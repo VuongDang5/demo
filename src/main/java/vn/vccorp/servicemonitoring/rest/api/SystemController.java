@@ -89,7 +89,7 @@ public class SystemController {
 
     @RequestMapping(value = "/add-user", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ApiOperation(value = "Add new user", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    @AdminAuthorize
+    @OwnerAuthorize
     public ResponseEntity<Object> addAccount(@RequestBody @Valid UserDTO newUser) {
         LOGGER.info("Receive request to add new user: {}, mail: {}, role: {}", newUser.getName(), newUser.getEmail(), newUser.getRole());
         userService.addAccount(newUser);
@@ -117,4 +117,5 @@ public class SystemController {
         userService.deleteAccount(deleteUserId);
         return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
     }
+
 }

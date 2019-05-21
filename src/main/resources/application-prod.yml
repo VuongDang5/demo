@@ -13,3 +13,7 @@ spring:
     url: jdbc:mysql://10.5.36.99:3306/service_monitoring
     username: root
     password: root
+
+ssh:
+  port: 2395
+  username: tuyennta
