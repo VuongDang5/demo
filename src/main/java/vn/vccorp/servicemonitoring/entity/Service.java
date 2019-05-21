@@ -43,10 +43,10 @@ public class Service {
     @Size(max = 15)
     private String serverId;
 
-    @NotBlank
     @Size(max = 10)
     private String serverPort;
 
+    @NotBlank
     @Size(max = 10)
     private String PID;
 

@@ -5,6 +5,7 @@
 
 package vn.vccorp.servicemonitoring.dto;
 
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import vn.vccorp.servicemonitoring.enumtype.Status;
@@ -13,9 +14,11 @@ import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
 import java.util.Date;
+import java.util.List;
 
 @Getter
 @Setter
+@Builder
 public class ServiceDTO {
 
     private Integer id;
@@ -32,10 +35,10 @@ public class ServiceDTO {
     @Size(max = 15)
     private String serverId;
 
-    @NotBlank
     @Size(max = 10)
     private String serverPort;
 
+    @NotBlank
     @Size(max = 10)
     private String PID;
 
@@ -97,4 +100,6 @@ public class ServiceDTO {
 
     @Size(max = 2000)
     private String note;
+
+    private List<Integer> maintainerIds;
 }

@@ -16,7 +16,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import vn.vccorp.servicemonitoring.dto.ServiceDTO;
+import vn.vccorp.servicemonitoring.logic.service.MonitorService;
 import vn.vccorp.servicemonitoring.message.Messages;
+import vn.vccorp.servicemonitoring.rest.response.BaseResponse;
+import vn.vccorp.servicemonitoring.rest.response.RestResponseBuilder;
 import vn.vccorp.servicemonitoring.utils.AppConstants;
 
 @RequestMapping(value = AppConstants.API_MAPPING + "/service")
@@ -27,13 +30,17 @@ public class ServiceController {
 
     @Autowired
     private Messages messages;
+    @Autowired
+    private MonitorService monitorService;
 
     @RequestMapping(value = "/register", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ApiOperation(value = "Register old service to monitor on this system", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity<Object> registerOldService(@RequestBody ServiceDTO serviceDTO){
         LOGGER.info("Receive request to register old service to monitor on this system");
-
-
+        monitorService.registerService(serviceDTO);
+        BaseResponse.Builder builder = new BaseResponse.Builder();
+        builder.setSuccessObject(true);
+        return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
     }
 
 }

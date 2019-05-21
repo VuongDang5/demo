@@ -5,6 +5,9 @@ import org.apache.commons.validator.routines.EmailValidator;
 import org.apache.commons.validator.routines.UrlValidator;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
+import org.joda.time.DateTimeZone;
+import org.joda.time.LocalDateTime;
+import org.joda.time.format.DateTimeFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
@@ -12,12 +15,14 @@ import org.springframework.data.domain.Sort;
 import org.springframework.util.StringUtils;
 
 import javax.servlet.http.HttpServletResponse;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.URI;
 import java.nio.charset.Charset;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 import java.util.regex.Pattern;
 
 /**
@@ -114,5 +119,64 @@ public class AppUtils {
             LOGGER.error("queryQueryParams function {}", e);
         }
         return result;
+    }
+
+    /**
+     * Execute command on terminal and return the output
+     * @param command   command to execute
+     * @return  output of command
+     */
+    public static List<String> executeCommand(String command) {
+        List<String> out = new ArrayList<>();
+        String[] args = new String[]{"/bin/bash", "-c", command, "with", "args"};
+        ProcessBuilder pb = new ProcessBuilder(args);
+        try {
+            out = execute(pb);
+        } catch (IOException e) {
+            LOGGER.error("Exception while executing command: " + command, e);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        return out;
+    }
+
+    /**
+     * Execute script file on terminal
+     * @param filePath  file to execute
+     * @return  output of script when execute on stdout
+     */
+    public static List<String> executeScriptFile(String filePath) {
+        List<String> out = new ArrayList<>();
+        ProcessBuilder pb = new ProcessBuilder(filePath);
+        try {
+            out = execute(pb);
+        } catch (IOException e) {
+            LOGGER.error("Exception while executing file: " + filePath, e);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        return out;
+    }
+
+    private static List<String> execute(ProcessBuilder pb) throws IOException, InterruptedException {
+        List<String> out = new ArrayList<>();
+        Process proc = pb.start();
+        BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+        String line;
+        while ((line = reader.readLine()) != null) {
+            out.add(line);
+        }
+        proc.waitFor();
+        return out;
+    }
+
+    public static Date getStartedDateOfProcess(String serverId, String sshPort, String pid){
+        String command = "ssh -p " + sshPort + " " + serverId + " -t 'date -r /proc/" + pid + " --rfc-3339=ns'";
+        List<String> out = executeCommand(command);
+        if (!out.isEmpty()){
+//            return Date.from(OffsetDateTime.parse(out.get(0).replace(" ", "T")).toInstant());
+            return LocalDateTime.parse(out.get(0).split("\\.")[0].replace(" ", "T")).toDate();
+        }
+        return LocalDateTime.now().toDate();
     }
 }
