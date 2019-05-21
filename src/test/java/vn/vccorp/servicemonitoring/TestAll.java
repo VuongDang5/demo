@@ -14,7 +14,7 @@ import vn.vccorp.servicemonitoring.utils.BeanUtils;
 import java.util.Collections;
 
 /**
- * Name: Cường Tuấn Nguyễn.
+ * Name:
  * Date: 05/07/2018.
  * Time: 15:00.
  */
