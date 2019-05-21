@@ -11,6 +11,7 @@ import vn.vccorp.servicemonitoring.enumtype.Status;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.util.Date;
 import java.util.List;
@@ -88,14 +89,11 @@ public class Service {
     private Integer diskLimit;
 
     @Enumerated(EnumType.STRING)
-    @NotBlank
-    @Size(max = 10)
     private Status status;
 
-    @NotBlank
+    @NotNull
     private Date startTime;
 
-    @NotBlank
     private Date lastCheckTime;
 
     @NotBlank

@@ -12,6 +12,7 @@ import vn.vccorp.servicemonitoring.enumtype.Status;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.util.Date;
 import java.util.List;
@@ -50,6 +51,10 @@ public class ServiceDTO {
     @Size(max = 200)
     private String logDir;
 
+    public String getLogDir(){
+        return logDir.endsWith("/") ? logDir : logDir + "/";
+    }
+
     @NotBlank
     @Size(max = 100)
     private String logFile;
@@ -80,10 +85,9 @@ public class ServiceDTO {
     private Integer diskLimit;
 
     @Enumerated(EnumType.STRING)
-    @NotBlank
-    @Size(max = 10)
     private Status status;
 
+    @NotNull
     private Date startTime;
 
     private Date lastCheckTime;
