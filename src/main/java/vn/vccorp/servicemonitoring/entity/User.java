@@ -10,7 +10,6 @@ import vn.vccorp.servicemonitoring.enumtype.Role;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.util.List;
 
@@ -63,10 +62,10 @@ public class User {
     private boolean isDeleted;
 
     @OneToMany(mappedBy = "user")
-    private List<ServerManagement> servers;
+    private List<UserServer> servers;
 
     @OneToMany(mappedBy = "user")
-    private List<ServiceManagement> services;
+    private List<UserService> services;
 
     @OneToMany(mappedBy = "user")
     private List<IssueTracking> issues;

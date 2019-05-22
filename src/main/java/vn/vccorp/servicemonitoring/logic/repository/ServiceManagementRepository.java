@@ -6,13 +6,13 @@
 package vn.vccorp.servicemonitoring.logic.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import vn.vccorp.servicemonitoring.entity.ServiceManagement;
+import vn.vccorp.servicemonitoring.entity.UserService;
 import vn.vccorp.servicemonitoring.enumtype.Role;
 
 import java.util.Optional;
 
-public interface ServiceManagementRepository extends JpaRepository<ServiceManagement, Integer> {
+public interface ServiceManagementRepository extends JpaRepository<UserService, Integer> {
 
-    Optional<ServiceManagement> findByUserIdAndRole(int userId, Role role);
+    Optional<UserService> findByUserIdAndRole(int userId, Role role);
 
 }

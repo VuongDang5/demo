@@ -114,7 +114,7 @@ public class Service {
     private String note;
 
     @OneToMany(mappedBy = "service")
-    private List<ServiceManagement> services;
+    private List<UserService> userServices;
 
     @OneToMany(mappedBy = "service")
     private List<Snapshot> snapshots;
