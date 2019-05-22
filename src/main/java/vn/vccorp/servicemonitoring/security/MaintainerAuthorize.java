@@ -14,7 +14,9 @@ import java.lang.annotation.*;
 @Inherited
 @PreAuthorize("hasAnyAuthority(T(vn.vccorp.servicemonitoring.enumtype.Role).ADMIN, " +
         "T(vn.vccorp.servicemonitoring.enumtype.Role).OWNER," +
-        "T(vn.vccorp.servicemonitoring.enumtype.Role).MAINTAINER)")
+        "T(vn.vccorp.servicemonitoring.enumtype.Role).MAINTAINER) " +
+        "&& @CustomPermissionEvaluator.forService(#currentUserId, #serviceId)")
 public @interface MaintainerAuthorize {
-
+    String currentUserId();
+    String serviceId();
 }
