@@ -41,7 +41,7 @@ public class ServiceDTO {
 
     @NotBlank
     @Size(max = 10)
-    private String PID;
+    private String pid;
 
     @NotBlank
     @Size(max = 200)
@@ -110,4 +110,7 @@ public class ServiceDTO {
     private String note;
 
     private List<Integer> maintainerIds;
+
+    @NotNull
+    private Integer ownerId;
 }

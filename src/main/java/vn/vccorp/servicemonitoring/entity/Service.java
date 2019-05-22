@@ -19,13 +19,20 @@ import java.util.List;
 @Getter
 @Setter
 @Entity
-@Table(indexes = {
-        @Index(columnList = "name"),
-        @Index(columnList = "serverId"),
-        @Index(columnList = "serverPort"),
-        @Index(columnList = "project"),
-        @Index(columnList = "status")
-})
+@Table(
+        indexes = {
+                @Index(columnList = "name"),
+                @Index(columnList = "serverId"),
+                @Index(columnList = "serverPort"),
+                @Index(columnList = "project"),
+                @Index(columnList = "pid"),
+                @Index(columnList = "status")
+        },
+        uniqueConstraints = {
+                @UniqueConstraint(columnNames = {
+                        "pid", "name"
+                })
+        })
 public class Service {
 
     @Id
@@ -55,7 +62,7 @@ public class Service {
     @Size(max = 200)
     private String deployDir;
 
-    public String getDeployDir(){
+    public String getDeployDir() {
         return deployDir.endsWith("/") ? deployDir : deployDir + "/";
     }
 

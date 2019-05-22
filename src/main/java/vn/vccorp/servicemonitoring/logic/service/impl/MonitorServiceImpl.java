@@ -10,8 +10,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import vn.vccorp.servicemonitoring.dto.ServiceDTO;
+import vn.vccorp.servicemonitoring.entity.UserService;
+import vn.vccorp.servicemonitoring.enumtype.Role;
 import vn.vccorp.servicemonitoring.exception.ApplicationException;
 import vn.vccorp.servicemonitoring.logic.repository.ServiceRepository;
+import vn.vccorp.servicemonitoring.logic.repository.UserServiceRepository;
 import vn.vccorp.servicemonitoring.logic.service.MonitorService;
 import vn.vccorp.servicemonitoring.message.Messages;
 import vn.vccorp.servicemonitoring.utils.AppUtils;
@@ -21,6 +24,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class MonitorServiceImpl implements MonitorService {
@@ -32,12 +36,14 @@ public class MonitorServiceImpl implements MonitorService {
     @Autowired
     private ServiceRepository serviceRepository;
     @Autowired
+    private UserServiceRepository userServiceRepository;
+    @Autowired
     private Messages messages;
 
     @Override
     public void registerService(ServiceDTO serviceDTO) {
         //check if service with specify info is correct on the system
-        if (!isProcessAlive(serviceDTO.getServerId(), serviceDTO.getPID())) {
+        if (!isProcessAlive(serviceDTO.getServerId(), serviceDTO.getPid())) {
             throw new ApplicationException(messages.get("service.pid.not-available"));
         }
         //check if log file is available
@@ -72,6 +78,12 @@ public class MonitorServiceImpl implements MonitorService {
         vn.vccorp.servicemonitoring.entity.Service service = dozerBeanMapper.map(serviceDTO, vn.vccorp.servicemonitoring.entity.Service.class);
         service.setStartTime(AppUtils.getStartedDateOfProcess(service.getServerId(), sshPort, service.getPID()));
         serviceRepository.save(service);
+
+        //save UserService
+        List<UserService> userServices = serviceDTO.getMaintainerIds()
+                .parallelStream().map(id -> new UserService(id, service.getId(), Role.MAINTAINER)).collect(Collectors.toList());
+        userServices.add(new UserService(serviceDTO.getOwnerId(), service.getId(), Role.OWNER));
+        userServiceRepository.saveAll(userServices);
     }
 
     private String getRunFileName(String name) {

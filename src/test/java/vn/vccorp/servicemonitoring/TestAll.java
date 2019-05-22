@@ -39,10 +39,11 @@ public class TestAll {
                 .language("java")
                 .logDir("/home/tuyennta/projects/freelance/blogcrawler/")
                 .logFile("out.log")
-                .PID("22435")
+                .pid("17950")
                 .project("test")
                 .serverId("localhost")
-                .maintainerIds(Collections.singletonList(1))
+                .maintainerIds(Collections.singletonList(2))
+                .ownerId(1)
                 .build();
         BeanUtils.getBean(MonitorService.class).registerService(serviceDTO);
     }
