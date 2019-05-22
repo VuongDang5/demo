@@ -12,7 +12,9 @@ import java.lang.annotation.*;
 @Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
-@PreAuthorize("hasAnyAuthority(T(vn.vccorp.servicemonitoring.enumtype.Role).USER, " +
+@PreAuthorize("hasAnyAuthority(T(vn.vccorp.servicemonitoring.enumtype.Role).ADMIN, " +
+        "T(vn.vccorp.servicemonitoring.enumtype.Role).OWNER," +
         "T(vn.vccorp.servicemonitoring.enumtype.Role).MAINTAINER)")
 public @interface MaintainerAuthorize {
+
 }

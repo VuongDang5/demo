@@ -6,6 +6,7 @@
 package vn.vccorp.servicemonitoring.security;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.google.gson.Gson;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -23,7 +24,6 @@ public class UserPrincipal implements UserDetails {
 
     private String username;
 
-    @JsonIgnore
     private String email;
 
     @JsonIgnore
@@ -114,5 +114,10 @@ public class UserPrincipal implements UserDetails {
     public int hashCode() {
 
         return Objects.hash(id);
+    }
+
+    @Override
+    public String toString(){
+        return new Gson().toJson(this);
     }
 }
