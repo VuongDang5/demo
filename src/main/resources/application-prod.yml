@@ -1,0 +1,19 @@
+server:
+  host: localhost
+  port: 8081
+spring:
+  example:
+    cookie:
+      domain: localhost
+      secure: false
+  jpa:
+    hibernate:
+      ddl-auto: create
+  datasource:
+    url: jdbc:mysql://10.5.36.99:3306/service_monitoring
+    username: root
+    password: root
+
+ssh:
+  port: 2395
+  username: tuyennta

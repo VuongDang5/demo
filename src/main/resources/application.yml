@@ -1,0 +1,29 @@
+spring.profiles.active: local
+
+server:
+  connection-timeout: 600000
+  servlet:
+    session:
+      cookie:
+        http-only: false
+        max-age: 86400
+
+application:
+  name: ServiceMonitoring
+
+#spring:
+#  autoconfigure:
+#    exclude: org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration, org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration, org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+
+app:
+  jwtSecret: SMTSecretKey
+  jwtExpirationInMs: 604800000 # 7 days
+
+default:
+  account:
+    username: root
+    name: root
+    email: root@root.com
+    password: root
+    role: ADMIN
+    phone: 0357990xxx
