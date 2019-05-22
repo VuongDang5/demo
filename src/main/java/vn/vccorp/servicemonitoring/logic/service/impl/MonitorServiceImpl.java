@@ -43,7 +43,7 @@ public class MonitorServiceImpl implements MonitorService {
     @Override
     public void registerService(ServiceDTO serviceDTO) {
         //check if service with specify info is correct on the system
-        if (!isProcessAlive(serviceDTO.getServerId(), serviceDTO.getPID())) {
+        if (!isProcessAlive(serviceDTO.getServerId(), serviceDTO.getPid())) {
             throw new ApplicationException(messages.get("service.pid.not-available"));
         }
         //check if log file is available

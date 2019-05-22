@@ -41,7 +41,7 @@ public class ServiceDTO {
 
     @NotBlank
     @Size(max = 10)
-    private String PID;
+    private String pid;
 
     @NotBlank
     @Size(max = 200)

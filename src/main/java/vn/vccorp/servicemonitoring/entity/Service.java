@@ -25,12 +25,12 @@ import java.util.List;
                 @Index(columnList = "serverId"),
                 @Index(columnList = "serverPort"),
                 @Index(columnList = "project"),
-                @Index(columnList = "PID"),
+                @Index(columnList = "pid"),
                 @Index(columnList = "status")
         },
         uniqueConstraints = {
                 @UniqueConstraint(columnNames = {
-                        "PID", "name"
+                        "pid", "name"
                 })
         })
 public class Service {
