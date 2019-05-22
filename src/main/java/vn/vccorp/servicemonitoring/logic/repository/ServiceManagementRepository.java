@@ -14,4 +14,5 @@ import java.util.Optional;
 public interface ServiceManagementRepository extends JpaRepository<ServiceManagement, Integer> {
 
     Optional<ServiceManagement> findByUserIdAndRole(int userId, Role role);
+
 }
