@@ -16,7 +16,10 @@ import vn.vccorp.servicemonitoring.logic.service.MonitorService;
 import vn.vccorp.servicemonitoring.message.Messages;
 import vn.vccorp.servicemonitoring.utils.AppUtils;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.List;
 
 @Service
@@ -39,18 +42,83 @@ public class MonitorServiceImpl implements MonitorService {
         }
         //check if log file is available
         File logFile = new File(serviceDTO.getLogDir() + serviceDTO.getLogFile());
-        if (!isFileExist(serviceDTO.getServerId(), logFile.getAbsolutePath())){
+        if (!isFileExist(serviceDTO.getServerId(), logFile.getAbsolutePath())) {
             throw new ApplicationException(messages.get("service.log.not-available"));
         }
+        //check if deploy dir is available
+        File deployDir = new File(serviceDTO.getDeployDir());
+        if (!isFolderExist(serviceDTO.getServerId(), deployDir.getAbsolutePath())) {
+            throw new ApplicationException(messages.get("service.deploydir.not-available"));
+        } else {
+            //create a file on deploy dir to run service
+            String deployCommand = "#!/bin/bash \n";
+            deployCommand += "cd " + serviceDTO.getDeployDir() + " \n";
+            deployCommand += serviceDTO.getDeployCommand() + "\n";
+            deployCommand += "echo $!";
+            File runFile = new File(getRunFileName(serviceDTO.getName()));
+            try {
+                runFile.createNewFile();
+                BufferedWriter br = new BufferedWriter(new FileWriter(runFile));
+                br.write(deployCommand);
+                br.flush();
+                br.close();
+                runFile.setExecutable(true);
+                AppUtils.putFile(serviceDTO.getServerId(), sshPort, runFile.getAbsolutePath(), serviceDTO.getDeployDir());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
         vn.vccorp.servicemonitoring.entity.Service service = dozerBeanMapper.map(serviceDTO, vn.vccorp.servicemonitoring.entity.Service.class);
         service.setStartTime(AppUtils.getStartedDateOfProcess(service.getServerId(), sshPort, service.getPID()));
         serviceRepository.save(service);
     }
 
-    private boolean isFileExist(String serverIP, String filePath){
+    private String getRunFileName(String name) {
+        return "run-" + name + ".sh";
+    }
+
+    @Override
+    public void startService(int serviceId) {
+        vn.vccorp.servicemonitoring.entity.Service service = serviceRepository.findById(serviceId).orElseThrow(() -> new ApplicationException(messages.get("service.id.not-found")));
+        String startCommand = "ssh -p " + sshPort + " " + service.getServerId()
+                + " -t 'nohup sh " + service.getDeployDir() + getRunFileName(service.getName()) + "'";
+
+        AppUtils.executeCommand(startCommand);
+
+        String getPidCommand = "ssh -p " + sshPort + " " + service.getServerId() + " -t 'cat " + service.getDeployDir() + "pid'";
+        List<String> out = AppUtils.executeCommand(getPidCommand);
+        if (out.isEmpty()) {
+            throw new ApplicationException(messages.get("service.error.starting"));
+        } else {
+            service.setPID(out.get(0));
+            serviceRepository.save(service);
+        }
+    }
+
+    @Override
+    public void stopService(int serviceId) {
+        vn.vccorp.servicemonitoring.entity.Service service = serviceRepository.findById(serviceId).orElseThrow(() -> new ApplicationException(messages.get("service.id.not-found")));
+        String command = "ssh -p " + sshPort + " " + service.getServerId() + " -t 'kill -9 " + service.getPID() + "'; echo $?";
+        List<String> out = AppUtils.executeCommand(command);
+        if (out.isEmpty() || !out.get(0).equals("0")) {
+            throw new ApplicationException(messages.get("service.error.stopping"));
+        }
+    }
+
+    private boolean isFileExist(String serverIP, String filePath) {
         String command = "ssh -p " + sshPort + " " + serverIP + " -t 'test -f " + filePath + "'; echo $?";
         List<String> out = AppUtils.executeCommand(command);
-        if (!out.isEmpty() && out.get(0).equals("0")){
+        if (!out.isEmpty() && out.get(0).equals("0")) {
+            return true;
+        }
+        return false;
+    }
+
+    private boolean isFolderExist(String serverIP, String filePath) {
+        String command = "ssh -p " + sshPort + " " + serverIP + " -t 'test -d " + filePath + "'; echo $?";
+        List<String> out = AppUtils.executeCommand(command);
+        if (!out.isEmpty() && out.get(0).equals("0")) {
             return true;
         }
         return false;
