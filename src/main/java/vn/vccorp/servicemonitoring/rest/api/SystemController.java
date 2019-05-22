@@ -125,8 +125,7 @@ public class SystemController {
     @ApiOperation(value = "Delete user", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
 //    @PreAuthorize("@CustomPermissionEvaluator.forService(#currentUser, #serviceId)")
     @OwnerAuthorize(currentUserId = "#currentUserId", serviceId = "#serviceId")
-    public ResponseEntity<Object> test(@P("currentUser") @CurrentUser UserPrincipal currentUser, @P("serviceId") @RequestBody int serviceId) {
-        LOGGER.info("Receive request of user: {}, mail: {}, role: {}", currentUser.getName(), currentUser.getEmail(), currentUser.getAuthorities());
+    public ResponseEntity<Object> test(@P("currentUserId") @RequestParam int currentUserId, @P("serviceId") @RequestParam int serviceId) {
         return null;
     }
 
