@@ -20,6 +20,9 @@ import vn.vccorp.servicemonitoring.logic.service.MonitorService;
 import vn.vccorp.servicemonitoring.message.Messages;
 import vn.vccorp.servicemonitoring.rest.response.BaseResponse;
 import vn.vccorp.servicemonitoring.rest.response.RestResponseBuilder;
+import vn.vccorp.servicemonitoring.security.CurrentUser;
+import vn.vccorp.servicemonitoring.security.UserAuthorize;
+import vn.vccorp.servicemonitoring.security.UserPrincipal;
 import vn.vccorp.servicemonitoring.utils.AppConstants;
 
 @RequestMapping(value = AppConstants.API_MAPPING + "/service")
@@ -43,4 +46,11 @@ public class ServiceController {
         return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
     }
 
+    @RequestMapping(value = "/show-all-service", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @ApiOperation(value = "Show all service", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @UserAuthorize
+    public ResponseEntity<Object> showAllService(@CurrentUser UserPrincipal currentUser) {
+        BaseResponse.Builder builder = new BaseResponse.Builder();
+        return ResponseEntity.accepted().body(monitorService.showAllService());
+    }
 }

@@ -18,8 +18,10 @@ import org.springframework.security.web.savedrequest.SavedRequest;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import vn.vccorp.servicemonitoring.dto.UserDTO;
+import vn.vccorp.servicemonitoring.entity.Service;
 import vn.vccorp.servicemonitoring.enumtype.ApplicationError;
 import vn.vccorp.servicemonitoring.exception.ApplicationException;
+import vn.vccorp.servicemonitoring.logic.service.MonitorService;
 import vn.vccorp.servicemonitoring.logic.service.UserService;
 import vn.vccorp.servicemonitoring.message.Messages;
 import vn.vccorp.servicemonitoring.rest.response.BaseResponse;
@@ -49,6 +51,8 @@ public class SystemController {
     AuthenticationManager authenticationManager;
     @Autowired
     UserService userService;
+    @Autowired
+    MonitorService monitorService;
 
     @RequestMapping(value = "/login", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ApiOperation(value = "Login account", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
@@ -117,5 +121,4 @@ public class SystemController {
         userService.deleteAccount(deleteUserId);
         return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
     }
-
 }

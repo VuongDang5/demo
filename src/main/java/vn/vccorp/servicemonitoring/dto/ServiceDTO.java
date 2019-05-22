@@ -5,9 +5,7 @@
 
 package vn.vccorp.servicemonitoring.dto;
 
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import vn.vccorp.servicemonitoring.enumtype.Status;
 
 import javax.persistence.*;
@@ -20,6 +18,8 @@ import java.util.List;
 @Getter
 @Setter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class ServiceDTO {
 
     private Integer id;

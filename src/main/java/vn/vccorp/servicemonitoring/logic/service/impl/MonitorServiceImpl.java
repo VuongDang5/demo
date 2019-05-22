@@ -65,4 +65,10 @@ public class MonitorServiceImpl implements MonitorService {
         }
         return false;
     }
+
+    @Override
+    public Object showAllService() {
+        List<vn.vccorp.servicemonitoring.entity.Service> service = serviceRepository.findAll();
+        return service;
+    }
 }
