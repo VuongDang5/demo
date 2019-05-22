@@ -35,7 +35,7 @@ public class UserService {
     @Getter
     @Setter
     @Embeddable
-    public class ServiceManagementKey implements Serializable {
+    public static class ServiceManagementKey implements Serializable {
         private Integer serviceId;
         private Integer userId;
     }
