@@ -23,6 +23,8 @@ import vn.vccorp.servicemonitoring.message.Messages;
 import vn.vccorp.servicemonitoring.security.RootUser;
 import vn.vccorp.servicemonitoring.utils.BeanUtils;
 
+import java.util.List;
+
 @Service
 public class UserServiceImpl implements UserService {
     private static final Logger LOGGER = LoggerFactory.getLogger(UserServiceImpl.class);
@@ -85,5 +87,11 @@ public class UserServiceImpl implements UserService {
 
         user.setDeleted(true);
         userRepository.save(user);
+    }
+
+    @Override
+    public Object showAllService() {
+        List<vn.vccorp.servicemonitoring.entity.Service> service = serviceRepository.findAll();
+        return service;
     }
 }
