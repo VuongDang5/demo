@@ -33,13 +33,13 @@ public class TestAll {
         ServiceDTO serviceDTO = ServiceDTO.builder()
                 .name("test")
                 .status(Status.ACTIVE)
-                .deployCommand("test")
-                .deployDir("test")
+                .deployCommand("nohup java -jar target/tdcd-crawler-service.jar > out.log &")
+                .deployDir("/home/tuyennta/projects/freelance/blogcrawler")
                 .description("test")
-                .language("test")
-                .logDir("/home/tuyennta/")
-                .logFile("java_error_in_PYCHARM_114761.log")
-                .PID("5202")
+                .language("java")
+                .logDir("/home/tuyennta/projects/freelance/blogcrawler/")
+                .logFile("out.log")
+                .PID("22435")
                 .project("test")
                 .serverId("localhost")
                 .maintainerIds(Collections.singletonList(1))
@@ -50,5 +50,15 @@ public class TestAll {
     @Test
     public void testGetStartedDateOfProcess(){
         System.out.println(AppUtils.getStartedDateOfProcess("localhost", "22", "5079"));
+    }
+
+    @Test
+    public void testStartService(){
+        BeanUtils.getBean(MonitorService.class).startService(3);
+    }
+
+    @Test
+    public void testStopService(){
+        BeanUtils.getBean(MonitorService.class).stopService(3);
     }
 }
