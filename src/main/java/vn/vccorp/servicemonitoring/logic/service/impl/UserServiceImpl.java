@@ -82,4 +82,22 @@ public class UserServiceImpl implements UserService {
         user.setDeleted(true);
         userRepository.save(user);
     }
+
+    @Override
+    public void updateRole(int userId, String role) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new ApplicationException(ApplicationError.NOT_FOUND_OR_INVALID_ACCOUNT_ID));
+        //at least have an admin
+        if(userRepository.findAllByRole(Role.ADMIN).isEmpty()) {
+            throw new ApplicationException(messages.get("error.user.change.admin"));
+        }
+
+        if (role.equals("ADMIN")){
+            user.setRole(Role.ADMIN);
+        }
+        else {
+            user.setRole(Role.USER);
+        }
+
+        userRepository.save(user);
+    }
 }

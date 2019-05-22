@@ -18,6 +18,7 @@ import org.springframework.security.web.savedrequest.SavedRequest;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import vn.vccorp.servicemonitoring.dto.UserDTO;
+import vn.vccorp.servicemonitoring.dto.RoleDTO;
 import vn.vccorp.servicemonitoring.enumtype.ApplicationError;
 import vn.vccorp.servicemonitoring.exception.ApplicationException;
 import vn.vccorp.servicemonitoring.logic.service.UserService;
@@ -115,6 +116,16 @@ public class SystemController {
         LOGGER.info("Receive request of user: {}, mail: {}, role: {}", currentUser.getName(), currentUser.getEmail(), currentUser.getAuthorities());
         BaseResponse.Builder builder = new BaseResponse.Builder();
         userService.deleteAccount(deleteUserId);
+        return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
+    }
+
+    @RequestMapping(value = "/change-role", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @ApiOperation(value = "Change Role", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @AdminAuthorize
+    public ResponseEntity<Object> updateRole(@CurrentUser UserPrincipal currentUser, @RequestBody @Valid RoleDTO roleDTO) {
+        LOGGER.info("Receive request of user: {}, mail: {}, role: {}", currentUser.getName(), currentUser.getEmail(), currentUser.getAuthorities());
+        BaseResponse.Builder builder = new BaseResponse.Builder();
+        userService.updateRole(roleDTO.getId(), roleDTO.getRole());
         return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
     }
 }
