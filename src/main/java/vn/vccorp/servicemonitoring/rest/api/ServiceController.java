@@ -45,7 +45,6 @@ public class ServiceController {
         return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
     }
 
-    @MaintainerAuthorize
     @RequestMapping(value = "/start", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ApiOperation(value = "Start a service", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity<Object> startService(@RequestBody int serviceId){
@@ -56,7 +55,6 @@ public class ServiceController {
         return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
     }
 
-    @MaintainerAuthorize
     @RequestMapping(value = "/stop", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ApiOperation(value = "Stop a service", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity<Object> stopService(@RequestBody int serviceId){

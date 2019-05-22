@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 import vn.vccorp.servicemonitoring.entity.User;
 import vn.vccorp.servicemonitoring.entity.UserService;
 import vn.vccorp.servicemonitoring.enumtype.ApplicationError;
+import vn.vccorp.servicemonitoring.enumtype.Role;
 import vn.vccorp.servicemonitoring.exception.ApplicationException;
 import vn.vccorp.servicemonitoring.logic.repository.UserRepository;
 import vn.vccorp.servicemonitoring.message.Messages;
@@ -28,6 +29,11 @@ public class CustomPermissionEvaluator implements ICustomPermissionEvaluator {
     @Override
     public boolean forService(int userId, int serviceId) {
         User user = userRepository.findByIdAndIsDeleted(userId, false).orElseThrow(() -> new ApplicationException(ApplicationError.NOT_FOUND_OR_INVALID_ACCOUNT_ID));
+        //if this user is an ADMIN then this user has all permission
+        if (user.getRole().equals(Role.ADMIN)){
+            return true;
+        }
+        //otherwise, this user has to owned or maintained this service
         List<UserService> serviceManagements = user.getServices().parallelStream().filter(s -> s.getService().getId().equals(serviceId)).collect(Collectors.toList());
         return !serviceManagements.isEmpty();
     }
