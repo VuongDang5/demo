@@ -16,7 +16,7 @@ import java.io.Serializable;
 @Setter
 @Entity
 @Table
-public class ServiceManagement {
+public class UserService {
 
     @EmbeddedId
     private ServiceManagementKey id;
