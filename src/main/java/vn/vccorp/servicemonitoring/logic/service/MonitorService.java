@@ -9,4 +9,8 @@ import vn.vccorp.servicemonitoring.dto.ServiceDTO;
 
 public interface MonitorService {
     void registerService(ServiceDTO serviceDTO);
+
+    void startService(int serviceId);
+
+    void stopService(int serviceId);
 }

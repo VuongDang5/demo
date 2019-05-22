@@ -23,6 +23,8 @@ import vn.vccorp.servicemonitoring.message.Messages;
 import vn.vccorp.servicemonitoring.security.RootUser;
 import vn.vccorp.servicemonitoring.utils.BeanUtils;
 
+import java.util.List;
+
 @Service
 public class UserServiceImpl implements UserService {
     private static final Logger LOGGER = LoggerFactory.getLogger(UserServiceImpl.class);
@@ -80,6 +82,20 @@ public class UserServiceImpl implements UserService {
         );
 
         user.setDeleted(true);
+        userRepository.save(user);
+    }
+
+    @Override
+    public void updateRole(int userId, Role role) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new ApplicationException(ApplicationError.NOT_FOUND_OR_INVALID_ACCOUNT_ID));
+
+        //at least have an admin
+        List<User> userAdmin = userRepository.findAllByRole(Role.ADMIN);
+        if(userAdmin.size() == 1 && userAdmin.get(0).getId() == userId && role == Role.USER) {
+            throw new ApplicationException(messages.get("error.user.change.admin"));
+        }
+
+        user.setRole(role);
         userRepository.save(user);
     }
 }

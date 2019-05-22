@@ -123,8 +123,9 @@ public class AppUtils {
 
     /**
      * Execute command on terminal and return the output
-     * @param command   command to execute
-     * @return  output of command
+     *
+     * @param command command to execute
+     * @return output of command
      */
     public static List<String> executeCommand(String command) {
         List<String> out = new ArrayList<>();
@@ -142,8 +143,9 @@ public class AppUtils {
 
     /**
      * Execute script file on terminal
-     * @param filePath  file to execute
-     * @return  output of script when execute on stdout
+     *
+     * @param filePath file to execute
+     * @return output of script when execute on stdout
      */
     public static List<String> executeScriptFile(String filePath) {
         List<String> out = new ArrayList<>();
@@ -170,13 +172,18 @@ public class AppUtils {
         return out;
     }
 
-    public static Date getStartedDateOfProcess(String serverId, String sshPort, String pid){
+    public static Date getStartedDateOfProcess(String serverId, String sshPort, String pid) {
         String command = "ssh -p " + sshPort + " " + serverId + " -t 'date -r /proc/" + pid + " --rfc-3339=ns'";
         List<String> out = executeCommand(command);
-        if (!out.isEmpty()){
+        if (!out.isEmpty()) {
 //            return Date.from(OffsetDateTime.parse(out.get(0).replace(" ", "T")).toInstant());
             return LocalDateTime.parse(out.get(0).split("\\.")[0].replace(" ", "T")).toDate();
         }
         return LocalDateTime.now().toDate();
+    }
+
+    public static void putFile(String serverId, String sshPort, String sourceFile, String destination) {
+        String command = "scp -P " + sshPort + " " + sourceFile + " " + serverId + ":" + destination;
+        executeCommand(command);
     }
 }

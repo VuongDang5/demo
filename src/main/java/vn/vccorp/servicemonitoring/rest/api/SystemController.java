@@ -8,7 +8,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -19,8 +18,10 @@ import org.springframework.security.web.savedrequest.RequestCache;
 import org.springframework.security.web.savedrequest.SavedRequest;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
+import vn.vccorp.servicemonitoring.dto.RoleDTO;
 import vn.vccorp.servicemonitoring.dto.UserDTO;
 import vn.vccorp.servicemonitoring.enumtype.ApplicationError;
+import vn.vccorp.servicemonitoring.enumtype.Role;
 import vn.vccorp.servicemonitoring.exception.ApplicationException;
 import vn.vccorp.servicemonitoring.logic.service.UserService;
 import vn.vccorp.servicemonitoring.message.Messages;
@@ -124,8 +125,19 @@ public class SystemController {
     @ApiOperation(value = "Delete user", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
 //    @PreAuthorize("@CustomPermissionEvaluator.forService(#currentUser, #serviceId)")
     @OwnerAuthorize(currentUserId = "#currentUserId", serviceId = "#serviceId")
-    public ResponseEntity<Object> test(@P("currentUser") @CurrentUser UserPrincipal currentUser, @P ("serviceId") @RequestBody int serviceId) {
+    public ResponseEntity<Object> test(@P("currentUser") @CurrentUser UserPrincipal currentUser, @P("serviceId") @RequestBody int serviceId) {
         LOGGER.info("Receive request of user: {}, mail: {}, role: {}", currentUser.getName(), currentUser.getEmail(), currentUser.getAuthorities());
         return null;
     }
+
+    @RequestMapping(value = "/change-role", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @ApiOperation(value = "Change Role", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @AdminAuthorize
+    public ResponseEntity<Object> updateRole(@CurrentUser UserPrincipal currentUser, @RequestBody @Valid RoleDTO roleDTO) {
+        LOGGER.info("Receive request of user: {}, mail: {}, role: {}", currentUser.getName(), currentUser.getEmail(), currentUser.getAuthorities());
+        BaseResponse.Builder builder = new BaseResponse.Builder();
+        userService.updateRole(roleDTO.getId(), Role.valueOf(roleDTO.getRole()));
+        return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
+    }
+
 }

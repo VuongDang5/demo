@@ -55,6 +55,10 @@ public class Service {
     @Size(max = 200)
     private String deployDir;
 
+    public String getDeployDir(){
+        return deployDir.endsWith("/") ? deployDir : deployDir + "/";
+    }
+
     @NotBlank
     @Size(max = 200)
     private String logDir;
