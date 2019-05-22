@@ -16,4 +16,5 @@ import java.lang.annotation.*;
         "T(vn.vccorp.servicemonitoring.enumtype.Role).OWNER," +
         "T(vn.vccorp.servicemonitoring.enumtype.Role).MAINTAINER)")
 public @interface MaintainerAuthorize {
+
 }

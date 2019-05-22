@@ -8,10 +8,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.parameters.P;
 import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
 import org.springframework.security.web.savedrequest.RequestCache;
 import org.springframework.security.web.savedrequest.SavedRequest;
@@ -89,7 +91,7 @@ public class SystemController {
 
     @RequestMapping(value = "/add-user", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ApiOperation(value = "Add new user", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    @OwnerAuthorize
+    @AdminAuthorize
     public ResponseEntity<Object> addAccount(@RequestBody @Valid UserDTO newUser) {
         LOGGER.info("Receive request to add new user: {}, mail: {}, role: {}", newUser.getName(), newUser.getEmail(), newUser.getRole());
         userService.addAccount(newUser);
@@ -118,4 +120,12 @@ public class SystemController {
         return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
     }
 
+    @RequestMapping(value = "/test", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @ApiOperation(value = "Delete user", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+//    @PreAuthorize("@CustomPermissionEvaluator.forService(#currentUser, #serviceId)")
+    @OwnerAuthorize(currentUserId = "#currentUserId", serviceId = "#serviceId")
+    public ResponseEntity<Object> test(@P("currentUser") @CurrentUser UserPrincipal currentUser, @P ("serviceId") @RequestBody int serviceId) {
+        LOGGER.info("Receive request of user: {}, mail: {}, role: {}", currentUser.getName(), currentUser.getEmail(), currentUser.getAuthorities());
+        return null;
+    }
 }

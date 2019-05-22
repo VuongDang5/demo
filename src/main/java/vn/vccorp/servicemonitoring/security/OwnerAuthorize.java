@@ -19,6 +19,9 @@ import static java.lang.annotation.ElementType.TYPE;
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
 @PreAuthorize("hasAnyAuthority(T(vn.vccorp.servicemonitoring.enumtype.Role).ADMIN, " +
-        "T(vn.vccorp.servicemonitoring.enumtype.Role).OWNER)")
+        "T(vn.vccorp.servicemonitoring.enumtype.Role).OWNER) " +
+        "&& @CustomPermissionEvaluator.forService(#currentUserId, #serviceId)")
 public @interface OwnerAuthorize {
+    String currentUserId();
+    String serviceId();
 }
