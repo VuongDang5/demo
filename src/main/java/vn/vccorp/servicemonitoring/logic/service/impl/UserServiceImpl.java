@@ -73,7 +73,7 @@ public class UserServiceImpl implements UserService {
             }
         }
 
-        //if delete an account that own some services
+        //if delete an account that own some userServices
         //we must alert user to transfer owner to others
         serviceManagementRepository.findByUserIdAndRole(deleteUserId, Role.OWNER).ifPresent(
                 o -> {
