@@ -110,4 +110,7 @@ public class ServiceDTO {
     private String note;
 
     private List<Integer> maintainerIds;
+
+    @NotNull
+    private Integer ownerId;
 }
