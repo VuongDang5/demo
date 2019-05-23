@@ -20,14 +20,14 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 
     List<User> findAllByRoleAndIsDeleted(Role role, boolean isDeleted);
     @Query(value =
-            "SELECT id, username, name, email, phone " +
+            "SELECT s.id, pid, username, u.role " +
                     "FROM user u " +
                     "JOIN service_management sm ON u.id = sm.user_id " +
                     "JOIN service s ON s.id = sm.service_id " +
                     "WHERE sm.role = 'OWNER' " +
                     "OR sm.role = 'MAINTAINER'",
             nativeQuery = true)
-    List<User> findAllServicesWithOwnerOrMaintainer();
+    List<User> findAllServiceHasOwnerOrMaintainer();
     List<User> findAllByRole(Role role);
 
     Optional<User> findByIdAndIsDeleted(int id, boolean isDeleted);

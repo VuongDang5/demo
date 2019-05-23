@@ -91,7 +91,7 @@ public class UserServiceImpl implements UserService {
 
         //at least have an admin
         List<User> userAdmin = userRepository.findAllByRole(Role.ADMIN);
-        if(userAdmin.size() == 1 && userAdmin.get(0).getId() == userId && role == Role.USER) {
+        if (userAdmin.size() == 1 && userAdmin.get(0).getId() == userId && role == Role.USER) {
             throw new ApplicationException(messages.get("error.user.change.admin"));
         }
 
@@ -100,7 +100,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public List<User> listServicesOfOwnerOrMaintainer() {
-        return null;
+    public List<User> listServiceHasOwnerOrMaintainer() {
+        return userRepository.findAllServiceHasOwnerOrMaintainer();
     }
 }

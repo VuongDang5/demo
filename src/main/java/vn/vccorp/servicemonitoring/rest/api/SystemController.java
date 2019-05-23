@@ -20,9 +20,11 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import vn.vccorp.servicemonitoring.dto.RoleDTO;
 import vn.vccorp.servicemonitoring.dto.UserDTO;
+import vn.vccorp.servicemonitoring.entity.User;
 import vn.vccorp.servicemonitoring.enumtype.ApplicationError;
 import vn.vccorp.servicemonitoring.enumtype.Role;
 import vn.vccorp.servicemonitoring.exception.ApplicationException;
+import vn.vccorp.servicemonitoring.logic.repository.UserRepository;
 import vn.vccorp.servicemonitoring.logic.service.UserService;
 import vn.vccorp.servicemonitoring.message.Messages;
 import vn.vccorp.servicemonitoring.rest.response.BaseResponse;
@@ -34,6 +36,7 @@ import vn.vccorp.servicemonitoring.utils.BeanUtils;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
+import java.util.List;
 
 /**
  * Name: tuyennta
@@ -122,12 +125,12 @@ public class SystemController {
     }
 
 
-    @RequestMapping(value = "/list-services-has-owner-maintainer", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    @ApiOperation(value = "List all services that have users with OWNER or MAINTAINER role", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @RequestMapping(value = "/list-services-has-owner-maintainer", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @ApiOperation(value = "List all services that have users with OWNER or MAINTAINER roles", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @AdminAuthorize
-    public ResponseEntity<Object> listServicesHasOwnerOrMaintainer(@CurrentUser UserPrincipal currentUser) {
+    public ResponseEntity<List<User>> listServicesHasOwnerOrMaintainer(@CurrentUser UserPrincipal currentUser) {
         LOGGER.info("Receive request of user: {}, mail: {}, role: {}", currentUser.getName(), currentUser.getEmail(), currentUser.getAuthorities());
-        return RestResponseBuilder.buildSuccessCollectionResponse(listServicesHasOwnerOrMaintainer());
+        return RestResponseBuilder.buildSuccessCollectionResponse(userService.listServiceHasOwnerOrMaintainer());
     }
 
     @RequestMapping(value = "/test", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)

@@ -22,5 +22,5 @@ public interface UserService {
 
     void updateRole(int userId, Role role);
 
-    List<User> listServicesOfOwnerOrMaintainer();
+    List<User> listServiceHasOwnerOrMaintainer();
 }
