@@ -8,6 +8,9 @@ package vn.vccorp.servicemonitoring.logic.service.impl;
 import org.dozer.DozerBeanMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import vn.vccorp.servicemonitoring.dto.ServiceDTO;
 import vn.vccorp.servicemonitoring.exception.ApplicationException;
@@ -68,16 +71,18 @@ public class MonitorServiceImpl implements MonitorService {
     }
 
     @Override
-    public Object showAllService() {
-        //Dung List de liet ke danh sach tat ca service
-        List<vn.vccorp.servicemonitoring.entity.Service> service = serviceRepository.findAll();
+    public Page<vn.vccorp.servicemonitoring.entity.Service> showAllService(int pageId) {
+        //Dung Pagination de liet ke danh sach tat ca service
+        Pageable firstPageWithFourElements = PageRequest.of(pageId, 4);
+        Page<vn.vccorp.servicemonitoring.entity.Service> service = serviceRepository.findAll(firstPageWithFourElements);
         return service;
+
     }
 
     @Override
-    public Object showService(int serviceId) {
+    public vn.vccorp.servicemonitoring.entity.Service showService(int serviceId) {
         //Hien thi Detail cua service theo serviceId
-        Optional<vn.vccorp.servicemonitoring.entity.Service> service = serviceRepository.findById(serviceId);
+        vn.vccorp.servicemonitoring.entity.Service service = serviceRepository.findById(serviceId);
         return service;
     }
 }

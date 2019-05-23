@@ -13,6 +13,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import vn.vccorp.servicemonitoring.dto.ServiceDTO;
+import vn.vccorp.servicemonitoring.entity.Service;
+import vn.vccorp.servicemonitoring.logic.repository.ServiceRepository;
 import vn.vccorp.servicemonitoring.logic.service.MonitorService;
 import vn.vccorp.servicemonitoring.message.Messages;
 import vn.vccorp.servicemonitoring.rest.response.BaseResponse;
@@ -21,6 +23,8 @@ import vn.vccorp.servicemonitoring.security.CurrentUser;
 import vn.vccorp.servicemonitoring.security.UserAuthorize;
 import vn.vccorp.servicemonitoring.security.UserPrincipal;
 import vn.vccorp.servicemonitoring.utils.AppConstants;
+
+import java.util.List;
 
 @RequestMapping(value = AppConstants.API_MAPPING + "/service")
 @RestController
@@ -43,17 +47,23 @@ public class ServiceController {
         return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
     }
 
-    @RequestMapping(value = "/show-all-service", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @RequestMapping(value = "/show-all-service/{pageId}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ApiOperation(value = "Show all service", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @UserAuthorize
-    public ResponseEntity<Object> showAllService(@CurrentUser UserPrincipal currentUser) {
-        return ResponseEntity.accepted().body(monitorService.showAllService());
+    public ResponseEntity<Object> showAllService(@CurrentUser UserPrincipal currentUser, @PathVariable int pageId) {
+        monitorService.showAllService(pageId);
+        BaseResponse.Builder builder = new BaseResponse.Builder();
+        builder.setSuccessObject(monitorService.showAllService(pageId));
+        return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
     }
 
     @RequestMapping(value = "/show-service/{serviceId}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ApiOperation(value = "Show service", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @UserAuthorize
     public ResponseEntity<Object> showService(@CurrentUser UserPrincipal currentUser, @PathVariable int serviceId) {
-        return ResponseEntity.accepted().body(monitorService.showService(serviceId));
+        monitorService.showService(serviceId);
+        BaseResponse.Builder builder = new BaseResponse.Builder();
+        builder.setSuccessObject(monitorService.showService(serviceId));
+        return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
     }
 }
