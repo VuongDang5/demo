@@ -22,6 +22,7 @@ import java.util.List;
 @NoArgsConstructor
 @Builder
 public class UserDTO {
+
     protected Integer id;
     @Email(message = "{user.email.invalid}")
     @NotBlank(message = "{user.email.not-empty}")

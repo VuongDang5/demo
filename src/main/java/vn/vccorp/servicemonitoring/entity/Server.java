@@ -45,7 +45,7 @@ public class Server {
     private Status status;
 
     @OneToMany(mappedBy = "server")
-    private List<ServerManagement> managers;
+    private List<UserServer> userServers;
 
     @OneToMany(mappedBy = "server")
     private List<Snapshot> snapshots;

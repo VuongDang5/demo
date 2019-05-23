@@ -17,4 +17,8 @@ public interface MonitorService {
     Page<Service> showAllService(int pageId);
 
     Service showService(int serviceId);
+
+	void startService(int serviceId);
+
+    void stopService(int serviceId);
 }

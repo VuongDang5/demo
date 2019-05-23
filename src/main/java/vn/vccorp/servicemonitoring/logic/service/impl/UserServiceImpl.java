@@ -66,10 +66,6 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
     }
 
-    /**
-     * klasdjf;
-     * @param deleteUaksjdfserIdkks đấklfjsa
-     */
     @Override
     public void deleteAccount(int deleteUserId) {
         User user = userRepository.findById(deleteUserId).orElseThrow(() -> new ApplicationException(ApplicationError.NOT_FOUND_OR_INVALID_ACCOUNT_ID));
@@ -81,7 +77,7 @@ public class UserServiceImpl implements UserService {
             }
         }
 
-        //if delete an account that own some services
+        //if delete an account that own some userServices
         //we must alert user to transfer owner to others
         serviceManagementRepository.findByUserIdAndRole(deleteUserId, Role.OWNER).ifPresent(
                 o -> {
@@ -90,6 +86,20 @@ public class UserServiceImpl implements UserService {
         );
 
         user.setDeleted(true);
+        userRepository.save(user);
+    }
+
+    @Override
+    public void updateRole(int userId, Role role) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new ApplicationException(ApplicationError.NOT_FOUND_OR_INVALID_ACCOUNT_ID));
+
+        //at least have an admin
+        List<User> userAdmin = userRepository.findAllByRole(Role.ADMIN);
+        if(userAdmin.size() == 1 && userAdmin.get(0).getId() == userId && role == Role.USER) {
+            throw new ApplicationException(messages.get("error.user.change.admin"));
+        }
+
+        user.setRole(role);
         userRepository.save(user);
     }
 }

@@ -11,6 +11,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.*;
 import vn.vccorp.servicemonitoring.dto.ServiceDTO;
 import vn.vccorp.servicemonitoring.entity.Service;
@@ -20,6 +24,8 @@ import vn.vccorp.servicemonitoring.message.Messages;
 import vn.vccorp.servicemonitoring.rest.response.BaseResponse;
 import vn.vccorp.servicemonitoring.rest.response.RestResponseBuilder;
 import vn.vccorp.servicemonitoring.security.CurrentUser;
+import vn.vccorp.servicemonitoring.security.MaintainerAuthorize;
+import vn.vccorp.servicemonitoring.security.OwnerAuthorize;
 import vn.vccorp.servicemonitoring.security.UserAuthorize;
 import vn.vccorp.servicemonitoring.security.UserPrincipal;
 import vn.vccorp.servicemonitoring.utils.AppConstants;
@@ -47,6 +53,28 @@ public class ServiceController {
         return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
     }
 
+    @RequestMapping(value = "/start", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @ApiOperation(value = "Start a service", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @MaintainerAuthorize(serviceId = "#serviceId")
+    public ResponseEntity<Object> startService(@CurrentUser UserPrincipal currentUser, @RequestBody int serviceId){
+        LOGGER.info("Receive request to start a service with id: " + serviceId);
+        monitorService.startService(serviceId);
+        BaseResponse.Builder builder = new BaseResponse.Builder();
+        builder.setSuccessObject(true);
+        return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
+    }
+
+    @RequestMapping(value = "/stop", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @ApiOperation(value = "Stop a service", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @MaintainerAuthorize(serviceId = "#serviceId")
+    public ResponseEntity<Object> stopService(@RequestBody int serviceId){
+        LOGGER.info("Receive request to stop a service with id: " + serviceId);
+        monitorService.stopService(serviceId);
+        BaseResponse.Builder builder = new BaseResponse.Builder();
+        builder.setSuccessObject(true);
+        return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
+    }
+
     @RequestMapping(value = "/show-all-service/{pageId}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ApiOperation(value = "Show all service", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @UserAuthorize
@@ -66,4 +94,5 @@ public class ServiceController {
         builder.setSuccessObject(monitorService.showService(serviceId));
         return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
     }
+	
 }

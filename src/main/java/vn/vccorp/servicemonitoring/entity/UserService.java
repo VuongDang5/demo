@@ -5,8 +5,7 @@
 
 package vn.vccorp.servicemonitoring.entity;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import vn.vccorp.servicemonitoring.enumtype.Role;
 
 import javax.persistence.*;
@@ -16,10 +15,19 @@ import java.io.Serializable;
 @Setter
 @Entity
 @Table
-public class ServiceManagement {
+@NoArgsConstructor
+@AllArgsConstructor
+public class UserService {
 
     @EmbeddedId
     private ServiceManagementKey id;
+
+    public UserService(int userId, int serviceId, Role role){
+        id = new ServiceManagementKey();
+        id.setUserId(userId);
+        id.setServiceId(serviceId);
+        this.role = role;
+    }
 
     @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "userId", insertable = false, updatable = false)
@@ -35,7 +43,7 @@ public class ServiceManagement {
     @Getter
     @Setter
     @Embeddable
-    public class ServiceManagementKey implements Serializable {
+    public static class ServiceManagementKey implements Serializable {
         private Integer serviceId;
         private Integer userId;
     }
