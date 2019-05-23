@@ -27,3 +27,12 @@ default:
     password: root
     role: ADMIN
     phone: 0357990xxx
+    
+  config:
+    id: 1
+    ramLimit: 0
+    cpuLimit: 0
+    gpuLimit: 0
+    diskLimit: 0
+    reportSchedule: 0 0 12 * * ?
+    
