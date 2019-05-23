@@ -20,8 +20,10 @@ import vn.vccorp.servicemonitoring.logic.service.MonitorService;
 import vn.vccorp.servicemonitoring.message.Messages;
 import vn.vccorp.servicemonitoring.rest.response.BaseResponse;
 import vn.vccorp.servicemonitoring.rest.response.RestResponseBuilder;
+import vn.vccorp.servicemonitoring.security.CurrentUser;
 import vn.vccorp.servicemonitoring.security.MaintainerAuthorize;
 import vn.vccorp.servicemonitoring.security.OwnerAuthorize;
+import vn.vccorp.servicemonitoring.security.UserPrincipal;
 import vn.vccorp.servicemonitoring.utils.AppConstants;
 
 @RequestMapping(value = AppConstants.API_MAPPING + "/service")
@@ -47,7 +49,8 @@ public class ServiceController {
 
     @RequestMapping(value = "/start", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ApiOperation(value = "Start a service", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity<Object> startService(@RequestBody int serviceId){
+    @MaintainerAuthorize(serviceId = "#serviceId")
+    public ResponseEntity<Object> startService(@CurrentUser UserPrincipal currentUser, @RequestBody int serviceId){
         LOGGER.info("Receive request to start a service with id: " + serviceId);
         monitorService.startService(serviceId);
         BaseResponse.Builder builder = new BaseResponse.Builder();
@@ -57,6 +60,7 @@ public class ServiceController {
 
     @RequestMapping(value = "/stop", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ApiOperation(value = "Stop a service", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @MaintainerAuthorize(serviceId = "#serviceId")
     public ResponseEntity<Object> stopService(@RequestBody int serviceId){
         LOGGER.info("Receive request to stop a service with id: " + serviceId);
         monitorService.stopService(serviceId);

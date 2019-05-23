@@ -5,6 +5,8 @@
 
 package vn.vccorp.servicemonitoring.security;
 
+import vn.vccorp.servicemonitoring.enumtype.Role;
+
 public interface ICustomPermissionEvaluator {
-    boolean forService(int userId, int serviceId);
+    boolean forService(Role role, String serviceId);
 }
