@@ -98,4 +98,9 @@ public class UserServiceImpl implements UserService {
         user.setRole(role);
         userRepository.save(user);
     }
+
+    @Override
+    public List<User> listServicesOfOwnerOrMaintainer() {
+        return null;
+    }
 }

@@ -122,14 +122,14 @@ public class SystemController {
     }
 
 
-    @RequestMapping(value = "/delete-user", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    @ApiOperation(value = "Delete user", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @RequestMapping(value = "/list-services-has-owner-maintainer", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @ApiOperation(value = "List all services that have users with OWNER or MAINTAINER role", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @AdminAuthorize
-    public ResponseEntity<Object> listServicesOfOwnerOrMaintainer(@CurrentUser UserPrincipal currentUser) {
+    public ResponseEntity<Object> listServicesHasOwnerOrMaintainer(@CurrentUser UserPrincipal currentUser) {
         LOGGER.info("Receive request of user: {}, mail: {}, role: {}", currentUser.getName(), currentUser.getEmail(), currentUser.getAuthorities());
-        BaseResponse.Builder builder = new BaseResponse.Builder();
-        return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
+        return RestResponseBuilder.buildSuccessCollectionResponse(listServicesHasOwnerOrMaintainer());
     }
+
     @RequestMapping(value = "/test", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ApiOperation(value = "Delete user", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
 //    @PreAuthorize("@CustomPermissionEvaluator.forService(#currentUser, #serviceId)")
