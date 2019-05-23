@@ -163,7 +163,7 @@ public class MonitorServiceImpl implements MonitorService {
     @Override
     public vn.vccorp.servicemonitoring.entity.Service showService(int serviceId) {
         //Hien thi Detail cua service theo serviceId
-        vn.vccorp.servicemonitoring.entity.Service service = serviceRepository.findById(serviceId);
+        vn.vccorp.servicemonitoring.entity.Service service = serviceRepository.findById(serviceId).get();
         return service;
     }
 }

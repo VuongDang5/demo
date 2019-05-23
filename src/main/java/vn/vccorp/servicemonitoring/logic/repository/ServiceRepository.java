@@ -14,5 +14,4 @@ import java.util.List;
 public interface ServiceRepository extends JpaRepository<Service, Integer> {
     List<Service> findAll();
 
-    Service findById(int serviceId);
 }

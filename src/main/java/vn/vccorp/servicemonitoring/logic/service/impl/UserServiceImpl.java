@@ -12,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import vn.vccorp.servicemonitoring.dto.UserDTO;
-
 import vn.vccorp.servicemonitoring.dto.ConfigurationDTO;
 import vn.vccorp.servicemonitoring.entity.Configuration;
 import vn.vccorp.servicemonitoring.entity.User;
