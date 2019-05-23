@@ -5,6 +5,7 @@
 
 package vn.vccorp.servicemonitoring.logic.service;
 
+import vn.vccorp.servicemonitoring.dto.ListDTO;
 import vn.vccorp.servicemonitoring.dto.UserDTO;
 import vn.vccorp.servicemonitoring.entity.User;
 import vn.vccorp.servicemonitoring.enumtype.Role;
@@ -22,5 +23,5 @@ public interface UserService {
 
     void updateRole(int userId, Role role);
 
-    List<User> listServiceHasOwnerOrMaintainer();
+    List<ListDTO> listAllUser();
 }

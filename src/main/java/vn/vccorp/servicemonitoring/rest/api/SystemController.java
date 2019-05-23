@@ -18,6 +18,7 @@ import org.springframework.security.web.savedrequest.RequestCache;
 import org.springframework.security.web.savedrequest.SavedRequest;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
+import vn.vccorp.servicemonitoring.dto.ListDTO;
 import vn.vccorp.servicemonitoring.dto.RoleDTO;
 import vn.vccorp.servicemonitoring.dto.UserDTO;
 import vn.vccorp.servicemonitoring.entity.User;
@@ -125,12 +126,12 @@ public class SystemController {
     }
 
 
-    @RequestMapping(value = "/list-services-has-owner-maintainer", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    @ApiOperation(value = "List all services that have users with OWNER or MAINTAINER roles", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @RequestMapping(value = "list-all-user", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @ApiOperation(value = "List all user and relevant information", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @AdminAuthorize
-    public ResponseEntity<List<User>> listServicesHasOwnerOrMaintainer(@CurrentUser UserPrincipal currentUser) {
+    public ResponseEntity<List<ListDTO>> listAllUser(@CurrentUser UserPrincipal currentUser) {
         LOGGER.info("Receive request of user: {}, mail: {}, role: {}", currentUser.getName(), currentUser.getEmail(), currentUser.getAuthorities());
-        return RestResponseBuilder.buildSuccessCollectionResponse(userService.listServiceHasOwnerOrMaintainer());
+        return RestResponseBuilder.buildSuccessCollectionResponse(userService.listAllUser());
     }
 
     @RequestMapping(value = "/test", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)

@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import vn.vccorp.servicemonitoring.dto.ListDTO;
 import vn.vccorp.servicemonitoring.dto.UserDTO;
 import vn.vccorp.servicemonitoring.entity.User;
 import vn.vccorp.servicemonitoring.enumtype.ApplicationError;
@@ -100,7 +101,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public List<User> listServiceHasOwnerOrMaintainer() {
-        return userRepository.findAllServiceHasOwnerOrMaintainer();
+    public List<ListDTO> listAllUser() {
+        return userRepository.findAllUser();
     }
 }
