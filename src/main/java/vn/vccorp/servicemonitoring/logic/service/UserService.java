@@ -13,6 +13,8 @@ public interface UserService {
     void addAccount(UserDTO userDTO);
 
     void initRootAccount();
+    
+    void initRootConfig();
 
     void updatePassword(int userId, String password);
 

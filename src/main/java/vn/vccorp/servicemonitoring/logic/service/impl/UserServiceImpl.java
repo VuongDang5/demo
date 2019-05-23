@@ -23,6 +23,7 @@ import vn.vccorp.servicemonitoring.logic.repository.ConfigurationRepository;
 import vn.vccorp.servicemonitoring.logic.repository.ServiceManagementRepository;
 import vn.vccorp.servicemonitoring.logic.service.UserService;
 import vn.vccorp.servicemonitoring.message.Messages;
+import vn.vccorp.servicemonitoring.security.RootConfig;
 import vn.vccorp.servicemonitoring.security.RootUser;
 import vn.vccorp.servicemonitoring.utils.BeanUtils;
 
@@ -61,6 +62,15 @@ public class UserServiceImpl implements UserService {
             userRepository.save(dozerBeanMapper.map(root, User.class));
         }
     }
+    
+    @Override
+    public void initRootConfig() {
+        RootConfig root = BeanUtils.getBean(RootConfig.class);
+        if (!configurationRepository.findById(root.getId()).isPresent()) {            
+        	configurationRepository.save(dozerBeanMapper.map(root, Configuration.class));
+        }
+    }
+
 
     @Override
     public void updatePassword(int userId, String password) {
@@ -107,7 +117,7 @@ public class UserServiceImpl implements UserService {
     }
     
     public void updateConfig(ConfigurationDTO configurationDTO) {
-        Configuration config = configurationRepository.findById(configurationDTO.getId()).orElseThrow(() -> new ApplicationException(ApplicationError.NOT_FOUND_OR_INVALID_ACCOUNT_ID));
+        Configuration config = configurationRepository.getOne(1);
         if (configurationDTO.getCpuLimit()!=null) {
         	config.setCpuLimit(configurationDTO.getCpuLimit());
         }
@@ -120,13 +130,13 @@ public class UserServiceImpl implements UserService {
         if (configurationDTO.getRamLimit()!=null) {
         	config.setRamLimit(configurationDTO.getRamLimit());
         }
-        if (CronExpression.isValidExpression(configurationDTO.getReportSchedule())) {
-        	if (configurationDTO.getReportSchedule()!=null) {
+        if (configurationDTO.getReportSchedule()!=null) {
+        	if (CronExpression.isValidExpression(configurationDTO.getReportSchedule())) {       	
         		config.setReportSchedule(configurationDTO.getReportSchedule());
         	}
-        }
-        else {
-        	throw new ApplicationException(messages.get("error.cron.expression"));
+        	else {
+        		throw new ApplicationException(messages.get("error.cron.expression"));
+        	}
         }
         configurationRepository.save(config);
     }
