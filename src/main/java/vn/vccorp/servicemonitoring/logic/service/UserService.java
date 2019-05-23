@@ -6,6 +6,7 @@
 package vn.vccorp.servicemonitoring.logic.service;
 
 import vn.vccorp.servicemonitoring.dto.UserDTO;
+import vn.vccorp.servicemonitoring.dto.ConfigurationDTO;
 import vn.vccorp.servicemonitoring.enumtype.Role;
 
 public interface UserService {
@@ -18,4 +19,6 @@ public interface UserService {
     void deleteAccount(int deleteUserId);
 
     void updateRole(int userId, Role role);
+    
+    void updateConfig(ConfigurationDTO configurationDTO);
 }
