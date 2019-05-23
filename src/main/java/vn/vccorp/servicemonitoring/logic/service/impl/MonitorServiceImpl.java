@@ -18,6 +18,7 @@ import vn.vccorp.servicemonitoring.utils.AppUtils;
 
 import java.io.File;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class MonitorServiceImpl implements MonitorService {
@@ -68,7 +69,15 @@ public class MonitorServiceImpl implements MonitorService {
 
     @Override
     public Object showAllService() {
+        //Dung List de liet ke danh sach tat ca service
         List<vn.vccorp.servicemonitoring.entity.Service> service = serviceRepository.findAll();
+        return service;
+    }
+
+    @Override
+    public Object showService(int serviceId) {
+        //Hien thi Detail cua service theo serviceId
+        Optional<vn.vccorp.servicemonitoring.entity.Service> service = serviceRepository.findById(serviceId);
         return service;
     }
 }

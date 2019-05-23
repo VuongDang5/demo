@@ -11,4 +11,6 @@ public interface MonitorService {
     void registerService(ServiceDTO serviceDTO);
 
     Object showAllService();
+
+    Object showService(int id);
 }
