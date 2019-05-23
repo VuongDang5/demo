@@ -11,6 +11,7 @@ import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.Map;
 
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.ElementType.TYPE;
@@ -20,8 +21,7 @@ import static java.lang.annotation.ElementType.TYPE;
 @Inherited
 @PreAuthorize("hasAnyAuthority(T(vn.vccorp.servicemonitoring.enumtype.Role).ADMIN, " +
         "T(vn.vccorp.servicemonitoring.enumtype.Role).OWNER) " +
-        "&& @CustomPermissionEvaluator.forService(#currentUserId, #serviceId)")
+        "&& @CustomPermissionEvaluator.forService(Role.OWNER, #serviceId)")
 public @interface OwnerAuthorize {
-    String currentUserId();
     String serviceId();
 }

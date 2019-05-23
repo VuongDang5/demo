@@ -14,6 +14,7 @@ import vn.vccorp.servicemonitoring.enumtype.Role;
 import vn.vccorp.servicemonitoring.exception.ApplicationException;
 import vn.vccorp.servicemonitoring.logic.repository.UserRepository;
 import vn.vccorp.servicemonitoring.message.Messages;
+import vn.vccorp.servicemonitoring.utils.BeanUtils;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -27,14 +28,18 @@ public class CustomPermissionEvaluator implements ICustomPermissionEvaluator {
     private Messages messages;
 
     @Override
-    public boolean forService(int userId, int serviceId) {
+    public boolean forService(Role role, String serviceId) {
+
+        int userId = BeanUtils.getAuthorizedUser().getId();
+
         User user = userRepository.findByIdAndIsDeleted(userId, false).orElseThrow(() -> new ApplicationException(ApplicationError.NOT_FOUND_OR_INVALID_ACCOUNT_ID));
         //if this user is an ADMIN then this user has all permission
-        if (user.getRole().equals(Role.ADMIN)){
+        if (user.getRole().equals(Role.ADMIN)) {
             return true;
         }
         //otherwise, this user has to owned or maintained this service
-        List<UserService> serviceManagements = user.getServices().parallelStream().filter(s -> s.getService().getId().equals(serviceId)).collect(Collectors.toList());
+        List<UserService> serviceManagements = user.getServices().parallelStream()
+                .filter(s -> s.getService().getId().equals(serviceId) && s.getRole().equals(role)).collect(Collectors.toList());
         return !serviceManagements.isEmpty();
     }
 }
