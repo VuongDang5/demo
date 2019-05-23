@@ -121,6 +121,15 @@ public class SystemController {
         return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
     }
 
+
+    @RequestMapping(value = "/delete-user", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @ApiOperation(value = "Delete user", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @AdminAuthorize
+    public ResponseEntity<Object> listServicesOfOwnerOrMaintainer(@CurrentUser UserPrincipal currentUser) {
+        LOGGER.info("Receive request of user: {}, mail: {}, role: {}", currentUser.getName(), currentUser.getEmail(), currentUser.getAuthorities());
+        BaseResponse.Builder builder = new BaseResponse.Builder();
+        return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
+    }
     @RequestMapping(value = "/test", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ApiOperation(value = "Delete user", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
 //    @PreAuthorize("@CustomPermissionEvaluator.forService(#currentUser, #serviceId)")
