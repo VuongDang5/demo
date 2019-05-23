@@ -82,6 +82,7 @@ public class Application implements CommandLineRunner {
     @Override
     public void run(String... args) {
         userService.initRootAccount();
+        userService.initRootConfig();
     }
 
     @ApiIgnore

@@ -12,16 +12,22 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import vn.vccorp.servicemonitoring.dto.UserDTO;
+import vn.vccorp.servicemonitoring.dto.ConfigurationDTO;
+import vn.vccorp.servicemonitoring.entity.Configuration;
 import vn.vccorp.servicemonitoring.entity.User;
 import vn.vccorp.servicemonitoring.enumtype.ApplicationError;
 import vn.vccorp.servicemonitoring.enumtype.Role;
 import vn.vccorp.servicemonitoring.exception.ApplicationException;
 import vn.vccorp.servicemonitoring.logic.repository.UserRepository;
+import vn.vccorp.servicemonitoring.logic.repository.ConfigurationRepository;
 import vn.vccorp.servicemonitoring.logic.repository.ServiceManagementRepository;
 import vn.vccorp.servicemonitoring.logic.service.UserService;
 import vn.vccorp.servicemonitoring.message.Messages;
+import vn.vccorp.servicemonitoring.security.RootConfig;
 import vn.vccorp.servicemonitoring.security.RootUser;
 import vn.vccorp.servicemonitoring.utils.BeanUtils;
+
+import org.quartz.CronExpression;
 
 import java.util.List;
 
@@ -39,6 +45,8 @@ public class UserServiceImpl implements UserService {
     Messages messages;
     @Autowired
     ServiceManagementRepository serviceManagementRepository;
+    @Autowired
+    ConfigurationRepository configurationRepository;
 
     @Override
     public void addAccount(UserDTO userDTO) {
@@ -54,6 +62,15 @@ public class UserServiceImpl implements UserService {
             userRepository.save(dozerBeanMapper.map(root, User.class));
         }
     }
+    
+    @Override
+    public void initRootConfig() {
+        RootConfig root = BeanUtils.getBean(RootConfig.class);
+        if (!configurationRepository.findById(root.getId()).isPresent()) {            
+        	configurationRepository.save(dozerBeanMapper.map(root, Configuration.class));
+        }
+    }
+
 
     @Override
     public void updatePassword(int userId, String password) {
@@ -97,5 +114,30 @@ public class UserServiceImpl implements UserService {
 
         user.setRole(role);
         userRepository.save(user);
+    }
+    
+    public void updateConfig(ConfigurationDTO configurationDTO) {
+        Configuration config = configurationRepository.getOne(1);
+        if (configurationDTO.getCpuLimit()!=null) {
+        	config.setCpuLimit(configurationDTO.getCpuLimit());
+        }
+        if (configurationDTO.getDiskLimit()!=null) {
+        	config.setDiskLimit(configurationDTO.getDiskLimit());
+        }
+        if (configurationDTO.getGpuLimit()!=null) {
+        	config.setGpuLimit(configurationDTO.getGpuLimit());
+        }
+        if (configurationDTO.getRamLimit()!=null) {
+        	config.setRamLimit(configurationDTO.getRamLimit());
+        }
+        if (configurationDTO.getReportSchedule()!=null) {
+        	if (CronExpression.isValidExpression(configurationDTO.getReportSchedule())) {       	
+        		config.setReportSchedule(configurationDTO.getReportSchedule());
+        	}
+        	else {
+        		throw new ApplicationException(messages.get("error.cron.expression"));
+        	}
+        }
+        configurationRepository.save(config);
     }
 }
