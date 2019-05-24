@@ -17,7 +17,6 @@ import vn.vccorp.servicemonitoring.dto.ServiceInfoDTO;
 import vn.vccorp.servicemonitoring.entity.UserService;
 import vn.vccorp.servicemonitoring.enumtype.Role;
 import vn.vccorp.servicemonitoring.exception.ApplicationException;
-import vn.vccorp.servicemonitoring.logic.repository.ServiceInformationRepository;
 import vn.vccorp.servicemonitoring.logic.repository.ServiceRepository;
 import vn.vccorp.servicemonitoring.logic.repository.UserServiceRepository;
 import vn.vccorp.servicemonitoring.logic.service.MonitorService;
@@ -84,7 +83,7 @@ public class MonitorServiceImpl implements MonitorService {
         }
 
         vn.vccorp.servicemonitoring.entity.Service service = dozerBeanMapper.map(serviceDTO, vn.vccorp.servicemonitoring.entity.Service.class);
-        service.setStartTime(AppUtils.getStartedDateOfProcess(service.getServer().getIp(), sshPort, service.getPID()));
+        service.setStartTime(AppUtils.getStartedDateOfProcess(service.getServer().getIp(), sshPort, service.getPid()));
         serviceRepository.save(service);
 
         //save UserService
@@ -111,7 +110,7 @@ public class MonitorServiceImpl implements MonitorService {
         if (out.isEmpty()) {
             throw new ApplicationException(messages.get("service.error.starting"));
         } else {
-            service.setPID(out.get(0));
+            service.setPid(out.get(0));
             serviceRepository.save(service);
         }
     }
@@ -119,7 +118,7 @@ public class MonitorServiceImpl implements MonitorService {
     @Override
     public void stopService(int serviceId) {
         vn.vccorp.servicemonitoring.entity.Service service = serviceRepository.findById(serviceId).orElseThrow(() -> new ApplicationException(messages.get("service.id.not-found")));
-        String command = "ssh -p " + sshPort + " " + service.getServer().getIp() + " -t 'kill -9 " + service.getPID() + "'; echo $?";
+        String command = "ssh -p " + sshPort + " " + service.getServer().getIp() + " -t 'kill -9 " + service.getPid() + "'; echo $?";
         List<String> out = AppUtils.executeCommand(command);
         if (out.isEmpty() || !out.get(0).equals("0")) {
             throw new ApplicationException(messages.get("service.error.stopping"));
@@ -158,8 +157,7 @@ public class MonitorServiceImpl implements MonitorService {
     public Page<vn.vccorp.servicemonitoring.entity.Service> showAllService(int currentPage, int pageSize) {
         //Dung Pagination de liet ke danh sach tat ca service
         Pageable firstPageWithFourElements = PageRequest.of(currentPage, pageSize);
-        Page<ServiceInfoDTO> service = serviceInformationRepository.showAllService(firstPageWithFourElements);
-        return null;
+        return serviceInformationRepository.showAllService(firstPageWithFourElements);
     }
 
     @Override

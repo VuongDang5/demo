@@ -5,9 +5,8 @@
 
 package vn.vccorp.servicemonitoring.logic.repository.impl;
 
-import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import vn.vccorp.servicemonitoring.dto.ServiceInfoDTO;
 import vn.vccorp.servicemonitoring.entity.Service;
 import vn.vccorp.servicemonitoring.logic.repository.ServiceRepositoryCustom;
 
@@ -22,19 +21,21 @@ public class ServiceRepositoryCustomImpl implements ServiceRepositoryCustom {
     private EntityManager entityManager;
 
     @Override
-    public Page<ServiceInfoDTO> showAllService(Pageable firstPageWithFourElements) {
-        String queryStr = "SELECT s.id, s.PID, s.api_endpoint, s.description, s.name, s.project, s.kong_mapping, " +
-                "s.note, s.server_id," +
-                " s.server_port, s.start_time, s.status, " +
+    public PageImpl<Service> showAllService(Pageable page) {
+        String queryStr = "SELECT s.id, s.pid, s.apiEndpoint, s.description, s.name, s.project, s.kongMapping, " +
+                "s.note, s.server.id, s.serverPort, s.startTime, s.status, " +
                 "us.role," +
-                "sn.time, sn.cpu_used, sn.disk_used, sn.gpu_used, sn.ram_used " +
+                "sn.time, sn.cpuUsed, sn.diskUsed, sn.gpuUsed, sn.ramUsed " +
                 "FROM Service s " +
-                "JOIN UserService us ON s.id = us.service_id " +
-                "JOIN User u ON us.user_id = u.id " +
-                "JOIN Snapshot sn ON s.id = sn.service_id";
-        Query query = entityManager.createQuery(queryStr);
+                "JOIN UserService us ON s.id = us.id.serviceId " +
+                "JOIN User u ON us.id.userId = u.id " +
+                "JOIN Snapshot sn ON s.id = sn.service.id " +
+                "ORDER BY s.id ASC";
+        Query query = entityManager.createQuery(queryStr)
+                .setFirstResult(page.getPageSize() * (page.getPageNumber() - 1))
+                .setMaxResults(page.getPageSize());
         List<Service> resultList = query.getResultList();
 
-        return null;
+        return new PageImpl<>(resultList, page, page.getPageSize());
     }
 }

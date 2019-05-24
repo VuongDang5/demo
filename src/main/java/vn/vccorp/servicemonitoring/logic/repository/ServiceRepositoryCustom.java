@@ -5,10 +5,10 @@
 
 package vn.vccorp.servicemonitoring.logic.repository;
 
-import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import vn.vccorp.servicemonitoring.dto.ServiceInfoDTO;
+import vn.vccorp.servicemonitoring.entity.Service;
 
 public interface ServiceRepositoryCustom {
-    Page<ServiceInfoDTO> showAllService(Pageable firstPageWithFourElements);
+    PageImpl<Service> showAllService(Pageable firstPageWithFourElements);
 }
