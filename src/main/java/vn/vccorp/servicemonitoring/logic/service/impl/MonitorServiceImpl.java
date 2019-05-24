@@ -13,7 +13,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import vn.vccorp.servicemonitoring.dto.ServiceDTO;
-import vn.vccorp.servicemonitoring.dto.ServiceInforDTO;
+import vn.vccorp.servicemonitoring.dto.ServiceInfoDTO;
 import vn.vccorp.servicemonitoring.entity.UserService;
 import vn.vccorp.servicemonitoring.enumtype.Role;
 import vn.vccorp.servicemonitoring.exception.ApplicationException;
@@ -30,7 +30,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.Optional;
 
 
 @Service
@@ -47,7 +46,7 @@ public class MonitorServiceImpl implements MonitorService {
     @Autowired
     private Messages messages;
     @Autowired
-    private ServiceInformationRepository serviceInformationRepository;
+    private ServiceRepository serviceInformationRepository;
 
     @Override
     public void registerService(ServiceDTO serviceDTO) {
@@ -159,8 +158,8 @@ public class MonitorServiceImpl implements MonitorService {
     public Page<vn.vccorp.servicemonitoring.entity.Service> showAllService(int currentPage, int pageSize) {
         //Dung Pagination de liet ke danh sach tat ca service
         Pageable firstPageWithFourElements = PageRequest.of(currentPage, pageSize);
-        Page<vn.vccorp.servicemonitoring.entity.Service> service = serviceInformationRepository.showAllService(firstPageWithFourElements);
-        return service;
+        Page<ServiceInfoDTO> service = serviceInformationRepository.showAllService(firstPageWithFourElements);
+        return null;
     }
 
     @Override

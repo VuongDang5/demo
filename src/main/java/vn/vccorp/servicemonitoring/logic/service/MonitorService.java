@@ -7,10 +7,7 @@ package vn.vccorp.servicemonitoring.logic.service;
 
 import org.springframework.data.domain.Page;
 import vn.vccorp.servicemonitoring.dto.ServiceDTO;
-import vn.vccorp.servicemonitoring.dto.ServiceInforDTO;
 import vn.vccorp.servicemonitoring.entity.Service;
-
-import java.util.List;
 
 public interface MonitorService {
     void registerService(ServiceDTO serviceDTO);

@@ -12,7 +12,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class ServiceInforDTO {
+public class ServiceInfoDTO {
 
     private Integer id;
 
@@ -20,7 +20,7 @@ public class ServiceInforDTO {
 
     private String description;
 
-    private String PID;
+    private String pid;
 
     private String serverId;
 
