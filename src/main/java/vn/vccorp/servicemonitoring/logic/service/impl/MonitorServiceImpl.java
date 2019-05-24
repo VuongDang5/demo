@@ -11,9 +11,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.vccorp.servicemonitoring.dto.ServiceDTO;
+import vn.vccorp.servicemonitoring.entity.Server;
 import vn.vccorp.servicemonitoring.entity.UserService;
 import vn.vccorp.servicemonitoring.enumtype.Role;
 import vn.vccorp.servicemonitoring.exception.ApplicationException;
+import vn.vccorp.servicemonitoring.logic.repository.ServerRepository;
 import vn.vccorp.servicemonitoring.logic.repository.ServiceRepository;
 import vn.vccorp.servicemonitoring.logic.repository.UserServiceRepository;
 import vn.vccorp.servicemonitoring.logic.service.MonitorService;
@@ -42,10 +44,16 @@ public class MonitorServiceImpl implements MonitorService {
     private UserServiceRepository userServiceRepository;
     @Autowired
     private Messages messages;
+    @Autowired
+    private ServerRepository serverRepository;
 
     @Transactional
     @Override
     public void registerService(ServiceDTO serviceDTO) {
+        //get server info from serverId
+        Server server = serverRepository.findById(serviceDTO.getServerId())
+                .orElseThrow(() -> new ApplicationException(messages.get("service.server.not-available", new String[]{String.valueOf(serviceDTO.getServerId())})));
+
         //check if service with specify info is correct on the system
         if (!isProcessAlive(serviceDTO.getServerIp(), serviceDTO.getPid())) {
             throw new ApplicationException(messages.get("service.pid.not-available", new String[]{serviceDTO.getPid(), serviceDTO.getServerIp()}));
@@ -80,7 +88,8 @@ public class MonitorServiceImpl implements MonitorService {
         }
 
         vn.vccorp.servicemonitoring.entity.Service service = dozerBeanMapper.map(serviceDTO, vn.vccorp.servicemonitoring.entity.Service.class);
-        service.setStartTime(AppUtils.getStartedDateOfProcess(serviceDTO.getServerIp(), sshUsername, sshPort, service.getPID()));
+        service.setStartTime(AppUtils.getStartedDateOfProcess(serviceDTO.getServerIp(), sshUsername, sshPort, service.getPid()));
+        service.setServer(server);
         serviceRepository.save(service);
 
         //save UserService
@@ -100,7 +109,7 @@ public class MonitorServiceImpl implements MonitorService {
         vn.vccorp.servicemonitoring.entity.Service service = serviceRepository.findById(serviceId).orElseThrow(() -> new ApplicationException(messages.get("service.id.not-found")));
 
         //check if service is already run then we do nothing
-        if (isServiceRunning(String.valueOf(serviceId), service.getPID())){
+        if (isServiceRunning(String.valueOf(serviceId), service.getPid())){
             return;
         }
 
@@ -114,7 +123,7 @@ public class MonitorServiceImpl implements MonitorService {
         if (out.isEmpty()) {
             throw new ApplicationException(messages.get("service.error.starting"));
         } else {
-            service.setPID(out.get(0));
+            service.setPid(out.get(0));
             serviceRepository.save(service);
         }
     }
@@ -131,7 +140,7 @@ public class MonitorServiceImpl implements MonitorService {
     @Override
     public void stopService(int serviceId) {
         vn.vccorp.servicemonitoring.entity.Service service = serviceRepository.findById(serviceId).orElseThrow(() -> new ApplicationException(messages.get("service.id.not-found")));
-        String command = "ssh -p " + sshPort + " " + sshUsername + "@" + service.getServer().getIp() + " -t 'kill -9 " + service.getPID() + "'; echo $?";
+        String command = "ssh -p " + sshPort + " " + sshUsername + "@" + service.getServer().getIp() + " -t 'kill -9 " + service.getPid() + "'; echo $?";
         List<String> out = AppUtils.executeCommand(command);
         if (out.isEmpty() || !out.get(0).equals("0")) {
             throw new ApplicationException(messages.get("service.error.stopping"));
