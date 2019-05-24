@@ -13,9 +13,11 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import vn.vccorp.servicemonitoring.dto.ServiceDTO;
+import vn.vccorp.servicemonitoring.dto.ServiceInforDTO;
 import vn.vccorp.servicemonitoring.entity.UserService;
 import vn.vccorp.servicemonitoring.enumtype.Role;
 import vn.vccorp.servicemonitoring.exception.ApplicationException;
+import vn.vccorp.servicemonitoring.logic.repository.ServiceInformationRepository;
 import vn.vccorp.servicemonitoring.logic.repository.ServiceRepository;
 import vn.vccorp.servicemonitoring.logic.repository.UserServiceRepository;
 import vn.vccorp.servicemonitoring.logic.service.MonitorService;
@@ -44,6 +46,8 @@ public class MonitorServiceImpl implements MonitorService {
     private UserServiceRepository userServiceRepository;
     @Autowired
     private Messages messages;
+    @Autowired
+    private ServiceInformationRepository serviceInformationRepository;
 
     @Override
     public void registerService(ServiceDTO serviceDTO) {
@@ -155,14 +159,14 @@ public class MonitorServiceImpl implements MonitorService {
     public Page<vn.vccorp.servicemonitoring.entity.Service> showAllService(int currentPage, int pageSize) {
         //Dung Pagination de liet ke danh sach tat ca service
         Pageable firstPageWithFourElements = PageRequest.of(currentPage, pageSize);
-        Page<vn.vccorp.servicemonitoring.entity.Service> service = serviceRepository.findAll(firstPageWithFourElements);
+        Page<vn.vccorp.servicemonitoring.entity.Service> service = serviceInformationRepository.showAllService(firstPageWithFourElements);
         return service;
     }
 
     @Override
     public vn.vccorp.servicemonitoring.entity.Service showService(int serviceId) {
         //Hien thi Detail cua service theo serviceId
-        vn.vccorp.servicemonitoring.entity.Service service = serviceRepository.findById(serviceId).get();
+        vn.vccorp.servicemonitoring.entity.Service service = serviceInformationRepository.findById(serviceId).get();
         return service;
     }
 }

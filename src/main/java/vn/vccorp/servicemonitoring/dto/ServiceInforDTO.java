@@ -1,9 +1,6 @@
 package vn.vccorp.servicemonitoring.dto;
 
 import lombok.*;
-import vn.vccorp.servicemonitoring.entity.IssueTracking;
-import vn.vccorp.servicemonitoring.entity.Snapshot;
-import vn.vccorp.servicemonitoring.entity.UserService;
 import vn.vccorp.servicemonitoring.enumtype.Status;
 
 import javax.persistence.OneToMany;
