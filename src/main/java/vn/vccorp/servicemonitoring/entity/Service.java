@@ -124,6 +124,9 @@ public class Service {
     private List<UserService> userServices;
 
     @OneToMany(mappedBy = "service")
+    private List<ServiceServer> serviceServers;
+
+    @OneToMany(mappedBy = "service")
     private List<Snapshot> snapshots;
 
     @OneToMany(mappedBy = "service")
