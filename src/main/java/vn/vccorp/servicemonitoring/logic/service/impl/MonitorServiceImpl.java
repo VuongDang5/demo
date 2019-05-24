@@ -152,12 +152,11 @@ public class MonitorServiceImpl implements MonitorService {
     }
 
     @Override
-    public Page<vn.vccorp.servicemonitoring.entity.Service> showAllService(int pageId) {
+    public Page<vn.vccorp.servicemonitoring.entity.Service> showAllService(int currentPage, int pageSize) {
         //Dung Pagination de liet ke danh sach tat ca service
-        Pageable firstPageWithFourElements = PageRequest.of(pageId, 4);
+        Pageable firstPageWithFourElements = PageRequest.of(currentPage, pageSize);
         Page<vn.vccorp.servicemonitoring.entity.Service> service = serviceRepository.findAll(firstPageWithFourElements);
         return service;
-
     }
 
     @Override

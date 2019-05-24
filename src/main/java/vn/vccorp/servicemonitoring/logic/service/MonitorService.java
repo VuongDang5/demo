@@ -14,7 +14,7 @@ import java.util.List;
 public interface MonitorService {
     void registerService(ServiceDTO serviceDTO);
 
-    Page<Service> showAllService(int pageId);
+    Page<Service> showAllService(int currentPage, int pageSize);
 
     Service showService(int serviceId);
 

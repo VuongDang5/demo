@@ -75,13 +75,13 @@ public class ServiceController {
         return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
     }
 
-    @RequestMapping(value = "/show-all-service/{pageId}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @RequestMapping(value = "/show-all-service/", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ApiOperation(value = "Show all service", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @UserAuthorize
-    public ResponseEntity<Object> showAllService(@CurrentUser UserPrincipal currentUser, @PathVariable int pageId) {
-        monitorService.showAllService(pageId);
+    public ResponseEntity<Object> showAllService(@CurrentUser UserPrincipal currentUser, @RequestParam int currentPage, @RequestParam int pageSize) {
+        monitorService.showAllService(currentPage,pageSize);
         BaseResponse.Builder builder = new BaseResponse.Builder();
-        builder.setSuccessObject(monitorService.showAllService(pageId));
+        builder.setSuccessObject(monitorService.showAllService(currentPage,pageSize));
         return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
     }
 

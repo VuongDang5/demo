@@ -244,7 +244,11 @@
             <artifactId>quartz</artifactId>
             <version>2.3.0</version>
         </dependency>
-
+        <dependency>
+            <groupId>org.springframework.data</groupId>
+            <artifactId>spring-data-jpa</artifactId>
+            <version>2.0.9.RELEASE</version>
+        </dependency>
     </dependencies>
     <build>
         <finalName>ServiceMonitoring</finalName>
