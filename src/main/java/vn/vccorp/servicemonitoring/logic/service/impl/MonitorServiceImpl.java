@@ -92,9 +92,16 @@ public class MonitorServiceImpl implements MonitorService {
 
     @Override
     public void startService(int serviceId) {
+        //check if service is existed in db
         vn.vccorp.servicemonitoring.entity.Service service = serviceRepository.findById(serviceId).orElseThrow(() -> new ApplicationException(messages.get("service.id.not-found")));
+
+        //check if service is already run then we do nothing
+        if (isServiceRunning(String.valueOf(serviceId), service.getPID())){
+            return;
+        }
+
         String startCommand = "ssh -p " + sshPort + " " + service.getServerId()
-                + " -t 'nohup sh " + service.getDeployDir() + getRunFileName(service.getName()) + "'";
+                + " -t 'nohup sh " + service.getDeployDir() + getRunFileName(service.getName()) + " > " + service.getDeployDir() + "pid'";
 
         AppUtils.executeCommand(startCommand);
 
@@ -106,6 +113,15 @@ public class MonitorServiceImpl implements MonitorService {
             service.setPID(out.get(0));
             serviceRepository.save(service);
         }
+    }
+
+    private boolean isServiceRunning(String serverId, String pid){
+        String command = "ssh -p " + sshPort + " " + serverId + " -t 'ps -p " + pid + "'";
+        List<String> out = AppUtils.executeCommand(command);
+        if (out.size() > 1 && out.get(1).split(" ")[0].equals(pid)){
+            return true;
+        }
+        return false;
     }
 
     @Override
