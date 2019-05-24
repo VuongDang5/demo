@@ -76,7 +76,7 @@ public class MonitorServiceImpl implements MonitorService {
         }
 
         vn.vccorp.servicemonitoring.entity.Service service = dozerBeanMapper.map(serviceDTO, vn.vccorp.servicemonitoring.entity.Service.class);
-        service.setStartTime(AppUtils.getStartedDateOfProcess(service.getServerId(), sshPort, service.getPID()));
+        service.setStartTime(AppUtils.getStartedDateOfProcess(service.getServer().getIp(), sshPort, service.getPID()));
         serviceRepository.save(service);
 
         //save UserService
@@ -93,12 +93,12 @@ public class MonitorServiceImpl implements MonitorService {
     @Override
     public void startService(int serviceId) {
         vn.vccorp.servicemonitoring.entity.Service service = serviceRepository.findById(serviceId).orElseThrow(() -> new ApplicationException(messages.get("service.id.not-found")));
-        String startCommand = "ssh -p " + sshPort + " " + service.getServerId()
+        String startCommand = "ssh -p " + sshPort + " " + service.getServer().getIp()
                 + " -t 'nohup sh " + service.getDeployDir() + getRunFileName(service.getName()) + "'";
 
         AppUtils.executeCommand(startCommand);
 
-        String getPidCommand = "ssh -p " + sshPort + " " + service.getServerId() + " -t 'cat " + service.getDeployDir() + "pid'";
+        String getPidCommand = "ssh -p " + sshPort + " " + service.getServer().getIp() + " -t 'cat " + service.getDeployDir() + "pid'";
         List<String> out = AppUtils.executeCommand(getPidCommand);
         if (out.isEmpty()) {
             throw new ApplicationException(messages.get("service.error.starting"));
@@ -111,7 +111,7 @@ public class MonitorServiceImpl implements MonitorService {
     @Override
     public void stopService(int serviceId) {
         vn.vccorp.servicemonitoring.entity.Service service = serviceRepository.findById(serviceId).orElseThrow(() -> new ApplicationException(messages.get("service.id.not-found")));
-        String command = "ssh -p " + sshPort + " " + service.getServerId() + " -t 'kill -9 " + service.getPID() + "'; echo $?";
+        String command = "ssh -p " + sshPort + " " + service.getServer().getIp() + " -t 'kill -9 " + service.getPID() + "'; echo $?";
         List<String> out = AppUtils.executeCommand(command);
         if (out.isEmpty() || !out.get(0).equals("0")) {
             throw new ApplicationException(messages.get("service.error.stopping"));

@@ -48,7 +48,7 @@ public class Server {
     private List<UserServer> userServers;
 
     @OneToMany(mappedBy = "server")
-    private List<ServiceServer> serviceServers;
+    private List<Service> services;
 
     @OneToMany(mappedBy = "server")
     private List<Snapshot> snapshots;
