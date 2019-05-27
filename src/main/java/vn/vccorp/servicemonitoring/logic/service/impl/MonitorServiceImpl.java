@@ -131,10 +131,7 @@ public class MonitorServiceImpl implements MonitorService {
     private boolean isServiceRunning(String serverId, String pid){
         String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverId + " -t 'ps -p " + pid + "'";
         List<String> out = AppUtils.executeCommand(command);
-        if (out.size() > 1 && out.get(1).split(" ")[0].equals(pid)){
-            return true;
-        }
-        return false;
+        return out.size() > 1 && out.get(1).split(" ")[0].equals(pid);
     }
 
     @Override
