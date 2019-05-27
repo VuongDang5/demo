@@ -5,9 +5,7 @@ import org.apache.commons.validator.routines.EmailValidator;
 import org.apache.commons.validator.routines.UrlValidator;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
-import org.joda.time.DateTimeZone;
 import org.joda.time.LocalDateTime;
-import org.joda.time.format.DateTimeFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
@@ -20,8 +18,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URI;
 import java.nio.charset.Charset;
-import java.time.OffsetDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.regex.Pattern;
 
@@ -172,8 +168,8 @@ public class AppUtils {
         return out;
     }
 
-    public static Date getStartedDateOfProcess(String serverId, String sshPort, String pid) {
-        String command = "ssh -p " + sshPort + " " + serverId + " -t 'date -r /proc/" + pid + " --rfc-3339=ns'";
+    public static Date getStartedDateOfProcess(String serverId, String sshUsername, String sshPort, String pid) {
+        String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverId + " -t 'date -r /proc/" + pid + " --rfc-3339=ns'";
         List<String> out = executeCommand(command);
         if (!out.isEmpty()) {
 //            return Date.from(OffsetDateTime.parse(out.get(0).replace(" ", "T")).toInstant());
@@ -182,8 +178,8 @@ public class AppUtils {
         return LocalDateTime.now().toDate();
     }
 
-    public static void putFile(String serverId, String sshPort, String sourceFile, String destination) {
-        String command = "scp -P " + sshPort + " " + sourceFile + " " + serverId + ":" + destination;
+    public static void putFile(String serverId, String sshUsername, String sshPort, String sourceFile, String destination) {
+        String command = "scp -P " + sshPort + " " + sourceFile + " " + sshUsername + "@" + serverId + ":" + destination;
         executeCommand(command);
     }
 }

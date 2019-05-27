@@ -34,7 +34,10 @@ public class ServiceDTO {
 
     @NotBlank
     @Size(max = 15)
-    private String serverId;
+    private String serverIp;
+
+    @NotNull
+    private Integer serverId;
 
     @Size(max = 10)
     private String serverPort;
