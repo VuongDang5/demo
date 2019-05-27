@@ -9,6 +9,7 @@ import org.dozer.DozerBeanMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import vn.vccorp.servicemonitoring.dto.LogServiceDTO;
 import vn.vccorp.servicemonitoring.dto.ServiceDTO;
 import vn.vccorp.servicemonitoring.entity.UserService;
 import vn.vccorp.servicemonitoring.enumtype.Role;
@@ -19,18 +20,24 @@ import vn.vccorp.servicemonitoring.logic.service.MonitorService;
 import vn.vccorp.servicemonitoring.message.Messages;
 import vn.vccorp.servicemonitoring.utils.AppUtils;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.stream.Stream;
 
 @Service
 public class MonitorServiceImpl implements MonitorService {
 
     @Value("${ssh.port}")
     private String sshPort;
+    @Value("${logserver.url}")
+    private String logLocalDir;
+    @Value("${logserver.max-lines}")
+    private int maxSyncLines;
     @Autowired
     private DozerBeanMapper dozerBeanMapper;
     @Autowired
@@ -118,6 +125,60 @@ public class MonitorServiceImpl implements MonitorService {
         }
     }
 
+    @Override
+    public List<String> getLogService(LogServiceDTO logServiceDTO) {
+        vn.vccorp.servicemonitoring.entity.Service service = serviceRepository.findById(logServiceDTO.getServiceId()).orElseThrow(() -> new ApplicationException(messages.get("service.id.not-found")));
+        //check if log file is available
+        File logRemoteFile = new File(service.getLogDir() + service.getLogFile());
+        if (!isFileExist(service.getServerId(), logRemoteFile.getAbsolutePath())) {
+            throw new ApplicationException(messages.get("service.log.not-available"));
+        }
+        //check if log file in local is available
+        File logLocalFile = new File(logLocalDir + service.getName() + File.separator + service.getLogFile());
+        if (!logLocalFile.getParentFile().exists()) {
+            logLocalFile.getParentFile().mkdirs();
+        }
+        if (!logLocalFile.exists()) {
+            try {
+                logLocalFile.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        //Sync log from that host to local host
+        syncLogFromRemote(service.getServerId(), logRemoteFile.getAbsolutePath(), logLocalFile.getAbsolutePath(), maxSyncLines);
+        if (!logLocalFile.exists()) {
+            throw new ApplicationException(messages.get("service.log.not-available"));
+        }
+
+        return readFileLog(logLocalFile.getAbsolutePath(), logServiceDTO);
+    }
+
+    private List<String> readFileLog(String path, LogServiceDTO logServiceDTO){
+        List<String> listLog = new ArrayList<>();
+
+        //read FileLog
+        try(Stream<String> stream = Files.lines(Paths.get(path), StandardCharsets.UTF_8)){
+            stream.forEach(line ->{
+                listLog.add(line);
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new ApplicationException(messages.get("service.log.not-available"));
+        }
+
+        //Check start, end log
+        if (logServiceDTO.getStart() > logServiceDTO.getEnd() || logServiceDTO.getEnd() > listLog.size()){
+            logServiceDTO.setEnd(listLog.size());
+        }
+        if (logServiceDTO.getStart() > listLog.size()){
+            logServiceDTO.setStart(0);
+            logServiceDTO.setEnd(listLog.size());
+        }
+
+        return listLog.subList(logServiceDTO.getStart(), logServiceDTO.getEnd());
+    }
+
     private boolean isFileExist(String serverIP, String filePath) {
         String command = "ssh -p " + sshPort + " " + serverIP + " -t 'test -f " + filePath + "'; echo $?";
         List<String> out = AppUtils.executeCommand(command);
@@ -140,6 +201,15 @@ public class MonitorServiceImpl implements MonitorService {
         String command = "ssh -p " + sshPort + " " + serverIP + " -t 'ps -p " + PID + " > /dev/null'; echo $?";
         List<String> out = AppUtils.executeCommand(command);
         //if command execute success it will return 0
+        if (!out.isEmpty() && out.get(0).equals("0")) {
+            return true;
+        }
+        return false;
+    }
+
+    private boolean syncLogFromRemote(String serverIP, String remoteLog, String localLog, int limit) {
+        String command = "ssh -p " + sshPort + " " + serverIP + " \"tail -n " + limit + " " + remoteLog + "\" >> " + localLog;
+        List<String> out = AppUtils.executeCommand(command);
         if (!out.isEmpty() && out.get(0).equals("0")) {
             return true;
         }

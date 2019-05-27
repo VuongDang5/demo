@@ -5,7 +5,10 @@
 
 package vn.vccorp.servicemonitoring.logic.service;
 
+import vn.vccorp.servicemonitoring.dto.LogServiceDTO;
 import vn.vccorp.servicemonitoring.dto.ServiceDTO;
+
+import java.util.List;
 
 public interface MonitorService {
     void registerService(ServiceDTO serviceDTO);
@@ -13,4 +16,6 @@ public interface MonitorService {
     void startService(int serviceId);
 
     void stopService(int serviceId);
+
+    List<String> getLogService(LogServiceDTO logServiceDTO);
 }

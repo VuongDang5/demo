@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import vn.vccorp.servicemonitoring.dto.ServiceDTO;
+import vn.vccorp.servicemonitoring.dto.LogServiceDTO;
 import vn.vccorp.servicemonitoring.logic.service.MonitorService;
 import vn.vccorp.servicemonitoring.message.Messages;
 import vn.vccorp.servicemonitoring.rest.response.BaseResponse;
@@ -66,6 +67,16 @@ public class ServiceController {
         monitorService.stopService(serviceId);
         BaseResponse.Builder builder = new BaseResponse.Builder();
         builder.setSuccessObject(true);
+        return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
+    }
+
+    @RequestMapping(value = "/get-log-service", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @ApiOperation(value = "Get 1000 log service", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public ResponseEntity<Object> showLogService(@RequestBody LogServiceDTO logServiceDTO){
+        LOGGER.info("Get log a service with id: " + logServiceDTO.getServiceId());
+
+        BaseResponse.Builder builder = new BaseResponse.Builder();
+        builder.setSuccessObject(monitorService.getLogService(logServiceDTO));
         return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
     }
 }
