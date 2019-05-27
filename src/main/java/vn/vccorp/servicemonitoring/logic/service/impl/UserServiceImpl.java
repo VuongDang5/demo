@@ -21,6 +21,7 @@ import vn.vccorp.servicemonitoring.exception.ApplicationException;
 import vn.vccorp.servicemonitoring.logic.repository.UserRepository;
 import vn.vccorp.servicemonitoring.logic.repository.ConfigurationRepository;
 import vn.vccorp.servicemonitoring.logic.repository.ServiceManagementRepository;
+import vn.vccorp.servicemonitoring.logic.repository.ServiceRepository;
 import vn.vccorp.servicemonitoring.logic.service.UserService;
 import vn.vccorp.servicemonitoring.message.Messages;
 import vn.vccorp.servicemonitoring.security.RootConfig;
@@ -29,6 +30,8 @@ import vn.vccorp.servicemonitoring.utils.BeanUtils;
 
 import org.quartz.CronExpression;
 
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
 import java.util.List;
 
 @Service
@@ -47,6 +50,8 @@ public class UserServiceImpl implements UserService {
     ServiceManagementRepository serviceManagementRepository;
     @Autowired
     ConfigurationRepository configurationRepository;
+    @Autowired
+    ServiceRepository serviceRepository;
 
     @Override
     public void addAccount(UserDTO userDTO) {
@@ -140,4 +145,5 @@ public class UserServiceImpl implements UserService {
         }
         configurationRepository.save(config);
     }
+    
 }

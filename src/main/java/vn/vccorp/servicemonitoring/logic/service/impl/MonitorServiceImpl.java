@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import vn.vccorp.servicemonitoring.dto.ServiceDTO;
 import vn.vccorp.servicemonitoring.entity.UserService;
+import vn.vccorp.servicemonitoring.enumtype.ApplicationError;
 import vn.vccorp.servicemonitoring.enumtype.Role;
 import vn.vccorp.servicemonitoring.exception.ApplicationException;
 import vn.vccorp.servicemonitoring.logic.repository.ServiceRepository;
@@ -145,4 +146,23 @@ public class MonitorServiceImpl implements MonitorService {
         }
         return false;
     }
+    
+    @Override
+    public void deleteLog(int id) {
+    	vn.vccorp.servicemonitoring.entity.Service service = serviceRepository.findById(id).orElseThrow(() -> new ApplicationException(messages.get("error.not.found.service")));
+    	try {
+    		String command = "ssh -p " + sshPort + " " + service.getServer().getIp();
+    		AppUtils.executeCommand(command);
+    		command = "cd " + service.getLogDir();
+    		AppUtils.executeCommand(command);
+    		command = "rm " + service.getLogFile();
+    		AppUtils.executeCommand(command);
+    		command = "touch" + service.getLogFile();
+    		AppUtils.executeCommand(command);
+    	} catch (Exception e) {
+    		throw new ApplicationException(messages.get("error.delete.log.failed"));
+    	}
+        //if command execute success it will return
+    }
+    
 }
