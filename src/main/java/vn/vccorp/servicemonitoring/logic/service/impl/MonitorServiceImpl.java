@@ -10,16 +10,23 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import vn.vccorp.servicemonitoring.dto.LogServiceDTO;
+import org.springframework.transaction.annotation.Transactional;
 import vn.vccorp.servicemonitoring.dto.ServiceDTO;
+import vn.vccorp.servicemonitoring.entity.Server;
 import vn.vccorp.servicemonitoring.entity.UserService;
 import vn.vccorp.servicemonitoring.enumtype.Role;
 import vn.vccorp.servicemonitoring.exception.ApplicationException;
+import vn.vccorp.servicemonitoring.logic.repository.ServerRepository;
 import vn.vccorp.servicemonitoring.logic.repository.ServiceRepository;
 import vn.vccorp.servicemonitoring.logic.repository.UserServiceRepository;
 import vn.vccorp.servicemonitoring.logic.service.MonitorService;
 import vn.vccorp.servicemonitoring.message.Messages;
 import vn.vccorp.servicemonitoring.utils.AppUtils;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -38,6 +45,8 @@ public class MonitorServiceImpl implements MonitorService {
     private String logLocalDir;
     @Value("${logserver.max-lines}")
     private int maxSyncLines;
+    @Value("${ssh.username}")
+    private String sshUsername;
     @Autowired
     private DozerBeanMapper dozerBeanMapper;
     @Autowired
@@ -46,22 +55,29 @@ public class MonitorServiceImpl implements MonitorService {
     private UserServiceRepository userServiceRepository;
     @Autowired
     private Messages messages;
+    @Autowired
+    private ServerRepository serverRepository;
 
+    @Transactional
     @Override
     public void registerService(ServiceDTO serviceDTO) {
+        //get server info from serverId
+        Server server = serverRepository.findById(serviceDTO.getServerId())
+                .orElseThrow(() -> new ApplicationException(messages.get("service.server.not-available", new String[]{String.valueOf(serviceDTO.getServerId())})));
+
         //check if service with specify info is correct on the system
-        if (!isProcessAlive(serviceDTO.getServerId(), serviceDTO.getPid())) {
-            throw new ApplicationException(messages.get("service.pid.not-available"));
+        if (!isProcessAlive(serviceDTO.getServerIp(), serviceDTO.getPid())) {
+            throw new ApplicationException(messages.get("service.pid.not-available", new String[]{serviceDTO.getPid(), serviceDTO.getServerIp()}));
         }
         //check if log file is available
         File logFile = new File(serviceDTO.getLogDir() + serviceDTO.getLogFile());
-        if (!isFileExist(serviceDTO.getServerId(), logFile.getAbsolutePath())) {
-            throw new ApplicationException(messages.get("service.log.not-available"));
+        if (!isFileExist(serviceDTO.getServerIp(), logFile.getAbsolutePath())) {
+            throw new ApplicationException(messages.get("service.log.not-available", new String[]{logFile.getAbsolutePath(), serviceDTO.getServerIp()}));
         }
         //check if deploy dir is available
         File deployDir = new File(serviceDTO.getDeployDir());
-        if (!isFolderExist(serviceDTO.getServerId(), deployDir.getAbsolutePath())) {
-            throw new ApplicationException(messages.get("service.deploydir.not-available"));
+        if (!isFolderExist(serviceDTO.getServerIp(), deployDir.getAbsolutePath())) {
+            throw new ApplicationException(messages.get("service.deploydir.not-available", new String[]{deployDir.getAbsolutePath(), serviceDTO.getServerIp()}));
         } else {
             //create a file on deploy dir to run service
             String deployCommand = "#!/bin/bash \n";
@@ -76,14 +92,15 @@ public class MonitorServiceImpl implements MonitorService {
                 br.flush();
                 br.close();
                 runFile.setExecutable(true);
-                AppUtils.putFile(serviceDTO.getServerId(), sshPort, runFile.getAbsolutePath(), serviceDTO.getDeployDir());
+                AppUtils.putFile(serviceDTO.getServerIp(), sshUsername, sshPort, runFile.getAbsolutePath(), serviceDTO.getDeployDir());
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
 
         vn.vccorp.servicemonitoring.entity.Service service = dozerBeanMapper.map(serviceDTO, vn.vccorp.servicemonitoring.entity.Service.class);
-        service.setStartTime(AppUtils.getStartedDateOfProcess(service.getServerId(), sshPort, service.getPID()));
+        service.setStartTime(AppUtils.getStartedDateOfProcess(serviceDTO.getServerIp(), sshUsername, sshPort, service.getPid()));
+        service.setServer(server);
         serviceRepository.save(service);
 
         //save UserService
@@ -99,26 +116,39 @@ public class MonitorServiceImpl implements MonitorService {
 
     @Override
     public void startService(int serviceId) {
+        //check if service is existed in db
         vn.vccorp.servicemonitoring.entity.Service service = serviceRepository.findById(serviceId).orElseThrow(() -> new ApplicationException(messages.get("service.id.not-found")));
-        String startCommand = "ssh -p " + sshPort + " " + service.getServerId()
-                + " -t 'nohup sh " + service.getDeployDir() + getRunFileName(service.getName()) + "'";
+
+        //check if service is already run then we do nothing
+        if (isServiceRunning(String.valueOf(serviceId), service.getPid())){
+            return;
+        }
+
+        String startCommand = "ssh -p " + sshPort + " " + sshUsername + "@" + service.getServer().getIp()
+                + " -t 'nohup sh " + service.getDeployDir() + getRunFileName(service.getName()) + " > " + service.getDeployDir() + "pid'";
 
         AppUtils.executeCommand(startCommand);
 
-        String getPidCommand = "ssh -p " + sshPort + " " + service.getServerId() + " -t 'cat " + service.getDeployDir() + "pid'";
+        String getPidCommand = "ssh -p " + sshPort + " " + sshUsername + "@" + service.getServer().getIp() + " -t 'cat " + service.getDeployDir() + "pid'";
         List<String> out = AppUtils.executeCommand(getPidCommand);
         if (out.isEmpty()) {
             throw new ApplicationException(messages.get("service.error.starting"));
         } else {
-            service.setPID(out.get(0));
+            service.setPid(out.get(0));
             serviceRepository.save(service);
         }
+    }
+
+    private boolean isServiceRunning(String serverId, String pid){
+        String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverId + " -t 'ps -p " + pid + "'";
+        List<String> out = AppUtils.executeCommand(command);
+        return out.size() > 1 && out.get(1).split(" ")[0].equals(pid);
     }
 
     @Override
     public void stopService(int serviceId) {
         vn.vccorp.servicemonitoring.entity.Service service = serviceRepository.findById(serviceId).orElseThrow(() -> new ApplicationException(messages.get("service.id.not-found")));
-        String command = "ssh -p " + sshPort + " " + service.getServerId() + " -t 'kill -9 " + service.getPID() + "'; echo $?";
+        String command = "ssh -p " + sshPort + " " + sshUsername + "@" + service.getServer().getIp() + " -t 'kill -9 " + service.getPid() + "'; echo $?";
         List<String> out = AppUtils.executeCommand(command);
         if (out.isEmpty() || !out.get(0).equals("0")) {
             throw new ApplicationException(messages.get("service.error.stopping"));
@@ -180,7 +210,7 @@ public class MonitorServiceImpl implements MonitorService {
     }
 
     private boolean isFileExist(String serverIP, String filePath) {
-        String command = "ssh -p " + sshPort + " " + serverIP + " -t 'test -f " + filePath + "'; echo $?";
+        String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIP + " -t 'test -f " + filePath + "'; echo $?";
         List<String> out = AppUtils.executeCommand(command);
         if (!out.isEmpty() && out.get(0).equals("0")) {
             return true;
@@ -189,7 +219,7 @@ public class MonitorServiceImpl implements MonitorService {
     }
 
     private boolean isFolderExist(String serverIP, String filePath) {
-        String command = "ssh -p " + sshPort + " " + serverIP + " -t 'test -d " + filePath + "'; echo $?";
+        String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIP + " -t 'test -d " + filePath + "'; echo $?";
         List<String> out = AppUtils.executeCommand(command);
         if (!out.isEmpty() && out.get(0).equals("0")) {
             return true;
@@ -198,7 +228,7 @@ public class MonitorServiceImpl implements MonitorService {
     }
 
     private boolean isProcessAlive(String serverIP, String PID) {
-        String command = "ssh -p " + sshPort + " " + serverIP + " -t 'ps -p " + PID + " > /dev/null'; echo $?";
+        String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIP + " -t 'ps -p " + PID + " > /dev/null'; echo $?";
         List<String> out = AppUtils.executeCommand(command);
         //if command execute success it will return 0
         if (!out.isEmpty() && out.get(0).equals("0")) {
@@ -208,7 +238,7 @@ public class MonitorServiceImpl implements MonitorService {
     }
 
     private boolean syncLogFromRemote(String serverIP, String remoteLog, String localLog, int limit) {
-        String command = "ssh -p " + sshPort + " " + serverIP + " \"tail -n " + limit + " " + remoteLog + "\" >> " + localLog;
+        String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIP +  " \"tail -n " + limit + " " + remoteLog + "\" >> " + localLog;
         List<String> out = AppUtils.executeCommand(command);
         if (!out.isEmpty() && out.get(0).equals("0")) {
             return true;

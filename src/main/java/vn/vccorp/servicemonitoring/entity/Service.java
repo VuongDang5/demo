@@ -22,7 +22,6 @@ import java.util.List;
 @Table(
         indexes = {
                 @Index(columnList = "name"),
-                @Index(columnList = "serverId"),
                 @Index(columnList = "serverPort"),
                 @Index(columnList = "project"),
                 @Index(columnList = "pid"),
@@ -47,16 +46,12 @@ public class Service {
     @Size(max = 1000)
     private String description;
 
-    @NotBlank
-    @Size(max = 15)
-    private String serverId;
-
     @Size(max = 10)
     private String serverPort;
 
     @NotBlank
     @Size(max = 10)
-    private String PID;
+    private String pid;
 
     @NotBlank
     @Size(max = 200)
@@ -122,6 +117,10 @@ public class Service {
 
     @OneToMany(mappedBy = "service")
     private List<UserService> userServices;
+
+    @ManyToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "serverId", insertable = false, updatable = false)
+    private Server server;
 
     @OneToMany(mappedBy = "service")
     private List<Snapshot> snapshots;
