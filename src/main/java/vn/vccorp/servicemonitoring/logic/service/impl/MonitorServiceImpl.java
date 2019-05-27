@@ -160,7 +160,7 @@ public class MonitorServiceImpl implements MonitorService {
         vn.vccorp.servicemonitoring.entity.Service service = serviceRepository.findById(logServiceDTO.getServiceId()).orElseThrow(() -> new ApplicationException(messages.get("service.id.not-found")));
         //check if log file is available
         File logRemoteFile = new File(service.getLogDir() + service.getLogFile());
-        if (!isFileExist(service.getServerId(), logRemoteFile.getAbsolutePath())) {
+        if (!isFileExist(service.getServer().getIp(), logRemoteFile.getAbsolutePath())) {
             throw new ApplicationException(messages.get("service.log.not-available"));
         }
         //check if log file in local is available
@@ -176,7 +176,7 @@ public class MonitorServiceImpl implements MonitorService {
             }
         }
         //Sync log from that host to local host
-        syncLogFromRemote(service.getServerId(), logRemoteFile.getAbsolutePath(), logLocalFile.getAbsolutePath(), maxSyncLines);
+        syncLogFromRemote(service.getServer().getIp(), logRemoteFile.getAbsolutePath(), logLocalFile.getAbsolutePath(), maxSyncLines);
         if (!logLocalFile.exists()) {
             throw new ApplicationException(messages.get("service.log.not-available"));
         }
