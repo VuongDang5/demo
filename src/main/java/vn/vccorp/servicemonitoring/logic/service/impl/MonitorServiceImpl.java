@@ -14,6 +14,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.support.SimpleJpaRepository;
 import org.springframework.stereotype.Service;
+import vn.vccorp.servicemonitoring.dto.LogServiceDTO;
 import org.springframework.transaction.annotation.Transactional;
 import vn.vccorp.servicemonitoring.dto.ServiceDTO;
 import vn.vccorp.servicemonitoring.entity.Server;
@@ -65,6 +66,7 @@ public class MonitorServiceImpl implements MonitorService {
     private ServiceRepository ServiceRepositoryCustom;
     @PersistenceContext
     private EntityManager entityManager;
+
     @Transactional
     @Override
     public void registerService(ServiceDTO serviceDTO) {
@@ -162,6 +164,30 @@ public class MonitorServiceImpl implements MonitorService {
         }
     }
 
+    @Override
+    public List<String> getLogService(LogServiceDTO logServiceDTO) {
+        vn.vccorp.servicemonitoring.entity.Service service = serviceRepository.findById(logServiceDTO.getServiceId()).orElseThrow(() -> new ApplicationException(messages.get("service.id.not-found")));
+        //check if log file is available
+        File logRemoteFile = new File(service.getLogDir() + service.getLogFile());
+        if (!isFileExist(service.getServer().getIp(), logRemoteFile.getAbsolutePath())) {
+            throw new ApplicationException(messages.get("service.log.not-available"));
+        }
+        String command;
+        if (logServiceDTO.getStart() == 0 && logServiceDTO.getEnd() == 0){
+            command = "ssh -p " + sshPort + " " + sshUsername + "@" + service.getServer().getIp() + " -t 'tail -n 1000 " + logRemoteFile.getAbsolutePath() + "'";
+        }
+        else {
+            command = "ssh -p " + sshPort + " " + sshUsername + "@" + service.getServer().getIp()
+                    + " -t 'sed -n '" + logServiceDTO.getStart() + "," + logServiceDTO.getEnd() + "p'" + logRemoteFile.getAbsolutePath() + "'";
+        }
+
+        List<String> out = AppUtils.executeCommand(command);
+        if (out.isEmpty() || !out.get(0).equals("0")) {
+            throw new ApplicationException(messages.get("service.error.getLog"));
+        }
+        return out;
+    }
+
     private boolean isFileExist(String serverIP, String filePath) {
         String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIP + " -t 'test -f " + filePath + "'; echo $?";
         List<String> out = AppUtils.executeCommand(command);
@@ -190,6 +216,15 @@ public class MonitorServiceImpl implements MonitorService {
         return false;
     }
 
+    private boolean syncLogFromRemote(String serverIP, String remoteLog, String localLog, int limit) {
+        String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIP +  " -t 'tail -n " + limit + " " + remoteLog + " >> " + localLog + "'; echo $?";
+        List<String> out = AppUtils.executeCommand(command);
+        if (!out.isEmpty() && out.get(0).equals("0")) {
+            return true;
+        }
+        return false;
+    }
+    
     @Override
     public Page<vn.vccorp.servicemonitoring.entity.Service> showAllService(int currentPage, int pageSize) {
         //dung pageable de them currentPage va Pagesize vao Page
