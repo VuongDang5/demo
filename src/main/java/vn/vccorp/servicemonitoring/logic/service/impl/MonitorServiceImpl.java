@@ -27,24 +27,14 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.*;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.stream.Stream;
 
 @Service
 public class MonitorServiceImpl implements MonitorService {
 
     @Value("${ssh.port}")
     private String sshPort;
-    @Value("${logserver.url}")
-    private String logLocalDir;
-    @Value("${logserver.max-lines}")
-    private int maxSyncLines;
     @Value("${ssh.username}")
     private String sshUsername;
     @Autowired
@@ -164,22 +154,20 @@ public class MonitorServiceImpl implements MonitorService {
             throw new ApplicationException(messages.get("service.log.not-available"));
         }
 
-        String command = "ssh -p " + sshPort + " " + sshUsername + "@" + service.getServer().getIp() + " -t 'tail -n " +  maxSyncLines + logRemoteFile.getAbsolutePath() + "'";
+        String command;
+        if (logServiceDTO.getStart() == 0 && logServiceDTO.getEnd() == -1){
+            command = "ssh -p " + sshPort + " " + sshUsername + "@" + service.getServer().getIp() + " -t 'tail -n 1000 " + logRemoteFile.getAbsolutePath() + "'";
+        }
+        else {
+            command = "ssh -p " + sshPort + " " + sshUsername + "@" + service.getServer().getIp()
+                    + " -t 'sed -n '" + logServiceDTO.getStart() + "," + logServiceDTO.getEnd() + "p'" + logRemoteFile.getAbsolutePath() + "'";
+        }
+
         List<String> out = AppUtils.executeCommand(command);
         if (out.isEmpty() || !out.get(0).equals("0")) {
-            throw new ApplicationException(messages.get("service.error.stopping"));
+            throw new ApplicationException(messages.get("service.error.getLog"));
         }
-
-        //Check start, end log
-        if (logServiceDTO.getStart() > logServiceDTO.getEnd() || logServiceDTO.getEnd() > out.size()){
-            logServiceDTO.setEnd(out.size());
-        }
-        if (logServiceDTO.getStart() > out.size()){
-            logServiceDTO.setStart(out.size()-1);
-            logServiceDTO.setEnd(out.size());
-        }
-
-        return out.subList(logServiceDTO.getStart(), logServiceDTO.getEnd());
+        return out;
     }
 
     private boolean isFileExist(String serverIP, String filePath) {
