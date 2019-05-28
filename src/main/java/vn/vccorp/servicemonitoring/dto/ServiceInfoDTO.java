@@ -14,7 +14,9 @@ public class ServiceInfoDTO {
 
     private Integer id;
 
-    private String name;
+    private String serviceName;
+
+    private String userName;
 
     private String email;
 
@@ -36,9 +38,15 @@ public class ServiceInfoDTO {
 
     private Date startTime;
 
-    private Date lastCheckTime;
-
     private Status status;
 
     private String note;
+
+    private String ramUsed;
+
+    private String cpuUsed;
+
+    private String gpuUsed;
+
+    private String diskUsed;
 }

@@ -24,15 +24,17 @@ public class ServiceRepositoryCustomImpl implements ServiceRepositoryCustom {
     @Override
     public PageImpl<Service> showAllService(Pageable page) {
         //Query hien thi cac thong tin can thiet cua service
-        String queryStr = "SELECT s.id, s.pid, s.apiEndpoint, s.description, s.name, s.project, s.kongMapping, " +
-                "s.note, s.server.id, s.serverPort, s.startTime, s.status, " +
-                "u.name, u.email " +
+        String queryStr = "SELECT s.id, s.pid, s.name, s.apiEndpoint, s.description, s.project, s.kongMapping, " +
+                "s.note, sv.ip, s.serverPort, s.startTime, s.status, " +
+                "u.name, u.email, " +
                 "us.role, " +
                 "sn.time, sn.cpuUsed, sn.diskUsed, sn.gpuUsed, sn.ramUsed " +
                 "FROM Service s " +
+                //Ghep cac table lai voi nhau. Neu thanh phan trong table co dau gach duoi thi thay bang dau cham
                 "JOIN UserService us ON s.id = us.id.serviceId " +
                 "JOIN User u ON us.id.userId = u.id " +
-                "JOIN Snapshot sn ON s.id = sn.service.id ";
+                "JOIN Snapshot sn ON s.id = sn.service.id " +
+                "JOIN Server sv ON s.server.id = sv.id ";
 
         Query query = entityManager.createQuery(queryStr)
                 //Sets the offset position in the result set to start pagination
