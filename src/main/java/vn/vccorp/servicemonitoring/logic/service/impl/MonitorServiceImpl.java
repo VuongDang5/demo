@@ -153,7 +153,6 @@ public class MonitorServiceImpl implements MonitorService {
         if (!isFileExist(service.getServer().getIp(), logRemoteFile.getAbsolutePath())) {
             throw new ApplicationException(messages.get("service.log.not-available"));
         }
-
         String command;
         if (logServiceDTO.getStart() == 0 && logServiceDTO.getEnd() == 0){
             command = "ssh -p " + sshPort + " " + sshUsername + "@" + service.getServer().getIp() + " -t 'tail -n 1000 " + logRemoteFile.getAbsolutePath() + "'";
