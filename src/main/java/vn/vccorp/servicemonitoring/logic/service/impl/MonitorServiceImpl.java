@@ -9,8 +9,10 @@ import org.dozer.DozerBeanMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.support.SimpleJpaRepository;
 import org.springframework.stereotype.Service;
 import vn.vccorp.servicemonitoring.dto.ServiceDTO;
 import vn.vccorp.servicemonitoring.dto.ServiceInfoDTO;
@@ -18,15 +20,23 @@ import vn.vccorp.servicemonitoring.entity.UserService;
 import vn.vccorp.servicemonitoring.enumtype.Role;
 import vn.vccorp.servicemonitoring.exception.ApplicationException;
 import vn.vccorp.servicemonitoring.logic.repository.ServiceRepository;
+import vn.vccorp.servicemonitoring.logic.repository.ServiceRepositoryCustom;
 import vn.vccorp.servicemonitoring.logic.repository.UserServiceRepository;
 import vn.vccorp.servicemonitoring.logic.service.MonitorService;
 import vn.vccorp.servicemonitoring.message.Messages;
 import vn.vccorp.servicemonitoring.utils.AppUtils;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.persistence.Query;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -45,7 +55,9 @@ public class MonitorServiceImpl implements MonitorService {
     @Autowired
     private Messages messages;
     @Autowired
-    private ServiceRepository serviceInformationRepository;
+    private ServiceRepository ServiceRepositoryCustom;
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @Override
     public void registerService(ServiceDTO serviceDTO) {
@@ -155,15 +167,15 @@ public class MonitorServiceImpl implements MonitorService {
 
     @Override
     public Page<vn.vccorp.servicemonitoring.entity.Service> showAllService(int currentPage, int pageSize) {
-        //Dung Pagination de liet ke danh sach tat ca service
-        Pageable firstPageWithFourElements = PageRequest.of(currentPage, pageSize);
-        return serviceInformationRepository.showAllService(firstPageWithFourElements);
+        Pageable pageNumber = PageRequest.of(currentPage, pageSize);
+        Page<vn.vccorp.servicemonitoring.entity.Service> results = ServiceRepositoryCustom.showAllService(pageNumber);
+        return results;
     }
 
     @Override
     public vn.vccorp.servicemonitoring.entity.Service showService(int serviceId) {
         //Hien thi Detail cua service theo serviceId
-        vn.vccorp.servicemonitoring.entity.Service service = serviceInformationRepository.findById(serviceId).get();
+        vn.vccorp.servicemonitoring.entity.Service service = ServiceRepositoryCustom.showService(serviceId);
         return service;
     }
 }

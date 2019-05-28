@@ -13,6 +13,7 @@ import vn.vccorp.servicemonitoring.logic.repository.ServiceRepositoryCustom;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
+import java.lang.invoke.SerializedLambda;
 import java.util.List;
 
 public class ServiceRepositoryCustomImpl implements ServiceRepositoryCustom {
@@ -29,13 +30,19 @@ public class ServiceRepositoryCustomImpl implements ServiceRepositoryCustom {
                 "FROM Service s " +
                 "JOIN UserService us ON s.id = us.id.serviceId " +
                 "JOIN User u ON us.id.userId = u.id " +
-                "JOIN Snapshot sn ON s.id = sn.service.id " +
-                "ORDER BY s.id ASC";
+                "JOIN Snapshot sn ON s.id = sn.service.id ";
         Query query = entityManager.createQuery(queryStr)
                 .setFirstResult(page.getPageSize() * (page.getPageNumber() - 1))
                 .setMaxResults(page.getPageSize());
         List<Service> resultList = query.getResultList();
-
         return new PageImpl<>(resultList, page, page.getPageSize());
     }
+
+    @Override
+    public Service showService(int serviceId) {
+        Service service = entityManager.find(Service.class, serviceId);
+        //List<Service> resultList = query.getResultList();
+        return service;
+    }
+
 }
