@@ -19,5 +19,5 @@ public class LogServiceDTO {
     private Integer start = 0;
 
     @Min(-1)
-    private Integer end = -1;
+    private Integer end = 0;
 }

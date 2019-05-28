@@ -155,7 +155,7 @@ public class MonitorServiceImpl implements MonitorService {
         }
 
         String command;
-        if (logServiceDTO.getStart() == 0 && logServiceDTO.getEnd() == -1){
+        if (logServiceDTO.getStart() == 0 && logServiceDTO.getEnd() == 0){
             command = "ssh -p " + sshPort + " " + sshUsername + "@" + service.getServer().getIp() + " -t 'tail -n 1000 " + logRemoteFile.getAbsolutePath() + "'";
         }
         else {
