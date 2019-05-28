@@ -8,26 +8,41 @@ package vn.vccorp.servicemonitoring.logic.service.impl;
 import org.dozer.DozerBeanMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.support.SimpleJpaRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.vccorp.servicemonitoring.dto.ServiceDTO;
 import vn.vccorp.servicemonitoring.entity.Server;
+import vn.vccorp.servicemonitoring.dto.ServiceInfoDTO;
 import vn.vccorp.servicemonitoring.entity.UserService;
 import vn.vccorp.servicemonitoring.enumtype.Role;
 import vn.vccorp.servicemonitoring.exception.ApplicationException;
 import vn.vccorp.servicemonitoring.logic.repository.ServerRepository;
 import vn.vccorp.servicemonitoring.logic.repository.ServiceRepository;
+import vn.vccorp.servicemonitoring.logic.repository.ServiceRepositoryCustom;
 import vn.vccorp.servicemonitoring.logic.repository.UserServiceRepository;
 import vn.vccorp.servicemonitoring.logic.service.MonitorService;
 import vn.vccorp.servicemonitoring.message.Messages;
 import vn.vccorp.servicemonitoring.utils.AppUtils;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.persistence.Query;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+
 
 @Service
 public class MonitorServiceImpl implements MonitorService {
@@ -46,7 +61,10 @@ public class MonitorServiceImpl implements MonitorService {
     private Messages messages;
     @Autowired
     private ServerRepository serverRepository;
-
+    @Autowired
+    private ServiceRepository ServiceRepositoryCustom;
+    @PersistenceContext
+    private EntityManager entityManager;
     @Transactional
     @Override
     public void registerService(ServiceDTO serviceDTO) {
@@ -170,5 +188,22 @@ public class MonitorServiceImpl implements MonitorService {
             return true;
         }
         return false;
+    }
+
+    @Override
+    public Page<vn.vccorp.servicemonitoring.entity.Service> showAllService(int currentPage, int pageSize) {
+        //dung pageable de them currentPage va Pagesize vao Page
+        Pageable pageNumber = PageRequest.of(currentPage, pageSize);
+        Page<vn.vccorp.servicemonitoring.entity.Service> results = ServiceRepositoryCustom.showAllService(pageNumber);
+        //kieu tra ve Pagination
+        return results;
+    }
+
+    @Override
+    public vn.vccorp.servicemonitoring.entity.Service showService(int serviceId) {
+        //Hien thi Detail cua service theo serviceId
+        vn.vccorp.servicemonitoring.entity.Service service = ServiceRepositoryCustom.showService(serviceId);
+        //Kieu tra ve la Entity
+        return service;
     }
 }
