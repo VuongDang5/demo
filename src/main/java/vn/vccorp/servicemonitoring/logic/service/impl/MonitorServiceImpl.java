@@ -163,50 +163,23 @@ public class MonitorServiceImpl implements MonitorService {
         if (!isFileExist(service.getServer().getIp(), logRemoteFile.getAbsolutePath())) {
             throw new ApplicationException(messages.get("service.log.not-available"));
         }
-        //check if log file in local is available
-        File logLocalFile = new File(logLocalDir + service.getName() + File.separator + service.getLogFile());
-        if (!logLocalFile.getParentFile().exists()) {
-            logLocalFile.getParentFile().mkdirs();
-        }
-        if (!logLocalFile.exists()) {
-            try {
-                logLocalFile.createNewFile();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        //Sync log from that host to local host
-        syncLogFromRemote(service.getServer().getIp(), logRemoteFile.getAbsolutePath(), logLocalFile.getAbsolutePath(), maxSyncLines);
-        if (!logLocalFile.exists()) {
-            throw new ApplicationException(messages.get("service.log.not-available"));
-        }
 
-        return readFileLog(logLocalFile.getAbsolutePath(), logServiceDTO);
-    }
-
-    private List<String> readFileLog(String path, LogServiceDTO logServiceDTO){
-        List<String> listLog = new ArrayList<>();
-
-        //read FileLog
-        try(Stream<String> stream = Files.lines(Paths.get(path), StandardCharsets.UTF_8)){
-            stream.forEach(line ->{
-                listLog.add(line);
-            });
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new ApplicationException(messages.get("service.log.not-available"));
+        String command = "ssh -p " + sshPort + " " + sshUsername + "@" + service.getServer().getIp() + " -t 'tail -n " +  maxSyncLines + logRemoteFile.getAbsolutePath() + "'";
+        List<String> out = AppUtils.executeCommand(command);
+        if (out.isEmpty() || !out.get(0).equals("0")) {
+            throw new ApplicationException(messages.get("service.error.stopping"));
         }
 
         //Check start, end log
-        if (logServiceDTO.getStart() > logServiceDTO.getEnd() || logServiceDTO.getEnd() > listLog.size()){
-            logServiceDTO.setEnd(listLog.size());
+        if (logServiceDTO.getStart() > logServiceDTO.getEnd() || logServiceDTO.getEnd() > out.size()){
+            logServiceDTO.setEnd(out.size());
         }
-        if (logServiceDTO.getStart() > listLog.size()){
-            logServiceDTO.setStart(0);
-            logServiceDTO.setEnd(listLog.size());
+        if (logServiceDTO.getStart() > out.size()){
+            logServiceDTO.setStart(out.size()-1);
+            logServiceDTO.setEnd(out.size());
         }
 
-        return listLog.subList(logServiceDTO.getStart(), logServiceDTO.getEnd());
+        return out.subList(logServiceDTO.getStart(), logServiceDTO.getEnd());
     }
 
     private boolean isFileExist(String serverIP, String filePath) {
@@ -238,7 +211,7 @@ public class MonitorServiceImpl implements MonitorService {
     }
 
     private boolean syncLogFromRemote(String serverIP, String remoteLog, String localLog, int limit) {
-        String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIP +  " \"tail -n " + limit + " " + remoteLog + "\" >> " + localLog;
+        String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIP +  " -t 'tail -n " + limit + " " + remoteLog + " >> " + localLog + "'; echo $?";
         List<String> out = AppUtils.executeCommand(command);
         if (!out.isEmpty() && out.get(0).equals("0")) {
             return true;

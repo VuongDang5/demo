@@ -72,7 +72,7 @@ public class ServiceController {
 
     @RequestMapping(value = "/get-log-service", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ApiOperation(value = "Get 1000 log service", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity<Object> showLogService(@RequestBody LogServiceDTO logServiceDTO){
+    public ResponseEntity<Object> getLogService(@RequestBody LogServiceDTO logServiceDTO){
         LOGGER.info("Get log a service with id: " + logServiceDTO.getServiceId());
 
         BaseResponse.Builder builder = new BaseResponse.Builder();
