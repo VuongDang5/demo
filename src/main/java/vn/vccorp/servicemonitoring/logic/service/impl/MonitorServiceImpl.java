@@ -61,7 +61,7 @@ public class MonitorServiceImpl implements MonitorService {
     private Messages messages;
     @Autowired
     private ServerRepository serverRepository;
-
+    @Autowired
     private ServiceRepository ServiceRepositoryCustom;
     @PersistenceContext
     private EntityManager entityManager;
@@ -192,8 +192,10 @@ public class MonitorServiceImpl implements MonitorService {
 
     @Override
     public Page<vn.vccorp.servicemonitoring.entity.Service> showAllService(int currentPage, int pageSize) {
+        //dung pageable de them currentPage va Pagesize vao Page
         Pageable pageNumber = PageRequest.of(currentPage, pageSize);
         Page<vn.vccorp.servicemonitoring.entity.Service> results = ServiceRepositoryCustom.showAllService(pageNumber);
+        //kieu tra ve Pagination
         return results;
     }
 
@@ -201,6 +203,7 @@ public class MonitorServiceImpl implements MonitorService {
     public vn.vccorp.servicemonitoring.entity.Service showService(int serviceId) {
         //Hien thi Detail cua service theo serviceId
         vn.vccorp.servicemonitoring.entity.Service service = ServiceRepositoryCustom.showService(serviceId);
+        //Kieu tra ve la Entity
         return service;
     }
 }

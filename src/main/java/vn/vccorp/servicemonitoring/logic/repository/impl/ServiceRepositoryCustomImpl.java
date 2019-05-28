@@ -23,6 +23,7 @@ public class ServiceRepositoryCustomImpl implements ServiceRepositoryCustom {
 
     @Override
     public PageImpl<Service> showAllService(Pageable page) {
+        //Query hien thi cac thong tin can thiet cua service
         String queryStr = "SELECT s.id, s.pid, s.apiEndpoint, s.description, s.name, s.project, s.kongMapping, " +
                 "s.note, s.server.id, s.serverPort, s.startTime, s.status, " +
                 "us.role," +
@@ -31,17 +32,22 @@ public class ServiceRepositoryCustomImpl implements ServiceRepositoryCustom {
                 "JOIN UserService us ON s.id = us.id.serviceId " +
                 "JOIN User u ON us.id.userId = u.id " +
                 "JOIN Snapshot sn ON s.id = sn.service.id ";
+
         Query query = entityManager.createQuery(queryStr)
+                //Sets the offset position in the result set to start pagination
                 .setFirstResult(page.getPageSize() * (page.getPageNumber() - 1))
+                //Sets the maximum number of entities that should be included in the page
                 .setMaxResults(page.getPageSize());
         List<Service> resultList = query.getResultList();
+        //Ket qua tra ve la PageImpl
         return new PageImpl<>(resultList, page, page.getPageSize());
     }
 
     @Override
     public Service showService(int serviceId) {
+        //Tim kiem va hien thi thong tin service dua tren serviceId
         Service service = entityManager.find(Service.class, serviceId);
-        //List<Service> resultList = query.getResultList();
+        //Ket qua tra ve la Entity
         return service;
     }
 
