@@ -26,7 +26,8 @@ public class ServiceRepositoryCustomImpl implements ServiceRepositoryCustom {
         //Query hien thi cac thong tin can thiet cua service
         String queryStr = "SELECT s.id, s.pid, s.apiEndpoint, s.description, s.name, s.project, s.kongMapping, " +
                 "s.note, s.server.id, s.serverPort, s.startTime, s.status, " +
-                "us.role," +
+                "u.name, u.email " +
+                "us.role, " +
                 "sn.time, sn.cpuUsed, sn.diskUsed, sn.gpuUsed, sn.ramUsed " +
                 "FROM Service s " +
                 "JOIN UserService us ON s.id = us.id.serviceId " +

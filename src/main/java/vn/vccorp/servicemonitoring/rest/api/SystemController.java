@@ -50,13 +50,10 @@ public class SystemController {
 
     @Autowired
     private Messages messages;
-
     @Autowired
     AuthenticationManager authenticationManager;
     @Autowired
     UserService userService;
-    @Autowired
-    MonitorService monitorService;
 
     @RequestMapping(value = "/login", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ApiOperation(value = "Login account", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)

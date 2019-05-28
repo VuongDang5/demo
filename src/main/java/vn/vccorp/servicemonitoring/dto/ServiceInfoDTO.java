@@ -3,9 +3,7 @@ package vn.vccorp.servicemonitoring.dto;
 import lombok.*;
 import vn.vccorp.servicemonitoring.enumtype.Status;
 
-import javax.persistence.OneToMany;
 import java.util.Date;
-import java.util.List;
 
 @Getter
 @Setter
@@ -18,11 +16,15 @@ public class ServiceInfoDTO {
 
     private String name;
 
+    private String email;
+
+    private String role;
+
     private String description;
 
     private String pid;
 
-    private String serverId;
+    private String serverIp;
 
     private String serverPort;
 
