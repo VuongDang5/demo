@@ -18,6 +18,7 @@ import vn.vccorp.servicemonitoring.entity.User;
 import vn.vccorp.servicemonitoring.enumtype.ApplicationError;
 import vn.vccorp.servicemonitoring.enumtype.Role;
 import vn.vccorp.servicemonitoring.exception.ApplicationException;
+import vn.vccorp.servicemonitoring.logic.repository.ServiceRepository;
 import vn.vccorp.servicemonitoring.logic.repository.UserRepository;
 import vn.vccorp.servicemonitoring.logic.repository.ConfigurationRepository;
 import vn.vccorp.servicemonitoring.logic.repository.ServiceManagementRepository;
@@ -47,6 +48,9 @@ public class UserServiceImpl implements UserService {
     ServiceManagementRepository serviceManagementRepository;
     @Autowired
     ConfigurationRepository configurationRepository;
+	@Autowired
+    private ServiceRepository serviceRepository;
+
 
     @Override
     public void addAccount(UserDTO userDTO) {

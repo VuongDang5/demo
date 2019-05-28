@@ -21,9 +21,11 @@ import org.springframework.web.bind.annotation.*;
 import vn.vccorp.servicemonitoring.dto.RoleDTO;
 import vn.vccorp.servicemonitoring.dto.UserDTO;
 import vn.vccorp.servicemonitoring.dto.ConfigurationDTO;
+import vn.vccorp.servicemonitoring.entity.Service;
 import vn.vccorp.servicemonitoring.enumtype.ApplicationError;
 import vn.vccorp.servicemonitoring.enumtype.Role;
 import vn.vccorp.servicemonitoring.exception.ApplicationException;
+import vn.vccorp.servicemonitoring.logic.service.MonitorService;
 import vn.vccorp.servicemonitoring.logic.service.UserService;
 import vn.vccorp.servicemonitoring.message.Messages;
 import vn.vccorp.servicemonitoring.rest.response.BaseResponse;
@@ -48,7 +50,6 @@ public class SystemController {
 
     @Autowired
     private Messages messages;
-
     @Autowired
     AuthenticationManager authenticationManager;
     @Autowired
