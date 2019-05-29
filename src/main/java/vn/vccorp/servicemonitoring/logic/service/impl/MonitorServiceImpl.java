@@ -11,16 +11,24 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.support.SimpleJpaRepository;
 import org.springframework.stereotype.Service;
+import vn.vccorp.servicemonitoring.dto.LogServiceDTO;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import vn.vccorp.servicemonitoring.dto.ServiceDTO;
 import vn.vccorp.servicemonitoring.entity.Server;
+import vn.vccorp.servicemonitoring.dto.ServiceInfoDTO;
 import vn.vccorp.servicemonitoring.entity.UserService;
 import vn.vccorp.servicemonitoring.enumtype.Role;
 import vn.vccorp.servicemonitoring.exception.ApplicationException;
 import vn.vccorp.servicemonitoring.logic.repository.ServerRepository;
 import vn.vccorp.servicemonitoring.logic.repository.ServiceRepository;
+import vn.vccorp.servicemonitoring.logic.repository.ServiceRepositoryCustom;
 import vn.vccorp.servicemonitoring.logic.repository.UserServiceRepository;
 import vn.vccorp.servicemonitoring.logic.service.MonitorService;
 import vn.vccorp.servicemonitoring.message.Messages;
@@ -28,6 +36,12 @@ import vn.vccorp.servicemonitoring.security.CustomPermissionEvaluator;
 import vn.vccorp.servicemonitoring.utils.AppUtils;
 import vn.vccorp.servicemonitoring.utils.BeanUtils;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.persistence.Query;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -37,8 +51,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+
 
 @Service
 public class MonitorServiceImpl implements MonitorService {
@@ -58,6 +74,10 @@ public class MonitorServiceImpl implements MonitorService {
     private Messages messages;
     @Autowired
     private ServerRepository serverRepository;
+    @Autowired
+    private ServiceRepository ServiceRepositoryCustom;
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @Transactional
     @Override
@@ -140,6 +160,7 @@ public class MonitorServiceImpl implements MonitorService {
             throw new ApplicationException(messages.get("service.error.stopping"));
         }
     }
+
 
     @Transactional
     @Override
@@ -320,6 +341,32 @@ public class MonitorServiceImpl implements MonitorService {
      * @param filePath file to check
      * @return true if file is existed otherwise false
      */
+
+    @Override
+    public List<String> getLogService(LogServiceDTO logServiceDTO) {
+        vn.vccorp.servicemonitoring.entity.Service service = serviceRepository.findById(logServiceDTO.getServiceId()).orElseThrow(() -> new ApplicationException(messages.get("service.id.not-found")));
+        //check if log file is available
+        File logRemoteFile = new File(service.getLogDir() + service.getLogFile());
+        if (!isFileExist(service.getServer().getIp(), logRemoteFile.getAbsolutePath())) {
+            throw new ApplicationException(messages.get("service.log.not-available"));
+        }
+        String command;
+        if (logServiceDTO.getStart() == 0 && logServiceDTO.getEnd() == 0){
+            command = "ssh -p " + sshPort + " " + sshUsername + "@" + service.getServer().getIp() + " -t 'tail -n 1000 " + logRemoteFile.getAbsolutePath() + "'";
+        }
+        else {
+            command = "ssh -p " + sshPort + " " + sshUsername + "@" + service.getServer().getIp()
+                    + " -t 'sed -n '" + logServiceDTO.getStart() + "," + logServiceDTO.getEnd() + "p'" + logRemoteFile.getAbsolutePath() + "'";
+        }
+
+        List<String> out = AppUtils.executeCommand(command);
+        if (out.isEmpty() || !out.get(0).equals("0")) {
+            throw new ApplicationException(messages.get("service.error.getLog"));
+        }
+        return out;
+    }
+
+
     private boolean isFileExist(String serverIP, String filePath) {
         String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIP + " -t 'test -f " + filePath + "'; echo $?";
         List<String> out = AppUtils.executeCommand(command);
@@ -360,5 +407,31 @@ public class MonitorServiceImpl implements MonitorService {
             return true;
         }
         return false;
+    }
+
+    private boolean syncLogFromRemote(String serverIP, String remoteLog, String localLog, int limit) {
+        String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIP +  " -t 'tail -n " + limit + " " + remoteLog + " >> " + localLog + "'; echo $?";
+        List<String> out = AppUtils.executeCommand(command);
+        if (!out.isEmpty() && out.get(0).equals("0")) {
+            return true;
+        }
+        return false;
+    }
+    
+    @Override
+    public Page<vn.vccorp.servicemonitoring.entity.Service> showAllService(int currentPage, int pageSize) {
+        //dung pageable de them currentPage va Pagesize vao Page
+        Pageable pageNumber = PageRequest.of(currentPage, pageSize);
+        Page<vn.vccorp.servicemonitoring.entity.Service> results = ServiceRepositoryCustom.showAllService(pageNumber);
+        //kieu tra ve Pagination
+        return results;
+    }
+
+    @Override
+    public vn.vccorp.servicemonitoring.entity.Service showService(int serviceId) {
+        //Hien thi Detail cua service theo serviceId
+        vn.vccorp.servicemonitoring.entity.Service service = ServiceRepositoryCustom.showService(serviceId);
+        //Kieu tra ve la Entity
+        return service;
     }
 }
