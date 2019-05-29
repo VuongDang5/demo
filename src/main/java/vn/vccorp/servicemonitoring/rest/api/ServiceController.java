@@ -15,7 +15,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import vn.vccorp.servicemonitoring.dto.ServiceDTO;
+import vn.vccorp.servicemonitoring.entity.Service;
+import vn.vccorp.servicemonitoring.dto.LogServiceDTO;
+import vn.vccorp.servicemonitoring.logic.repository.ServiceRepository;
 import vn.vccorp.servicemonitoring.logic.service.MonitorService;
 import vn.vccorp.servicemonitoring.message.Messages;
 import vn.vccorp.servicemonitoring.rest.response.BaseResponse;
@@ -23,8 +27,11 @@ import vn.vccorp.servicemonitoring.rest.response.RestResponseBuilder;
 import vn.vccorp.servicemonitoring.security.CurrentUser;
 import vn.vccorp.servicemonitoring.security.MaintainerAuthorize;
 import vn.vccorp.servicemonitoring.security.OwnerAuthorize;
+import vn.vccorp.servicemonitoring.security.UserAuthorize;
 import vn.vccorp.servicemonitoring.security.UserPrincipal;
 import vn.vccorp.servicemonitoring.utils.AppConstants;
+
+import java.util.List;
 
 @RequestMapping(value = AppConstants.API_MAPPING + "/service")
 @RestController
@@ -78,4 +85,35 @@ public class ServiceController {
         builder.setSuccessObject(true);
         return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
     }
+
+    @RequestMapping(value = "/get-log-service", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @ApiOperation(value = "Get 1000 log service", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public ResponseEntity<Object> getLogService(@RequestBody LogServiceDTO logServiceDTO){
+        LOGGER.info("Get log a service with id: " + logServiceDTO.getServiceId());
+
+        BaseResponse.Builder builder = new BaseResponse.Builder();
+        builder.setSuccessObject(monitorService.getLogService(logServiceDTO));
+        return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
+    }
+
+    @RequestMapping(value = "/show-all-service/", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @ApiOperation(value = "Show all service", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @UserAuthorize
+    public ResponseEntity<Object> showAllService(@CurrentUser UserPrincipal currentUser, @RequestParam int currentPage, @RequestParam int pageSize) {
+        monitorService.showAllService(currentPage,pageSize);
+        BaseResponse.Builder builder = new BaseResponse.Builder();
+        builder.setSuccessObject(monitorService.showAllService(currentPage,pageSize));
+        return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
+    }
+
+    @RequestMapping(value = "/show-service/{serviceId}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @ApiOperation(value = "Show service", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @UserAuthorize
+    public ResponseEntity<Object> showService(@CurrentUser UserPrincipal currentUser, @PathVariable int serviceId) {
+        monitorService.showService(serviceId);
+        BaseResponse.Builder builder = new BaseResponse.Builder();
+        builder.setSuccessObject(monitorService.showService(serviceId));
+        return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
+    }
+    
 }
