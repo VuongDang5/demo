@@ -39,7 +39,7 @@ public class TestAll {
                 .language("java")
                 .logDir("/home/tuyennta/projects/freelance/blogcrawler/")
                 .logFile("out.log")
-                .pid("16595")
+                .pid("14516")
                 .project("test")
                 .serverId(1)
                 .serverIp("localhost")

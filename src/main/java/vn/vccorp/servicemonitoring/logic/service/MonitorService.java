@@ -5,6 +5,7 @@
 
 package vn.vccorp.servicemonitoring.logic.service;
 
+import org.springframework.web.multipart.MultipartFile;
 import vn.vccorp.servicemonitoring.dto.ServiceDTO;
 
 public interface MonitorService {
@@ -13,4 +14,13 @@ public interface MonitorService {
     void startService(int serviceId);
 
     void stopService(int serviceId);
+
+    void deployService(ServiceDTO serviceDTO, Integer currentUserId,
+                       MultipartFile jar,
+                       MultipartFile originalJar,
+                       MultipartFile dependencies,
+                       MultipartFile modelFile,
+                       MultipartFile sourceCode,
+                       MultipartFile dockerFile);
+
 }
