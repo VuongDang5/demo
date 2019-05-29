@@ -22,6 +22,7 @@ import vn.vccorp.servicemonitoring.logic.repository.ServiceRepository;
 import vn.vccorp.servicemonitoring.logic.repository.UserRepository;
 import vn.vccorp.servicemonitoring.logic.repository.ConfigurationRepository;
 import vn.vccorp.servicemonitoring.logic.repository.ServiceManagementRepository;
+import vn.vccorp.servicemonitoring.logic.repository.ServiceRepository;
 import vn.vccorp.servicemonitoring.logic.service.UserService;
 import vn.vccorp.servicemonitoring.message.Messages;
 import vn.vccorp.servicemonitoring.security.RootConfig;
@@ -144,4 +145,5 @@ public class UserServiceImpl implements UserService {
         }
         configurationRepository.save(config);
     }
+    
 }

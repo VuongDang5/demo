@@ -23,4 +23,5 @@ public interface UserService {
     void updateRole(int userId, Role role);
     
     void updateConfig(ConfigurationDTO configurationDTO);
+    
 }

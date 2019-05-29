@@ -12,14 +12,14 @@ import vn.vccorp.servicemonitoring.entity.Service;
 
 import java.util.List;
 
-import java.util.List;
-
 public interface MonitorService {
     void registerService(ServiceDTO serviceDTO);
 
 	void startService(int serviceId);
 
     void stopService(int serviceId);
+    
+    void deleteLog(int id);
 
     Page<Service> showAllService(int currentPage, int pageSize);
 

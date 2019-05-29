@@ -75,6 +75,16 @@ public class ServiceController {
         builder.setSuccessObject(true);
         return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
     }
+    
+    @RequestMapping(value = "/delete-log", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @ApiOperation(value = "Delete Log", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public ResponseEntity<Object> deleteLog(@CurrentUser UserPrincipal currentUser, @RequestBody int id) {
+        LOGGER.info("Receive request of user: {}, mail: {}, role: {}", currentUser.getName(), currentUser.getEmail(), currentUser.getAuthorities());
+        monitorService.deleteLog(id);
+        BaseResponse.Builder builder = new BaseResponse.Builder();
+        builder.setSuccessObject(true);
+        return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
+    }
 
     @RequestMapping(value = "/get-log-service", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ApiOperation(value = "Get 1000 log service", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
@@ -84,6 +94,7 @@ public class ServiceController {
         BaseResponse.Builder builder = new BaseResponse.Builder();
         builder.setSuccessObject(monitorService.getLogService(logServiceDTO));
         return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
+    }
 
     @RequestMapping(value = "/show-all-service/", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ApiOperation(value = "Show all service", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
@@ -104,5 +115,5 @@ public class ServiceController {
         builder.setSuccessObject(monitorService.showService(serviceId));
         return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
     }
-	
+    
 }
