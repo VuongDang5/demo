@@ -220,13 +220,8 @@ public class MonitorServiceImpl implements MonitorService {
     @Override
     public void deleteLog(int id) {
     	vn.vccorp.servicemonitoring.entity.Service service = serviceRepository.findById(id).orElseThrow(() -> new ApplicationException(messages.get("error.not.found.service")));
-    	try {
-    		String command = "ssh -p " + sshPort + " " + sshUsername + "@" + service.getServer().getIp() + " 'rm " + service.getLogDir() + service.getLogFile() + "; touch " + service.getLogDir() + service.getLogFile() + "'";
-    		AppUtils.executeCommand(command);
-    	} catch (Exception e) {
-    		throw new ApplicationException(messages.get("error.delete.log.failed"));
-    	}
-        //if command execute success it will return
+    	String command = "ssh -p " + sshPort + " " + sshUsername + "@" + service.getServer().getIp() + " 'rm " + service.getLogDir() + service.getLogFile() + "; touch " + service.getLogDir() + service.getLogFile() + "'";
+    	AppUtils.executeCommand(command);
     }
     
     private boolean syncLogFromRemote(String serverIP, String remoteLog, String localLog, int limit) {
