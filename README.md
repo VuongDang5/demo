@@ -17,6 +17,18 @@ This is the source code for Service Monitoring System - APIs server.
       For intellij: https://projectlombok.org/setup/intellij      
     + Run Application.java to start our application. (Remember to start mysqld service in advance)
     + Link to explore swagger-ui: http://localhost:8082/swagger-ui.html
+    + Setup a sudo user for this tool on your local:
+        1. Create a user named "monitoring" with command: `sudo adduser monitoring --disabled-password`
+        2. Allow this user to execute all sudo command without password: `sudo visudo`
+        3. Added this line to the end of file: `monitoring      ALL=(ALL) NOPASSWD:ALL` then save and quit the editor
+        4. Login to monitoring user with command: `sudo su monitoring`
+        5. Create .ssh folder for monitoring user: `mkdir /home/monitoring/.ssh`
+        6. Added public key of your main user to authorized_keys of monitoring user: `sudo cat /home/tuyennta/.ssh/id_rsa.pub > /home/monitoring/.ssh/authorized_keys`       
+         If your main user doesn't have ssh public key, then login to your main user and run this command: `ssh-keygen -t rsa`
+        7. Logging out of monitoring user then test if you can ssh to monitoring user and try a sudo command:
+        - `ssh monitoring@localhost`
+        - `sudo -v`
+        If both commands success without asking for password then you're done. 
  - DBSchema and description about entity relationship:
     https://drive.google.com/open?id=1PzWudOa3KHBhIyCn7ZJABn3sg3rjmJpm
 
