@@ -30,7 +30,10 @@ import java.util.List;
         },
         uniqueConstraints = {
                 @UniqueConstraint(columnNames = {
-                        "pid", "name"
+                        "pid"
+                }),
+                @UniqueConstraint(columnNames = {
+                        "name"
                 })
         })
 public class Service {

@@ -1,25 +1,15 @@
 package vn.vccorp.servicemonitoring.utils;
 
-import com.google.gson.Gson;
-import org.apache.commons.validator.routines.EmailValidator;
-import org.apache.commons.validator.routines.UrlValidator;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.utils.URLEncodedUtils;
 import org.joda.time.LocalDateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
-import org.springframework.util.StringUtils;
 
-import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.URI;
-import java.nio.charset.Charset;
-import java.util.*;
-import java.util.regex.Pattern;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 /**
  * Name: tuyennta
@@ -29,92 +19,109 @@ import java.util.regex.Pattern;
 public class AppUtils {
     private static final Logger LOGGER = LoggerFactory.getLogger(AppUtils.class);
 
-    public static void returnResponse(HttpServletResponse response, Object object) {
-        try {
-            response.setHeader("Access-Control-Allow-Origin", "*");
-            response.setHeader("Access-Control-Allow-Credentials", "true");
-            response.setHeader("Access-Control-Allow-Methods", "POST, GET, HEAD, OPTIONS");
-            response.setHeader("Access-Control-Allow-Headers", "Origin, Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers");
-            String json = new Gson().toJson(object);
-            response.setContentType("application/json");
-            response.setCharacterEncoding("UTF-8");
-            response.getWriter().write(json);
-        } catch (IOException e) {
+    /**
+     * Check if a process is alive on a remote server using pid of process
+     *
+     * @param serverIP    server to check
+     * @param PID         process id to check
+     * @param sshPort
+     * @param sshUsername
+     * @return true if process is alive otherwise false
+     */
+    public static boolean isProcessAlive(String serverIP, String PID, String sshPort, String sshUsername) {
+        String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIP + " -t 'ps -p " + PID + " > /dev/null'; echo $?";
+        List<String> out = AppUtils.executeCommand(command);
+        //if command execute success it will return 0
+        if (!out.isEmpty() && out.get(0).equals("0")) {
+            return true;
         }
+        return false;
     }
 
-    public static PageRequest createPageRequest(Integer page, Integer limit, Sort sort) {
-        PageRequest pageRequest;
-        if (null == page || 0 > page) {
-            page = 0;
+    /**
+     * Check if a folder is existed on a remote server
+     *
+     * @param serverIP    server to check
+     * @param filePath    folder to check
+     * @param sshPort
+     * @param sshUsername
+     * @return true if folder existed otherwise false
+     */
+    public static boolean isFolderExist(String serverIP, String filePath, String sshPort, String sshUsername) {
+        String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIP + " -t 'test -d " + filePath + "'; echo $?";
+        List<String> out = AppUtils.executeCommand(command);
+        if (!out.isEmpty() && out.get(0).equals("0")) {
+            return true;
         }
-        if (null == limit || 1 > limit) {
-            limit = 10;
-        }
-        if (null == sort) {
-            pageRequest = PageRequest.of(page, limit);
-        } else {
-            pageRequest = PageRequest.of(page, limit, sort);
-        }
-        return pageRequest;
+        return false;
     }
 
-    public static Integer extractDigitsFromString(String str) {
-        try {
-            if (!StringUtils.isEmpty(str)) {
-                Integer value = Integer.valueOf(str.replaceAll("\\D+", ""));
-                if (str.toLowerCase().contains("b")) {
-                    value *= 1000000000;
-                } else if (str.toLowerCase().contains("m")) {
-                    value *= 1000000;
-                } else if (str.toLowerCase().contains("k")) {
-                    value *= 1000;
-                }
-                return value;
-            }
-        } catch (Exception e) {
+    /**
+     * Check if a file is exist on remote server or not
+     *
+     * @param serverIP    server to check
+     * @param filePath    file to check
+     * @param sshPort
+     * @param sshUsername
+     * @return true if file is existed otherwise false
+     */
+    public static boolean isFileExist(String serverIP, String filePath, String sshPort, String sshUsername) {
+        String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIP + " -t 'test -f " + filePath + "'; echo $?";
+        List<String> out = AppUtils.executeCommand(command);
+        if (!out.isEmpty() && out.get(0).equals("0")) {
+            return true;
         }
-        return 0;
+        return false;
     }
 
-    public static boolean isValidEmailAddress(String email) {
-        return EmailValidator.getInstance().isValid(email);
+    /**
+     * Change user mod of a file on specific server
+     *
+     * @param file        file to change
+     * @param serverIp    server where the file is located
+     * @param mod         mod to change
+     * @param sshPort
+     * @param sshUsername
+     */
+    public static void chmod(String file, String serverIp, int mod, String sshPort, String sshUsername) {
+        String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIp + " -t '" +
+                "sudo chmod " + mod + " " + file + "'; echo $?";
+        AppUtils.executeCommand(command);
     }
 
-    public static boolean isValidWebsiteAddress(String website) {
-        return UrlValidator.getInstance().isValid(website);
+    /**
+     * Change mode of a file or directory to specified mod on a remote serverIp
+     *
+     * @param file        file or directory to change
+     * @param serverIp    server where the file is located
+     * @param mod         mode to change
+     * @param sshPort
+     * @param sshUsername
+     */
+    public static void chmodRecursive(String file, String serverIp, int mod, String sshPort, String sshUsername) {
+        String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIp + " -t '" +
+                "sudo chmod " + mod + " " + file + " -r'; echo $?";
+        AppUtils.executeCommand(command);
     }
 
-    public static boolean isValidFbMessenger(String fbMessenger) {
-        if (StringUtils.isEmpty(fbMessenger)) {
-            return false;
+    /**
+     * Create directory on target server
+     *
+     * @param dir         absolute path to directory need to create
+     * @param serverIp    server where to create directory
+     * @param sshPort
+     * @param sshUsername
+     */
+    public static void mkdir(String dir, String serverIp, String sshPort, String sshUsername) {
+        String commandPrefix = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIp + " -t '";
+        String mkdirCmd = "sudo mkdir " + " " + dir + " -p'; echo $?";
+        AppUtils.executeCommand(commandPrefix + mkdirCmd);
+        if (dir.lastIndexOf("/") == dir.length() - 1) {
+            dir = dir.substring(0, dir.length() - 1);
         }
-        return fbMessenger.contains("m.me/");
-    }
-
-    public static boolean isValidYoutube(String youtube) {
-        if (StringUtils.isEmpty(youtube)) {
-            return false;
-        }
-        return youtube.contains("youtube.com");
-    }
-
-    public static boolean checkPasswordByRule(String password) {
-        return password != null && password.length() >= 8 && Pattern.matches("[a-zA-Z]+[0-9]+", password);
-    }
-
-    public static Map<String, String> getQueryParams(String url) {
-        Map<String, String> result = new HashMap<>();
-        try {
-            List<NameValuePair> params = URLEncodedUtils.parse(new URI(url), Charset.forName("UTF-8"));
-
-            for (NameValuePair param : params) {
-                result.put(param.getName(), param.getValue());
-            }
-        } catch (Exception e) {
-            LOGGER.error("queryQueryParams function {}", e);
-        }
-        return result;
+        dir = dir.substring(0, dir.lastIndexOf("/"));
+        String chownCmd = "sudo chown " + sshUsername + ":" + sshUsername + " -R " + dir + "'; echo $?";
+        AppUtils.executeCommand(commandPrefix + chownCmd);
     }
 
     /**
