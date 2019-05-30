@@ -8,4 +8,6 @@ package vn.vccorp.servicemonitoring.logic.service;
 public interface HealthCheckService {
 
     void checkResources();
+
+
 }
