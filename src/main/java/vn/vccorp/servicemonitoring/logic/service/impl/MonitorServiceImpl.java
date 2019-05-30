@@ -21,6 +21,7 @@ import vn.vccorp.servicemonitoring.dto.LogServiceDTO;
 import vn.vccorp.servicemonitoring.dto.ServiceDTO;
 import vn.vccorp.servicemonitoring.entity.Server;
 import vn.vccorp.servicemonitoring.entity.UserService;
+import vn.vccorp.servicemonitoring.enumtype.ApplicationError;
 import vn.vccorp.servicemonitoring.enumtype.Role;
 import vn.vccorp.servicemonitoring.exception.ApplicationException;
 import vn.vccorp.servicemonitoring.logic.repository.ServerRepository;
@@ -411,7 +412,14 @@ public class MonitorServiceImpl implements MonitorService {
         }
         return false;
     }
-
+    
+    @Override
+    public void deleteLog(int id) {
+    	vn.vccorp.servicemonitoring.entity.Service service = serviceRepository.findById(id).orElseThrow(() -> new ApplicationException(messages.get("error.not.found.service")));
+    	String command = "ssh -p " + sshPort + " " + sshUsername + "@" + service.getServer().getIp() + " 'rm " + service.getLogDir() + service.getLogFile() + "; touch " + service.getLogDir() + service.getLogFile() + "'";
+    	AppUtils.executeCommand(command);
+    }
+    
     private boolean syncLogFromRemote(String serverIP, String remoteLog, String localLog, int limit) {
         String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIP + " -t 'tail -n " + limit + " " + remoteLog + " >> " + localLog + "'; echo $?";
         List<String> out = AppUtils.executeCommand(command);
@@ -437,4 +445,5 @@ public class MonitorServiceImpl implements MonitorService {
         //Kieu tra ve la Entity
         return service;
     }
+    
 }

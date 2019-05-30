@@ -69,6 +69,16 @@ public class ServiceController {
         builder.setSuccessObject(true);
         return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
     }
+    
+    @RequestMapping(value = "/delete-log", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @ApiOperation(value = "Delete Log", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public ResponseEntity<Object> deleteLog(@CurrentUser UserPrincipal currentUser, @RequestBody int id) {
+        LOGGER.info("Receive request of user: {}, mail: {}, role: {}", currentUser.getName(), currentUser.getEmail(), currentUser.getAuthorities());
+        monitorService.deleteLog(id);
+        BaseResponse.Builder builder = new BaseResponse.Builder();
+        builder.setSuccessObject(true);
+        return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
+    }
 
 
     @RequestMapping(value = "/deploy", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE

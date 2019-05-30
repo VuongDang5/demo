@@ -20,6 +20,8 @@ public interface MonitorService {
     void startService(int serviceId);
 
     void stopService(int serviceId);
+    
+    void deleteLog(int id);
 
     Page<Service> showAllService(int currentPage, int pageSize);
 
