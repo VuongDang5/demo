@@ -44,7 +44,7 @@ public class CustomPermissionEvaluator implements ICustomPermissionEvaluator {
     }
 
     @Override
-    public boolean forService(List<Role> roles, Integer serviceId) {
+    public boolean forServices(List<Role> roles, Integer serviceId) {
 
         int userId = BeanUtils.getAuthorizedUser().getId();
 

@@ -109,7 +109,7 @@ public class Service {
     private List<UserService> userServices;
 
     @ManyToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "serverId", insertable = false, updatable = false)
+    @JoinColumn(name = "serverId")
     private Server server;
 
     @OneToMany(mappedBy = "service")

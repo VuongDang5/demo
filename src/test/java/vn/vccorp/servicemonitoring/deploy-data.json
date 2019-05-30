@@ -1,5 +1,5 @@
 {
-  "deployCommand": "nohup java -jar target/tdcd-crawler-service.jar > out.log &",
+  "deployCommand": "nohup java -jar tdcd-crawler-service.jar >> out.log &",
   "deployDir": "/home/tuyennta/test/freelance/blogcrawler",
   "description": "string",
   "language": "JAVA",

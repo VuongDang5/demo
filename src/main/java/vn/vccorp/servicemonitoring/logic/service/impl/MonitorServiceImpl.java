@@ -12,23 +12,19 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.support.SimpleJpaRepository;
 import org.springframework.stereotype.Service;
-import vn.vccorp.servicemonitoring.dto.LogServiceDTO;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import vn.vccorp.servicemonitoring.dto.LogServiceDTO;
 import vn.vccorp.servicemonitoring.dto.ServiceDTO;
 import vn.vccorp.servicemonitoring.entity.Server;
-import vn.vccorp.servicemonitoring.dto.ServiceInfoDTO;
 import vn.vccorp.servicemonitoring.entity.UserService;
 import vn.vccorp.servicemonitoring.enumtype.Role;
 import vn.vccorp.servicemonitoring.exception.ApplicationException;
 import vn.vccorp.servicemonitoring.logic.repository.ServerRepository;
 import vn.vccorp.servicemonitoring.logic.repository.ServiceRepository;
-import vn.vccorp.servicemonitoring.logic.repository.ServiceRepositoryCustom;
 import vn.vccorp.servicemonitoring.logic.repository.UserServiceRepository;
 import vn.vccorp.servicemonitoring.logic.service.MonitorService;
 import vn.vccorp.servicemonitoring.message.Messages;
@@ -36,22 +32,14 @@ import vn.vccorp.servicemonitoring.security.CustomPermissionEvaluator;
 import vn.vccorp.servicemonitoring.utils.AppUtils;
 import vn.vccorp.servicemonitoring.utils.BeanUtils;
 
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-import javax.persistence.Query;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Root;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.net.Inet4Address;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -64,6 +52,8 @@ public class MonitorServiceImpl implements MonitorService {
     private String sshPort;
     @Value("${ssh.username}")
     private String sshUsername;
+    @Value("${path.upload}")
+    private String uploadDir;
     @Autowired
     private DozerBeanMapper dozerBeanMapper;
     @Autowired
@@ -76,8 +66,6 @@ public class MonitorServiceImpl implements MonitorService {
     private ServerRepository serverRepository;
     @Autowired
     private ServiceRepository ServiceRepositoryCustom;
-    @PersistenceContext
-    private EntityManager entityManager;
 
     @Transactional
     @Override
@@ -96,7 +84,7 @@ public class MonitorServiceImpl implements MonitorService {
             throw new ApplicationException(messages.get("service.log.not-available", new String[]{logFile.getAbsolutePath(), serviceDTO.getServerIp()}));
         }
         //check if deploy dir is available
-        createDeployFile(serviceDTO, server.getIp());
+        createStartServiceScript(serviceDTO, server.getIp());
 
         vn.vccorp.servicemonitoring.entity.Service service = dozerBeanMapper.map(serviceDTO, vn.vccorp.servicemonitoring.entity.Service.class);
         service.setStartTime(AppUtils.getStartedDateOfProcess(serviceDTO.getServerIp(), sshUsername, sshPort, service.getPid()));
@@ -131,7 +119,7 @@ public class MonitorServiceImpl implements MonitorService {
         }
 
         String startCommand = "ssh -p " + sshPort + " " + sshUsername + "@" + service.getServer().getIp()
-                + " -t 'nohup sh " + service.getDeployDir() + getRunFileName(service.getName()) + " > " + service.getDeployDir() + "pid'";
+                + " -t 'nohup sh " + service.getDeployDir() + getRunFileName(service.getName()) + " &'";
 
         AppUtils.executeCommand(startCommand);
 
@@ -164,7 +152,7 @@ public class MonitorServiceImpl implements MonitorService {
 
     @Transactional
     @Override
-    public void deployService(ServiceDTO serviceDTO, Integer currentUserId, MultipartFile jar, MultipartFile originalJar, MultipartFile dependencies, MultipartFile modelFile, MultipartFile sourceCode, MultipartFile dockerFile) {
+    public void deployService(ServiceDTO serviceDTO, Integer currentUserId, MultipartFile jar, MultipartFile originalJar, MultipartFile dependencies, MultipartFile modelFile, MultipartFile sourceCode, MultipartFile dockerFile) throws IOException {
         //get server info from serverId
         Server server = serverRepository.findById(serviceDTO.getServerId())
                 .orElseThrow(() -> new ApplicationException(messages.get("service.server.not-available", new String[]{String.valueOf(serviceDTO.getServerId())})));
@@ -174,7 +162,7 @@ public class MonitorServiceImpl implements MonitorService {
             vn.vccorp.servicemonitoring.entity.Service oldService = serviceRepository.findById(serviceDTO.getId()).orElseThrow(() -> new ApplicationException(messages.get("service.id.not-found")));
 
             //check permission of current user on the service
-            if (!BeanUtils.getBean(CustomPermissionEvaluator.class).forService(Arrays.asList(Role.ADMIN, Role.OWNER, Role.MAINTAINER), serviceDTO.getId())) {
+            if (!BeanUtils.getBean(CustomPermissionEvaluator.class).forServices(Arrays.asList(Role.ADMIN, Role.OWNER, Role.MAINTAINER), serviceDTO.getId())) {
                 throw new ApplicationException(messages.get("service.user.not-authorize"));
             }
 
@@ -198,13 +186,22 @@ public class MonitorServiceImpl implements MonitorService {
         processUploadFile(server.getIp(), serviceDTO.getDeployDir(), dockerFile, false, true);
 
         //process register service
-        createDeployFile(serviceDTO, server.getIp());
+        createStartServiceScript(serviceDTO, server.getIp());
 
         //save service info
         vn.vccorp.servicemonitoring.entity.Service service = dozerBeanMapper.map(serviceDTO, vn.vccorp.servicemonitoring.entity.Service.class);
         service.setStartTime(LocalDateTime.now().toDate());
         service.setServer(server);
+//        service.set
         serviceRepository.save(service);
+
+//        //save server info
+//        if (server.getServices() == null){
+//            server.setServices(Collections.singletonList(service));
+//        } else {
+//            server.getServices().add(service);
+//        }
+//        serverRepository.save(server);
 
         //save UserService
         List<UserService> userServices = serviceDTO.getMaintainerIds()
@@ -222,7 +219,7 @@ public class MonitorServiceImpl implements MonitorService {
      * @param serviceDTO service info
      * @param serverIp
      */
-    private void createDeployFile(ServiceDTO serviceDTO, String serverIp) {
+    private void createStartServiceScript(ServiceDTO serviceDTO, String serverIp) {
         File deployDir = new File(serviceDTO.getDeployDir());
         if (!isFolderExist(serverIp, deployDir.getAbsolutePath())) {
             throw new ApplicationException(messages.get("service.deploydir.not-available", new String[]{deployDir.getAbsolutePath(), serverIp}));
@@ -231,7 +228,7 @@ public class MonitorServiceImpl implements MonitorService {
             String deployCommand = "#!/bin/bash \n";
             deployCommand += "cd " + serviceDTO.getDeployDir() + " \n";
             deployCommand += serviceDTO.getDeployCommand() + "\n";
-            deployCommand += "echo $!";
+            deployCommand += "echo $! > pid";
             File runFile = new File(getRunFileName(serviceDTO.getName()));
             try {
                 runFile.createNewFile();
@@ -257,27 +254,29 @@ public class MonitorServiceImpl implements MonitorService {
      * @param willExtract       if upload file is a compressed file and need to be extracted then set this parameter to true otherwise false
      * @param willExecute       if upload file is an executable file then set this parameter to true otherwise false
      */
-    private void processUploadFile(String serverIp, String destinationFolder, MultipartFile file, boolean willExtract, boolean willExecute) {
+    private void processUploadFile(String serverIp, String destinationFolder, MultipartFile file, boolean willExtract, boolean willExecute) throws IOException {
         if (file != null) {
-            Path path = Paths.get(destinationFolder + file.getOriginalFilename());
+            File upload = new File(uploadDir);
+            if (!upload.exists()) {
+                upload.mkdirs();
+            }
+            Path path = Paths.get(uploadDir + file.getOriginalFilename());
+            Files.write(path, file.getBytes());
+            //upload file to target server
+            AppUtils.putFile(serverIp, sshUsername, sshPort, path.toString(), destinationFolder);
+            //delete local file to save storage
             try {
-                Files.write(path, file.getBytes());
-                //if we deploy service on a difference server then we must upload file to that server
-                if (!Inet4Address.getLocalHost().getHostAddress().equals(serverIp)) {
-                    AppUtils.putFile(serverIp, sshUsername, sshPort, path.toString(), destinationFolder);
-                    //delete local file to save storage
-                    Files.delete(path);
-                }
-                //if we need to extract this file
-                if (willExtract) {
-                    extract(path.toString(), serverIp);
-                }
-                //if this file is an executable file
-                if (willExecute) {
-                    chmod(path.toString(), serverIp, 777);
-                }
+                Files.delete(path);
             } catch (IOException e) {
-                LOGGER.error("Exception while putting file to target server", e);
+                LOGGER.error("Exception while deleting uploaded file on local", e);
+            }
+            //if we need to extract this file
+            if (willExtract) {
+                extract(destinationFolder + file.getOriginalFilename(), serverIp);
+            }
+            //if this file is an executable file
+            if (willExecute) {
+                chmod(destinationFolder + file.getOriginalFilename(), serverIp, 777);
             }
         }
     }
@@ -307,9 +306,15 @@ public class MonitorServiceImpl implements MonitorService {
      * @param serverIp server where the file is located
      * @param mod      mode to change
      */
-    private void chmod(String file, String serverIp, int mod) {
+    private void chmodRecursive(String file, String serverIp, int mod) {
         String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIp + " -t '" +
                 "sudo chmod " + mod + " " + file + " -r'; echo $?";
+        AppUtils.executeCommand(command);
+    }
+
+    private void chmod(String file, String serverIp, int mod) {
+        String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIp + " -t '" +
+                "sudo chmod " + mod + " " + file + "'; echo $?";
         AppUtils.executeCommand(command);
     }
 
@@ -334,13 +339,6 @@ public class MonitorServiceImpl implements MonitorService {
         }
     }
 
-    /**
-     * Check if a file is exist on remote server or not
-     *
-     * @param serverIP server to check
-     * @param filePath file to check
-     * @return true if file is existed otherwise false
-     */
 
     @Override
     public List<String> getLogService(LogServiceDTO logServiceDTO) {
@@ -351,10 +349,9 @@ public class MonitorServiceImpl implements MonitorService {
             throw new ApplicationException(messages.get("service.log.not-available"));
         }
         String command;
-        if (logServiceDTO.getStart() == 0 && logServiceDTO.getEnd() == 0){
+        if (logServiceDTO.getStart() == 0 && logServiceDTO.getEnd() == 0) {
             command = "ssh -p " + sshPort + " " + sshUsername + "@" + service.getServer().getIp() + " -t 'tail -n 1000 " + logRemoteFile.getAbsolutePath() + "'";
-        }
-        else {
+        } else {
             command = "ssh -p " + sshPort + " " + sshUsername + "@" + service.getServer().getIp()
                     + " -t 'sed -n '" + logServiceDTO.getStart() + "," + logServiceDTO.getEnd() + "p'" + logRemoteFile.getAbsolutePath() + "'";
         }
@@ -366,7 +363,13 @@ public class MonitorServiceImpl implements MonitorService {
         return out;
     }
 
-
+    /**
+     * Check if a file is exist on remote server or not
+     *
+     * @param serverIP server to check
+     * @param filePath file to check
+     * @return true if file is existed otherwise false
+     */
     private boolean isFileExist(String serverIP, String filePath) {
         String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIP + " -t 'test -f " + filePath + "'; echo $?";
         List<String> out = AppUtils.executeCommand(command);
@@ -410,14 +413,14 @@ public class MonitorServiceImpl implements MonitorService {
     }
 
     private boolean syncLogFromRemote(String serverIP, String remoteLog, String localLog, int limit) {
-        String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIP +  " -t 'tail -n " + limit + " " + remoteLog + " >> " + localLog + "'; echo $?";
+        String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIP + " -t 'tail -n " + limit + " " + remoteLog + " >> " + localLog + "'; echo $?";
         List<String> out = AppUtils.executeCommand(command);
         if (!out.isEmpty() && out.get(0).equals("0")) {
             return true;
         }
         return false;
     }
-    
+
     @Override
     public Page<vn.vccorp.servicemonitoring.entity.Service> showAllService(int currentPage, int pageSize) {
         //dung pageable de them currentPage va Pagesize vao Page
