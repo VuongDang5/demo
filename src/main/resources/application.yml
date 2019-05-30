@@ -35,6 +35,7 @@ default:
     gpuLimit: 0
     diskLimit: 0
     reportSchedule: 0 0 12 * * ?
+    healthCheckSchedule: 0 * * ? * *
 
 path:
   upload: ./uploads/

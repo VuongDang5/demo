@@ -5,13 +5,12 @@
 
 package vn.vccorp.servicemonitoring.entity;
 
-import io.swagger.models.auth.In;
 import lombok.Getter;
 import lombok.Setter;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.Size;
+import javax.validation.constraints.NotNull;
 import java.util.Date;
 
 @Getter
@@ -26,38 +25,30 @@ public class Snapshot {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @NotBlank
+    @NotNull
     private Date time;
 
-    @Size(max = 100)
-    private String ramFree;
+    private Float ramFree;
 
-    @Size(max = 100)
-    private String ramUsed;
+    private Float ramUsed;
 
-    @Size(max = 100)
-    private String cpuFree;
+    private Float cpuFree;
 
-    @Size(max = 100)
-    private String cpuUsed;
+    private Float cpuUsed;
 
-    @Size(max = 100)
-    private String gpuFree;
+    private Float gpuFree;
 
-    @Size(max = 100)
-    private String gpuUsed;
+    private Float gpuUsed;
 
-    @Size(max = 100)
-    private String diskFree;
+    private Float diskFree;
 
-    @Size(max = 100)
-    private String diskUsed;
+    private Float diskUsed;
 
     @ManyToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "serverId", insertable = false, updatable = false)
+    @JoinColumn(name = "serverId")
     private Server server;
 
     @ManyToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "serviceId", insertable = false, updatable = false)
+    @JoinColumn(name = "serviceId")
     private Service service;
 }

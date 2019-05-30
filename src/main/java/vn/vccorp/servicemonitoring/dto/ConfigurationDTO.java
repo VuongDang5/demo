@@ -27,6 +27,8 @@ public class ConfigurationDTO {
 
 	private String reportSchedule;
 
+    private String healthCheckSchedule;
+
     private Integer ramLimit;
 
     private Integer cpuLimit;

@@ -20,6 +20,42 @@ public class AppUtils {
     private static final Logger LOGGER = LoggerFactory.getLogger(AppUtils.class);
 
     /**
+     * Get total size of a folder on remote server
+     * @param folder    folder to get size
+     * @param serverIp  server ip address of folder
+     * @param sshPort   ssh port to connect to the server
+     * @param sshUsername   username to connect to server via ssh command
+     * @return  size of folder (Kb)
+     */
+    public static Integer getFolderSize(String folder, String serverIp, String sshPort, String sshUsername){
+        String command = String.format("ssh -p %s %s@%s -t 'sudo du -s %s'", sshPort, sshUsername, serverIp, folder);
+        List<String> out = executeCommand(command);
+        if (out.isEmpty()){
+            return 0;
+        } else {
+            return Integer.parseInt(out.get(0).split("\\s")[0]);
+        }
+    }
+
+    /**
+     * Get size of the disk on remote server which is having folder
+     * @param folder    absolute path to folder on the disk
+     * @param serverIp  server to check disk size
+     * @param sshPort   ssh port to connect to that server
+     * @param sshUsername   ssh user to connect to that server
+     * @return  size of disk (Kb)
+     */
+    public static Integer getDiskSize(String folder, String serverIp, String sshPort, String sshUsername){
+        String command = String.format("ssh -p %s %s@%s -t 'sudo df -h %s --output=size'", sshPort, sshUsername, serverIp, folder);
+        List<String> out = executeCommand(command);
+        if (out.size() <= 1){
+            return 0;
+        } else {
+            return Integer.parseInt(out.get(1).replace("G", "").trim()) * 1024  * 1024;
+        }
+    }
+
+    /**
      * Check if a process is alive on a remote server using pid of process
      *
      * @param serverIP    server to check
@@ -30,7 +66,7 @@ public class AppUtils {
      */
     public static boolean isProcessAlive(String serverIP, String PID, String sshPort, String sshUsername) {
         String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIP + " -t 'ps -p " + PID + " > /dev/null'; echo $?";
-        List<String> out = AppUtils.executeCommand(command);
+        List<String> out = executeCommand(command);
         //if command execute success it will return 0
         if (!out.isEmpty() && out.get(0).equals("0")) {
             return true;
@@ -49,7 +85,7 @@ public class AppUtils {
      */
     public static boolean isFolderExist(String serverIP, String filePath, String sshPort, String sshUsername) {
         String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIP + " -t 'test -d " + filePath + "'; echo $?";
-        List<String> out = AppUtils.executeCommand(command);
+        List<String> out = executeCommand(command);
         if (!out.isEmpty() && out.get(0).equals("0")) {
             return true;
         }
@@ -67,7 +103,7 @@ public class AppUtils {
      */
     public static boolean isFileExist(String serverIP, String filePath, String sshPort, String sshUsername) {
         String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIP + " -t 'test -f " + filePath + "'; echo $?";
-        List<String> out = AppUtils.executeCommand(command);
+        List<String> out = executeCommand(command);
         if (!out.isEmpty() && out.get(0).equals("0")) {
             return true;
         }
@@ -86,7 +122,7 @@ public class AppUtils {
     public static void chmod(String file, String serverIp, int mod, String sshPort, String sshUsername) {
         String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIp + " -t '" +
                 "sudo chmod " + mod + " " + file + "'; echo $?";
-        AppUtils.executeCommand(command);
+        executeCommand(command);
     }
 
     /**
@@ -101,7 +137,7 @@ public class AppUtils {
     public static void chmodRecursive(String file, String serverIp, int mod, String sshPort, String sshUsername) {
         String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIp + " -t '" +
                 "sudo chmod " + mod + " " + file + " -r'; echo $?";
-        AppUtils.executeCommand(command);
+        executeCommand(command);
     }
 
     /**
@@ -115,13 +151,13 @@ public class AppUtils {
     public static void mkdir(String dir, String serverIp, String sshPort, String sshUsername) {
         String commandPrefix = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIp + " -t '";
         String mkdirCmd = "sudo mkdir " + " " + dir + " -p'; echo $?";
-        AppUtils.executeCommand(commandPrefix + mkdirCmd);
+        executeCommand(commandPrefix + mkdirCmd);
         if (dir.lastIndexOf("/") == dir.length() - 1) {
             dir = dir.substring(0, dir.length() - 1);
         }
         dir = dir.substring(0, dir.lastIndexOf("/"));
         String chownCmd = "sudo chown " + sshUsername + ":" + sshUsername + " -R " + dir + "'; echo $?";
-        AppUtils.executeCommand(commandPrefix + chownCmd);
+        executeCommand(commandPrefix + chownCmd);
     }
 
     /**

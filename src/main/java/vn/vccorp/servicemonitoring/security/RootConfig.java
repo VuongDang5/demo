@@ -21,6 +21,8 @@ public class RootConfig {
 	
     private String reportSchedule;
 
+    private String healthCheckSchedule;
+
     private Integer ramLimit;
 
     private Integer cpuLimit;
