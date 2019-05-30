@@ -21,7 +21,6 @@ import vn.vccorp.servicemonitoring.dto.LogServiceDTO;
 import vn.vccorp.servicemonitoring.dto.ServiceDTO;
 import vn.vccorp.servicemonitoring.entity.Server;
 import vn.vccorp.servicemonitoring.entity.UserService;
-import vn.vccorp.servicemonitoring.enumtype.ApplicationError;
 import vn.vccorp.servicemonitoring.enumtype.Role;
 import vn.vccorp.servicemonitoring.exception.ApplicationException;
 import vn.vccorp.servicemonitoring.logic.repository.ServerRepository;
@@ -76,12 +75,12 @@ public class MonitorServiceImpl implements MonitorService {
                 .orElseThrow(() -> new ApplicationException(messages.get("service.server.not-available", new String[]{String.valueOf(serviceDTO.getServerId())})));
 
         //check if service with specified info is correct on the system
-        if (!isProcessAlive(serviceDTO.getServerIp(), serviceDTO.getPid())) {
+        if (!AppUtils.isProcessAlive(serviceDTO.getServerIp(), serviceDTO.getPid(), sshPort, sshUsername)) {
             throw new ApplicationException(messages.get("service.pid.not-available", new String[]{serviceDTO.getPid(), serviceDTO.getServerIp()}));
         }
         //check if log file is available
         File logFile = new File(serviceDTO.getLogDir() + serviceDTO.getLogFile());
-        if (!isFileExist(serviceDTO.getServerIp(), logFile.getAbsolutePath())) {
+        if (!AppUtils.isFileExist(serviceDTO.getServerIp(), logFile.getAbsolutePath(), sshPort, sshUsername)) {
             throw new ApplicationException(messages.get("service.log.not-available", new String[]{logFile.getAbsolutePath(), serviceDTO.getServerIp()}));
         }
         //check if deploy dir is available
@@ -172,10 +171,10 @@ public class MonitorServiceImpl implements MonitorService {
         }
 
         //create deploy dir
-        mkdir(serviceDTO.getDeployDir(), server.getIp());
+        AppUtils.mkdir(serviceDTO.getDeployDir(), server.getIp(), sshPort, sshUsername);
 
         //create log dir
-        mkdir(serviceDTO.getLogDir(), server.getIp());
+        AppUtils.mkdir(serviceDTO.getLogDir(), server.getIp(), sshPort, sshUsername);
 
         //process upload deploy file
         //all upload files will be place in deploy directory of service on remote server where the service will be deployed
@@ -193,16 +192,7 @@ public class MonitorServiceImpl implements MonitorService {
         vn.vccorp.servicemonitoring.entity.Service service = dozerBeanMapper.map(serviceDTO, vn.vccorp.servicemonitoring.entity.Service.class);
         service.setStartTime(LocalDateTime.now().toDate());
         service.setServer(server);
-//        service.set
         serviceRepository.save(service);
-
-//        //save server info
-//        if (server.getServices() == null){
-//            server.setServices(Collections.singletonList(service));
-//        } else {
-//            server.getServices().add(service);
-//        }
-//        serverRepository.save(server);
 
         //save UserService
         List<UserService> userServices = serviceDTO.getMaintainerIds()
@@ -218,11 +208,11 @@ public class MonitorServiceImpl implements MonitorService {
      * Create an executable file to run service
      *
      * @param serviceDTO service info
-     * @param serverIp
+     * @param serverIp   server where to place execute script
      */
     private void createStartServiceScript(ServiceDTO serviceDTO, String serverIp) {
         File deployDir = new File(serviceDTO.getDeployDir());
-        if (!isFolderExist(serverIp, deployDir.getAbsolutePath())) {
+        if (!AppUtils.isFolderExist(serverIp, deployDir.getAbsolutePath(), sshPort, sshUsername)) {
             throw new ApplicationException(messages.get("service.deploydir.not-available", new String[]{deployDir.getAbsolutePath(), serverIp}));
         } else {
             //create a file on deploy dir to run service
@@ -277,47 +267,11 @@ public class MonitorServiceImpl implements MonitorService {
             }
             //if this file is an executable file
             if (willExecute) {
-                chmod(destinationFolder + file.getOriginalFilename(), serverIp, 777);
+                AppUtils.chmod(destinationFolder + file.getOriginalFilename(), serverIp, 777, sshPort, sshUsername);
             }
         }
     }
 
-    /**
-     * Create directory on target server
-     *
-     * @param dir      absolute path to directory need to create
-     * @param serverIp server where to create directory
-     */
-    private void mkdir(String dir, String serverIp) {
-        String commandPrefix = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIp + " -t '";
-        String mkdirCmd = "sudo mkdir " + " " + dir + " -p'; echo $?";
-        AppUtils.executeCommand(commandPrefix + mkdirCmd);
-        if (dir.lastIndexOf("/") == dir.length() - 1) {
-            dir = dir.substring(0, dir.length() - 1);
-        }
-        dir = dir.substring(0, dir.lastIndexOf("/"));
-        String chownCmd = "sudo chown " + sshUsername + ":" + sshUsername + " -R " + dir + "'; echo $?";
-        AppUtils.executeCommand(commandPrefix + chownCmd);
-    }
-
-    /**
-     * Change mode of a file or directory to specified mod on a remote serverIp
-     *
-     * @param file     file or directory to change
-     * @param serverIp server where the file is located
-     * @param mod      mode to change
-     */
-    private void chmodRecursive(String file, String serverIp, int mod) {
-        String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIp + " -t '" +
-                "sudo chmod " + mod + " " + file + " -r'; echo $?";
-        AppUtils.executeCommand(command);
-    }
-
-    private void chmod(String file, String serverIp, int mod) {
-        String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIp + " -t '" +
-                "sudo chmod " + mod + " " + file + "'; echo $?";
-        AppUtils.executeCommand(command);
-    }
 
     /**
      * Extract a compressed file on a remote server
@@ -340,13 +294,12 @@ public class MonitorServiceImpl implements MonitorService {
         }
     }
 
-
     @Override
     public List<String> getLogService(LogServiceDTO logServiceDTO) {
         vn.vccorp.servicemonitoring.entity.Service service = serviceRepository.findById(logServiceDTO.getServiceId()).orElseThrow(() -> new ApplicationException(messages.get("service.id.not-found")));
         //check if log file is available
         File logRemoteFile = new File(service.getLogDir() + service.getLogFile());
-        if (!isFileExist(service.getServer().getIp(), logRemoteFile.getAbsolutePath())) {
+        if (!AppUtils.isFileExist(service.getServer().getIp(), logRemoteFile.getAbsolutePath(), sshPort, sshUsername)) {
             throw new ApplicationException(messages.get("service.log.not-available"));
         }
         String command;
@@ -364,62 +317,14 @@ public class MonitorServiceImpl implements MonitorService {
         return out;
     }
 
-    /**
-     * Check if a file is exist on remote server or not
-     *
-     * @param serverIP server to check
-     * @param filePath file to check
-     * @return true if file is existed otherwise false
-     */
-    private boolean isFileExist(String serverIP, String filePath) {
-        String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIP + " -t 'test -f " + filePath + "'; echo $?";
-        List<String> out = AppUtils.executeCommand(command);
-        if (!out.isEmpty() && out.get(0).equals("0")) {
-            return true;
-        }
-        return false;
-    }
 
-    /**
-     * Check if a folder is existed on a remote server
-     *
-     * @param serverIP server to check
-     * @param filePath folder to check
-     * @return true if folder existed otherwise false
-     */
-    private boolean isFolderExist(String serverIP, String filePath) {
-        String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIP + " -t 'test -d " + filePath + "'; echo $?";
-        List<String> out = AppUtils.executeCommand(command);
-        if (!out.isEmpty() && out.get(0).equals("0")) {
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * Check if a process is alive on a remote server using pid of process
-     *
-     * @param serverIP server to check
-     * @param PID      process id to check
-     * @return true if process is alive otherwise false
-     */
-    private boolean isProcessAlive(String serverIP, String PID) {
-        String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIP + " -t 'ps -p " + PID + " > /dev/null'; echo $?";
-        List<String> out = AppUtils.executeCommand(command);
-        //if command execute success it will return 0
-        if (!out.isEmpty() && out.get(0).equals("0")) {
-            return true;
-        }
-        return false;
-    }
-    
     @Override
     public void deleteLog(int id) {
-    	vn.vccorp.servicemonitoring.entity.Service service = serviceRepository.findById(id).orElseThrow(() -> new ApplicationException(messages.get("error.not.found.service")));
-    	String command = "ssh -p " + sshPort + " " + sshUsername + "@" + service.getServer().getIp() + " 'rm " + service.getLogDir() + service.getLogFile() + "; touch " + service.getLogDir() + service.getLogFile() + "'";
-    	AppUtils.executeCommand(command);
+        vn.vccorp.servicemonitoring.entity.Service service = serviceRepository.findById(id).orElseThrow(() -> new ApplicationException(messages.get("error.not.found.service")));
+        String command = "ssh -p " + sshPort + " " + sshUsername + "@" + service.getServer().getIp() + " 'rm " + service.getLogDir() + service.getLogFile() + "; touch " + service.getLogDir() + service.getLogFile() + "'";
+        AppUtils.executeCommand(command);
     }
-    
+
     private boolean syncLogFromRemote(String serverIP, String remoteLog, String localLog, int limit) {
         String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIP + " -t 'tail -n " + limit + " " + remoteLog + " >> " + localLog + "'; echo $?";
         List<String> out = AppUtils.executeCommand(command);
@@ -445,5 +350,5 @@ public class MonitorServiceImpl implements MonitorService {
         //Kieu tra ve la Entity
         return service;
     }
-    
+
 }

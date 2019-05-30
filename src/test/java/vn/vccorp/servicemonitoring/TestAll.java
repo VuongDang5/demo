@@ -7,6 +7,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import vn.vccorp.servicemonitoring.dto.ServiceDTO;
 import vn.vccorp.servicemonitoring.enumtype.Status;
+import vn.vccorp.servicemonitoring.logic.service.HealthCheckService;
 import vn.vccorp.servicemonitoring.logic.service.MonitorService;
 import vn.vccorp.servicemonitoring.utils.AppUtils;
 import vn.vccorp.servicemonitoring.utils.BeanUtils;
@@ -64,4 +65,8 @@ public class TestAll {
         BeanUtils.getBean(MonitorService.class).stopService(3);
     }
 
+    @Test
+    public void testHealthCheck3(){
+        BeanUtils.getBean(HealthCheckService.class).checkResources();
+    }
 }

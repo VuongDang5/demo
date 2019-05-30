@@ -24,6 +24,9 @@ public class Configuration {
     @Size(max = 100)
     private String reportSchedule;
 
+    @Size(max = 100)
+    private String healthCheckSchedule;
+
     private Integer ramLimit;
 
     private Integer cpuLimit;
