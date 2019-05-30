@@ -135,6 +135,9 @@ public class UserServiceImpl implements UserService {
         if (configurationDTO.getRamLimit()!=null) {
         	config.setRamLimit(configurationDTO.getRamLimit());
         }
+        if (configurationDTO.getHealthCheckSchedule() != null){
+            config.setHealthCheckSchedule(configurationDTO.getHealthCheckSchedule());
+        }
         if (configurationDTO.getReportSchedule()!=null) {
         	if (CronExpression.isValidExpression(configurationDTO.getReportSchedule())) {       	
         		config.setReportSchedule(configurationDTO.getReportSchedule());
