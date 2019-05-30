@@ -42,4 +42,20 @@ public class CustomPermissionEvaluator implements ICustomPermissionEvaluator {
                 .filter(s -> s.getService().getId().equals(serviceId) && s.getRole().equals(role)).collect(Collectors.toList());
         return !serviceManagements.isEmpty();
     }
+
+    @Override
+    public boolean forServices(List<Role> roles, Integer serviceId) {
+
+        int userId = BeanUtils.getAuthorizedUser().getId();
+
+        User user = userRepository.findByIdAndIsDeleted(userId, false).orElseThrow(() -> new ApplicationException(ApplicationError.NOT_FOUND_OR_INVALID_ACCOUNT_ID));
+        //if this user is an ADMIN then this user has all permission
+        if (user.getRole().equals(Role.ADMIN)) {
+            return true;
+        }
+        //otherwise, this user has to owned or maintained this service
+        List<UserService> serviceManagements = user.getServices().parallelStream()
+                .filter(s -> s.getService().getId().equals(serviceId) && roles.contains(s.getRole())).collect(Collectors.toList());
+        return !serviceManagements.isEmpty();
+    }
 }
