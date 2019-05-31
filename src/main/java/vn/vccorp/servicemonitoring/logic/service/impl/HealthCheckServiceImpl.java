@@ -53,7 +53,7 @@ public class HealthCheckServiceImpl implements HealthCheckService {
     @Autowired
     private LogServiceRepository logServiceRepository;
     private int lastUpdateLogMax = 24;
-
+    private String folderLogName = "LogService";
     @Transactional
     @Override
     public void checkLogService() {
@@ -138,14 +138,13 @@ public class HealthCheckServiceImpl implements HealthCheckService {
         return snapshot;
     }
 
-    private LogService checkLog(vn.vccorp.servicemonitoring.entity.Service service)
-    {
+    private LogService checkLog(Service service) {
         //check if log remote file is available
         File logRemoteFile = new File(service.getLogDir() + service.getLogFile());
         if (!AppUtils.isFileExist(service.getServer().getIp(), logRemoteFile.getAbsolutePath(), sshPort, sshUsername)) {
             throw new ApplicationException(messages.get("service.log.not-available"));
         }
-        File localLogDir = new File(service.getName());
+        File localLogDir = new File(folderLogName + File.separator + service.getName());
         File logFile = new File(localLogDir.getAbsolutePath() + File.separator + service.getLogFile());
 
         //Create new LogService if it = null
@@ -165,7 +164,6 @@ public class HealthCheckServiceImpl implements HealthCheckService {
                         .logSize(0.0f)
                         .build()
         );
-        logServiceRepository.save(logService);
 
         //
         int errCount = 0;
@@ -189,8 +187,7 @@ public class HealthCheckServiceImpl implements HealthCheckService {
                 }
 
                 if (!logFile.exists()) {
-                    msg = "Log file not found: " + logFile.getAbsolutePath() + ". Service: " + service.getName();
-                    return logService;
+                    throw new ApplicationException(messages.get("Log file not found: " + logFile.getAbsolutePath() + ". Service: " + service.getName()));
                 }
             }
             catch (IOException e){
@@ -204,7 +201,7 @@ public class HealthCheckServiceImpl implements HealthCheckService {
             if (newLine == -1) {
                 throw new ApplicationException(messages.get("service.check-log.error"));
             }
-            long lastLine = logService.getCheckedLine();
+            long lastLine = Files.lines(logFile.toPath()).count();
 
             //Service don't have new log
             if (newLine == lastLine) {
@@ -263,9 +260,11 @@ public class HealthCheckServiceImpl implements HealthCheckService {
             logService.setErrorMsg(String.join("\r\n", lassErr));
             logService.setUpdatedDate(LocalDateTime.now());
             logService.setLastLoggingDate(LocalDateTime.now());
+            //save log service
+            logServiceRepository.save(logService);
         }
         catch (IOException e){
-
+            throw new ApplicationException(messages.get("service.check-log.error"));
         }
 
         return logService;

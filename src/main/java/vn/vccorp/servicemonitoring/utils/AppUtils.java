@@ -121,7 +121,7 @@ public class AppUtils {
      * @return true if sync success
      */
     public static boolean syncLogFromRemote(String serverIP, String remoteLog, String localLog, int limit, String sshPort, String sshUsername) {
-        String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIP + " -t 'tail -n " + limit + " " + remoteLog + " >> " + localLog + "'; echo $?";
+        String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIP + " -t 'tail -n " + limit + " " + remoteLog + "' >> " + localLog + "; echo $?";
         List<String> out = AppUtils.executeCommand(command);
         if (!out.isEmpty() && out.get(0).equals("0")) {
             return true;

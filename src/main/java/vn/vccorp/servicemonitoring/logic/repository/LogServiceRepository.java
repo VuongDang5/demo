@@ -7,7 +7,7 @@ import vn.vccorp.servicemonitoring.entity.LogService;
 import java.util.Optional;
 
 public interface LogServiceRepository extends ServiceRepositoryCustom, JpaRepository<LogService, Integer> {
-    @Query(value = "select * from LogService where serviceId = ?1", nativeQuery = true)
+
     Optional<LogService> findByServiceId(int serviceId);
 
 }
