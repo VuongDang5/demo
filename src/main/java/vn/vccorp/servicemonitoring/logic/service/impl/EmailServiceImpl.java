@@ -1,5 +1,6 @@
 package vn.vccorp.servicemonitoring.logic.service.impl;
 
+import com.google.common.collect.ImmutableMap;
 import freemarker.template.Configuration;
 import org.apache.commons.validator.routines.EmailValidator;
 import org.slf4j.Logger;
@@ -11,7 +12,9 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import vn.vccorp.servicemonitoring.config.EmailConfig;
 import vn.vccorp.servicemonitoring.config.GMailAuthenticator;
+import vn.vccorp.servicemonitoring.dto.ServiceErrorDTO;
 import vn.vccorp.servicemonitoring.logic.service.EmailService;
+import vn.vccorp.servicemonitoring.message.Messages;
 
 import javax.mail.*;
 import javax.mail.internet.*;
@@ -30,10 +33,22 @@ public class EmailServiceImpl implements EmailService {
 
     @Autowired
     private Configuration freemarkerConfiguration;
+    @Autowired
+    private Messages messages;
 
     @Override
     public String createBodyEmailFromTemplate(Map<String, Object> model, String emailTemplateName) {
         return geFreeMarkerTemplateContent(model, emailTemplateName);
+    }
+
+    @Override
+    public void sendServiceReachLimitWarning(ServiceErrorDTO serviceErrorDTO, List<String> recipients) {
+        String body = createBodyEmailFromTemplate(ImmutableMap.of("service", serviceErrorDTO), "healthcheck-service-error-template.ftl");
+        try {
+            sendEmail(recipients, null, null, messages.get("service.warning.limit-reach"), body, null);
+        } catch (Exception e) {
+            LOGGER.error("Exception while sending warning message");
+        }
     }
 
     @Override
