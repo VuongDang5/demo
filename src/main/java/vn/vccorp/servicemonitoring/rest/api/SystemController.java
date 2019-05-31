@@ -5,6 +5,7 @@ import io.swagger.annotations.ApiOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -130,9 +131,11 @@ public class SystemController {
     @RequestMapping(value = "list-all-user", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ApiOperation(value = "List all user and relevant information", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @AdminAuthorize
-    public ResponseEntity<List<ListDTO>> listAllUser(@CurrentUser UserPrincipal currentUser) {
+    public ResponseEntity<Object> listAllUser(@CurrentUser UserPrincipal currentUser, @RequestParam int currentPage, @RequestParam int pageSize) {
         LOGGER.info("Receive request of user: {}, mail: {}, role: {}", currentUser.getName(), currentUser.getEmail(), currentUser.getAuthorities());
-        return RestResponseBuilder.buildSuccessCollectionResponse(userService.listAllUser());
+        BaseResponse.Builder builder = new BaseResponse.Builder();
+        builder.setSuccessObject(userService.listAllUser(currentPage, pageSize));
+        return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
     }
 
     @RequestMapping(value = "/test", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)

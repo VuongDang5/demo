@@ -17,13 +17,13 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface UserRepository extends JpaRepository<User, Integer>, CustomUserdataRepository {
+public interface UserRepository extends JpaRepository<User, Integer>, UserRepositoryCustom {
     Optional<User> findByUsernameOrEmailAndIsDeleted(String username, String email, boolean isDeleted);
 
     List<User> findAllByRoleAndIsDeleted(Role role, boolean isDeleted);
     List<User> findAllByRole(Role role);
-    @Query(nativeQuery = true)
-    List<ListDTO> getAllOwnerOrMaintainerDetail();
+/*    @Query(nativeQuery = true)
+    List<ListDTO> getAllOwnerOrMaintainerDetail();*/
     Optional<User> findByIdAndIsDeleted(int id, boolean isDeleted);
 }
 

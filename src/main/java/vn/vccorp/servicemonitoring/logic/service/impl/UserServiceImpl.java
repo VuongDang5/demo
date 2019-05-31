@@ -9,6 +9,10 @@ import org.dozer.DozerBeanMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import vn.vccorp.servicemonitoring.dto.ListDTO;
@@ -32,6 +36,7 @@ import vn.vccorp.servicemonitoring.utils.BeanUtils;
 
 import org.quartz.CronExpression;
 
+import javax.management.Query;
 import java.util.List;
 
 @Service
@@ -122,11 +127,6 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
     }
 
-    @Override
-    public List<ListDTO> listAllUser() {
-        return userRepository.getAllOwnerOrMaintainerDetail();
-    }
-
     public void updateConfig(ConfigurationDTO configurationDTO) {
         Configuration config = configurationRepository.getOne(1);
         if (configurationDTO.getCpuLimit()!=null) {
@@ -153,5 +153,12 @@ public class UserServiceImpl implements UserService {
         	}
         }
         configurationRepository.save(config);
+    }
+
+    @Override
+    public Page<ListDTO> listAllUser(int currentPage, int pageSize) {
+
+        Pageable pageNumber = PageRequest.of(currentPage, pageSize);
+        return userRepository.getAllUser(pageNumber);
     }
 }

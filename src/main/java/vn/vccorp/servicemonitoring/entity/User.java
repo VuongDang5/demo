@@ -7,6 +7,7 @@ package vn.vccorp.servicemonitoring.entity;
 
 import lombok.*;
 import vn.vccorp.servicemonitoring.dto.ListDTO;
+import vn.vccorp.servicemonitoring.dto.UserServiceDTO;
 import vn.vccorp.servicemonitoring.enumtype.Role;
 
 import javax.persistence.*;
@@ -24,38 +25,38 @@ import java.util.List;
         name="userDetailsMapping",
         classes = {
                 @ConstructorResult(
-                        targetClass = ListDTO.class,
+                        targetClass = UserServiceDTO.class,
                         columns = {
                                 @ColumnResult(name = "name"),
                                 @ColumnResult(name = "username"),
                                 @ColumnResult(name = "email"),
                                 @ColumnResult(name = "phone"),
-                                @ColumnResult(name = "serviceName"),
-                                @ColumnResult(name = "pid"),
-                                @ColumnResult(name = "role"),
-                                @ColumnResult(name = "serviceDescription"),
-                                @ColumnResult(name = "serviceStatus"),
-                                @ColumnResult(name = "serverName"),
-                                @ColumnResult(name = "ip"),
-                                @ColumnResult(name = "groups"),
-                                @ColumnResult(name = "serverDescription"),
-                                @ColumnResult(name = "serverStatus")
+                                @ColumnResult(name = "services"),
+                                @ColumnResult(name = "servers")
                         }
                 )
         }
 )
-@NamedNativeQuery(name = "User.getAllOwnerOrMaintainerDetail",
-        query = "SELECT u.name, u.username, u.email, u.phone, " +
-        "service.name AS serviceName, service.pid, user_service.role, service.description AS serviceDescription, service.status AS serviceStatus, " +
-        "server.name AS serverName, server.ip, user_server.groups, server.description AS serverDescription, server.status AS serverStatus " +
-        "FROM user u " +
-        "JOIN user_service ON u.id = user_service.user_id " +
-        "JOIN service ON service.id = user_service.service_id " +
-        "JOIN user_server ON (u.id = user_server.user_id AND service.server_id = user_server.server_id) " +
-        "JOIN server ON server.id = user_server.server_id " +
-        "WHERE user_service.role = 'OWNER' " +
-        "OR user_service.role = 'MAINTAINER' ",
-resultSetMapping = "userDetailsMapping")
+/*@NamedNativeQuery(name = "User.getAllOwnerOrMaintainerDetail",
+        query = "SELECT u.name, u.username, u.email, u.phone, u.id, " +
+                "GROUP_CONCAT( " +
+                "CONCAT_WS(',', IFNULL(service.name, 'null'), IFNULL(service.pid, 'null'), IFNULL(user_service.role, 'null'), IFNULL(service.description, 'null'), IFNULL(service.status, 'null')) " +
+                "ORDER BY service.pid " +
+                "SEPARATOR ';' " +
+                ") AS serviceInfo, " +
+                "GROUP_CONCAT( " +
+                "CONCAT_WS(',', IFNULL(server.name, 'null'), IFNULL(server.ip, 'null'), IFNULL(user_server.groups, 'null'), IFNULL(server.description, 'null'), IFNULL(server.status, 'null')) " +
+                "ORDER BY server.ip " +
+                "SEPARATOR ';' " +
+                ") AS serverInfo " +
+                "FROM user u " +
+                "JOIN user_service ON u.id = user_service.user_id " +
+                "JOIN service ON service.id = user_service.service_id " +
+                "JOIN user_server ON (u.id = user_server.user_id AND service.server_id = user_server.server_id) " +
+                "JOIN server ON server.id = user_server.server_id " +
+                "WHERE user_service.role = 'OWNER' " +
+                "OR user_service.role = 'MAINTAINER' ",
+resultSetMapping = "userDetailsMapping")*/
 @Entity
 @Table(
         uniqueConstraints = {

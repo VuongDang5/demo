@@ -5,6 +5,7 @@
 
 package vn.vccorp.servicemonitoring.logic.service;
 
+import org.springframework.data.domain.Page;
 import vn.vccorp.servicemonitoring.dto.ListDTO;
 import vn.vccorp.servicemonitoring.dto.UserDTO;
 import vn.vccorp.servicemonitoring.entity.User;
@@ -28,5 +29,5 @@ public interface UserService {
     
     void updateConfig(ConfigurationDTO configurationDTO);
     
-    List<ListDTO> listAllUser();
+    Page<ListDTO> listAllUser(int currentPage, int pageSize);
 }
