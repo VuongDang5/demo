@@ -364,7 +364,7 @@ public class MonitorServiceImpl implements MonitorService {
     
     @Override
     public void changeRoleServiceOwner(int userId, int serviceId, Role role) {
-    	List<UserService> user = userServiceRepository.findAllByRole(Role.OWNER);
+    	List<UserService> user = userServiceRepository.findAllByRoleAndServiceId(Role.OWNER, serviceId);
     	//Check Unique Owner
         if(user.size() == 1 && user.get(0).getUser().getId() == userId && role == Role.MAINTAINER) {
             throw new ApplicationException(messages.get("error.user.change.owner"));

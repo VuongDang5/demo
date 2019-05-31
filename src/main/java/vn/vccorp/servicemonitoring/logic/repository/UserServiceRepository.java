@@ -13,7 +13,7 @@ import vn.vccorp.servicemonitoring.enumtype.Role;
 
 public interface UserServiceRepository extends JpaRepository<UserService, UserService.ServiceManagementKey> {
 	UserService findByUserIdAndServiceId(int userId, int serviceId);
-
-	List<UserService> findAllByRole(Role owner);
+	
+	List<UserService> findAllByRoleAndServiceId(Role owner, int serviceId);
 
 }
