@@ -20,7 +20,9 @@ import org.springframework.web.multipart.MultipartFile;
 import vn.vccorp.servicemonitoring.dto.LogServiceDTO;
 import vn.vccorp.servicemonitoring.dto.ServiceDTO;
 import vn.vccorp.servicemonitoring.entity.Server;
+import vn.vccorp.servicemonitoring.entity.User;
 import vn.vccorp.servicemonitoring.entity.UserService;
+import vn.vccorp.servicemonitoring.enumtype.ApplicationError;
 import vn.vccorp.servicemonitoring.enumtype.Role;
 import vn.vccorp.servicemonitoring.exception.ApplicationException;
 import vn.vccorp.servicemonitoring.logic.repository.ServerRepository;
@@ -349,6 +351,41 @@ public class MonitorServiceImpl implements MonitorService {
         vn.vccorp.servicemonitoring.entity.Service service = ServiceRepositoryCustom.showService(serviceId);
         //Kieu tra ve la Entity
         return service;
+    }
+    
+    @Override
+    public Page<UserService> showServiceOwners(int currentPage, int pageSize, Integer serviceId) {
+        //dung pageable de them currentPage va Pagesize vao Page
+        Pageable pageNumber = PageRequest.of(currentPage, pageSize);
+        Page<UserService> results = ServiceRepositoryCustom.showServiceOwners(pageNumber, serviceId);
+        //kieu tra ve Pagination
+        return results;
+    }
+    
+    @Override
+    public void changeRoleServiceOwner(int userId, int serviceId, Role role) {
+    	List<UserService> user = userServiceRepository.findAllByRole(Role.OWNER);
+    	//Check Unique Owner
+        if(user.size() == 1 && user.get(0).getUser().getId() == userId && role == Role.MAINTAINER) {
+            throw new ApplicationException(messages.get("error.user.change.owner"));
+        }
+        try {
+        	UserService userService = userServiceRepository.findByUserIdAndServiceId(userId, serviceId);
+        	userService.setRole(role);
+        	userServiceRepository.save(userService);
+        } catch (Exception e) {
+        	throw new ApplicationException(messages.get("error.not.valid.user.or.service"));
+        }
+    	
+    }
+    
+    @Override
+    public void addServiceOwner(int userId, int serviceId, Role role) {
+        if (userServiceRepository.findByUserIdAndServiceId(userId, serviceId) != null) {
+        	throw new ApplicationException(messages.get("error.user.already.exist"));
+        }
+    	UserService userService = new UserService(userId, serviceId, role);
+    	userServiceRepository.save(userService);
     }
 
 }

@@ -21,7 +21,7 @@ import static java.lang.annotation.ElementType.TYPE;
 @Inherited
 @PreAuthorize("hasAnyAuthority(T(vn.vccorp.servicemonitoring.enumtype.Role).ADMIN, " +
         "T(vn.vccorp.servicemonitoring.enumtype.Role).OWNER) " +
-        "&& @CustomPermissionEvaluator.forService(Role.OWNER, #serviceId)")
+        "&& @CustomPermissionEvaluator.forService(T(vn.vccorp.servicemonitoring.enumtype.Role).OWNER, #serviceId)")
 public @interface OwnerAuthorize {
     String serviceId();
 }

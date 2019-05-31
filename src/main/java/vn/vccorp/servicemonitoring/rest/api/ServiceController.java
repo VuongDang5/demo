@@ -15,12 +15,15 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import vn.vccorp.servicemonitoring.dto.LogServiceDTO;
 import vn.vccorp.servicemonitoring.dto.ServiceDTO;
+import vn.vccorp.servicemonitoring.enumtype.Role;
 import vn.vccorp.servicemonitoring.logic.service.MonitorService;
 import vn.vccorp.servicemonitoring.message.Messages;
 import vn.vccorp.servicemonitoring.rest.response.BaseResponse;
 import vn.vccorp.servicemonitoring.rest.response.RestResponseBuilder;
+import vn.vccorp.servicemonitoring.security.AdminAuthorize;
 import vn.vccorp.servicemonitoring.security.CurrentUser;
 import vn.vccorp.servicemonitoring.security.MaintainerAuthorize;
+import vn.vccorp.servicemonitoring.security.OwnerAuthorize;
 import vn.vccorp.servicemonitoring.security.UserAuthorize;
 import vn.vccorp.servicemonitoring.security.UserPrincipal;
 import vn.vccorp.servicemonitoring.utils.AppConstants;
@@ -134,6 +137,37 @@ public class ServiceController {
         monitorService.showService(serviceId);
         BaseResponse.Builder builder = new BaseResponse.Builder();
         builder.setSuccessObject(monitorService.showService(serviceId));
+        return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
+    }
+    
+    @RequestMapping(value = "/show-service-owners/{serviceId}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @ApiOperation(value = "Show service owners", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @OwnerAuthorize(serviceId = "#serviceId")
+    public ResponseEntity<Object> showServiceOwner(@CurrentUser UserPrincipal currentUser,@RequestParam int currentPage, @RequestParam int pageSize, 
+    		@PathVariable Integer serviceId) {
+        monitorService.showServiceOwners(currentPage, pageSize,serviceId);
+        BaseResponse.Builder builder = new BaseResponse.Builder();
+        builder.setSuccessObject(monitorService.showServiceOwners(currentPage, pageSize, serviceId));
+        return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
+    }
+    
+    @RequestMapping(value = "/change-service-owner-role/{serviceId}/{userId}", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @ApiOperation(value = "Change service owner role", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @OwnerAuthorize(serviceId = "#serviceId")
+    public ResponseEntity<Object> changeRoleServiceOwner(@CurrentUser UserPrincipal currentUser, @PathVariable int serviceId, @PathVariable int userId, @RequestBody String role) {
+        monitorService.changeRoleServiceOwner(userId, serviceId, Role.valueOf(role));
+        BaseResponse.Builder builder = new BaseResponse.Builder();
+        builder.setSuccessObject(true);
+        return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
+    }
+    
+    @RequestMapping(value = "/add-service-owner/{serviceId}/{userId}", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @ApiOperation(value = "add service owner", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @OwnerAuthorize(serviceId = "#serviceId")
+    public ResponseEntity<Object> addServiceOwner(@CurrentUser UserPrincipal currentUser, @PathVariable int serviceId, @PathVariable int userId, @RequestBody String role) {
+        monitorService.addServiceOwner(userId, serviceId, Role.valueOf(role));
+        BaseResponse.Builder builder = new BaseResponse.Builder();
+        builder.setSuccessObject(true);
         return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
     }
 

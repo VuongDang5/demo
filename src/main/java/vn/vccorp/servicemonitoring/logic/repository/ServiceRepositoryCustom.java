@@ -10,6 +10,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import vn.vccorp.servicemonitoring.entity.Service;
+import vn.vccorp.servicemonitoring.entity.UserService;
 
 import java.util.List;
 
@@ -17,4 +18,7 @@ public interface ServiceRepositoryCustom {
     PageImpl<Service> showAllService(Pageable firstPageWithFourElements);
 
     Service showService(int serviceId);
+    
+    PageImpl<UserService> showServiceOwners(Pageable firstPageWithFourElements, Integer serviceId);
+    
 }
