@@ -10,8 +10,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.transaction.annotation.Transactional;
 import vn.vccorp.servicemonitoring.dto.ServiceErrorDTO;
 import vn.vccorp.servicemonitoring.entity.IssueTracking;
@@ -20,10 +18,7 @@ import vn.vccorp.servicemonitoring.entity.Snapshot;
 import vn.vccorp.servicemonitoring.entity.User;
 import vn.vccorp.servicemonitoring.enumtype.IssueType;
 import vn.vccorp.servicemonitoring.enumtype.Role;
-import vn.vccorp.servicemonitoring.logic.repository.IssueTrackingRepository;
-import vn.vccorp.servicemonitoring.logic.repository.ServiceRepository;
-import vn.vccorp.servicemonitoring.logic.repository.SnapshotRepository;
-import vn.vccorp.servicemonitoring.logic.repository.UserRepository;
+import vn.vccorp.servicemonitoring.logic.repository.*;
 import vn.vccorp.servicemonitoring.logic.service.EmailService;
 import vn.vccorp.servicemonitoring.logic.service.HealthCheckService;
 import vn.vccorp.servicemonitoring.message.Messages;
@@ -55,59 +50,54 @@ public class HealthCheckServiceImpl implements HealthCheckService {
 
     @Transactional
     @Override
-    public void checkResources() {
-        Page<Service> services;
-        do {
-            //get all services
-            services = serviceRepository.findAll(PageRequest.of(0, 10));
+    public void checkResources(Service service) {
 
-            //loop through all services and check one by one
-            for (Service service : services.getContent()) {
-                //get cpu,ram usage
-                Snapshot snapshot = getCpuAndMemUsage(service.getPid(), service.getServer().getIp());
-                snapshot.setService(service);
+        //get cpu,ram usage
+        Snapshot snapshot = getCpuAndMemUsage(service.getPid(), service.getServer().getIp());
+        snapshot.setService(service);
 
-                //get disk usage
-                snapshot.setDiskUsed(getDiskUsage(service.getDeployDir(), service.getLogDir(), service.getServer().getIp()));
+        //get disk usage
+        snapshot.setDiskUsed(getDiskUsage(service.getDeployDir(), service.getLogDir(), service.getServer().getIp()));
 
-                //save snapshot
-                snapshotRepository.save(snapshot);
+        //save snapshot
+        snapshotRepository.save(snapshot);
 
-                //check if limit threshold is over
-                checkLimitResource(service, snapshot);
-            }
-        } while (services.hasNext());
+        //check if limit threshold is over
+        checkLimitResource(service, snapshot);
+
     }
 
     /**
      * Check if service is consumed more resources than it's limit
-     * @param service   service to check
-     * @param snapshot  current snapshot of service to compare
+     *
+     * @param service  service to check
+     * @param snapshot current snapshot of service to compare
      */
     private void checkLimitResource(Service service, Snapshot snapshot) {
         if (service.getRamLimit() != null && service.getRamLimit() > 0 && service.getRamLimit() <= snapshot.getRamUsed()) {
             String detailMessage = String.format("Your service has bean reached RAM limited. Current percent of RAM used: %s, limit: %s", snapshot.getRamUsed(), service.getRamLimit());
-            addingIssueTrackingAndSendReport(service, detailMessage);
+            addingIssueTrackingAndSendReport(service, detailMessage, IssueType.WARNING);
         }
         if (service.getCpuLimit() != null && service.getCpuLimit() > 0 && service.getCpuLimit() <= snapshot.getCpuUsed()) {
             String detailMessage = String.format("Your service has bean reached CPU limited. Current percent of CPU used: %s, limit: %s", snapshot.getCpuUsed(), service.getCpuLimit());
-            addingIssueTrackingAndSendReport(service, detailMessage);
+            addingIssueTrackingAndSendReport(service, detailMessage, IssueType.WARNING);
         }
         if (service.getDiskLimit() != null && service.getDiskLimit() > 0 && service.getDiskLimit() >= snapshot.getDiskUsed()) {
             String detailMessage = String.format("Your service has bean reached disk limited. Current percent of disk used: %s, limit: %s", snapshot.getDiskUsed(), service.getDiskLimit());
-            addingIssueTrackingAndSendReport(service, detailMessage);
+            addingIssueTrackingAndSendReport(service, detailMessage, IssueType.WARNING);
         }
     }
 
     /**
      * Adding a new issue_tracking to db and send warning report with specific detail message
-     * @param service   service that got warning
+     *  @param service       service that got warning
      * @param detailMessage detail message of warning
+     * @param issueType
      */
-    private void addingIssueTrackingAndSendReport(Service service, String detailMessage) {
+    private void addingIssueTrackingAndSendReport(Service service, String detailMessage, IssueType issueType) {
         //create a new record for issue_tracking
         IssueTracking issueTracking = new IssueTracking();
-        issueTracking.setIssueType(IssueType.WARNING);
+        issueTracking.setIssueType(issueType);
         issueTracking.setDetail(detailMessage);
         issueTracking.setService(service);
         issueTracking.setTrackingTime(LocalDateTime.now().toDate());
@@ -119,7 +109,7 @@ public class HealthCheckServiceImpl implements HealthCheckService {
                 .deployedServer(service.getServer().getIp())
                 .detail(detailMessage)
                 .linkOnTool("will be updated")
-                .problem(IssueType.WARNING.name())
+                .problem(issueType.name())
                 .status(service.getStatus().name())
                 .build();
 
@@ -171,5 +161,12 @@ public class HealthCheckServiceImpl implements HealthCheckService {
             snapshot.setRamUsed(Float.valueOf(cpuAndMem[1]));
         }
         return snapshot;
+    }
+
+    public void healthCheck1(Service service) {
+        if (!AppUtils.isProcessAlive(service.getServer().getIp(), service.getPid(), sshPort, sshUsername)) {
+            String detailMessage = "Your service has died";
+            addingIssueTrackingAndSendReport(service, detailMessage, IssueType.ERROR);
+        }
     }
 }
