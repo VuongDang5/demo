@@ -39,3 +39,14 @@ default:
 
 path:
   upload: ./uploads/
+
+smtp:
+  host: smtp.gmail.com
+  port: 587
+  user: notify.adtech@gmail.com
+  password: Cuong123456789
+  authentication: true
+  sender:
+    email: notify.adtech@gmail.com
+  cc:
+    email: tuyennguyenthanhanh@admicro.vn

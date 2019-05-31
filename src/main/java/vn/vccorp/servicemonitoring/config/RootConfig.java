@@ -3,7 +3,7 @@
  * Created on: 10/05/2019 22:16
  */
 
-package vn.vccorp.servicemonitoring.security;
+package vn.vccorp.servicemonitoring.config;
 
 import lombok.Getter;
 import lombok.Setter;
