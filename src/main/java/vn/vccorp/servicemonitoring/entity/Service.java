@@ -7,6 +7,7 @@ package vn.vccorp.servicemonitoring.entity;
 
 import lombok.Getter;
 import lombok.Setter;
+import vn.vccorp.servicemonitoring.enumtype.Language;
 import vn.vccorp.servicemonitoring.enumtype.Status;
 
 import javax.persistence.*;
@@ -22,7 +23,6 @@ import java.util.List;
 @Table(
         indexes = {
                 @Index(columnList = "name"),
-                @Index(columnList = "serverId"),
                 @Index(columnList = "serverPort"),
                 @Index(columnList = "project"),
                 @Index(columnList = "pid"),
@@ -30,7 +30,10 @@ import java.util.List;
         },
         uniqueConstraints = {
                 @UniqueConstraint(columnNames = {
-                        "pid", "name"
+                        "pid"
+                }),
+                @UniqueConstraint(columnNames = {
+                        "name"
                 })
         })
 public class Service {
@@ -47,16 +50,11 @@ public class Service {
     @Size(max = 1000)
     private String description;
 
-    @NotBlank
-    @Size(max = 15)
-    private String serverId;
-
     @Size(max = 10)
     private String serverPort;
 
-    @NotBlank
     @Size(max = 10)
-    private String PID;
+    private String pid;
 
     @NotBlank
     @Size(max = 200)
@@ -74,18 +72,8 @@ public class Service {
     @Size(max = 100)
     private String logFile;
 
-    @NotBlank
-    @Size(max = 15)
-    private String language;
-
-    @Size(max = 100)
-    private String mainJar;
-
-    @Size(max = 100)
-    private String originalJar;
-
-    @Size(max = 100)
-    private String dependencies;
+    @Enumerated(EnumType.STRING)
+    private Language language;
 
     @NotBlank
     @Size(max = 1000)
@@ -122,6 +110,10 @@ public class Service {
 
     @OneToMany(mappedBy = "service")
     private List<UserService> userServices;
+
+    @ManyToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "serverId")
+    private Server server;
 
     @OneToMany(mappedBy = "service")
     private List<Snapshot> snapshots;

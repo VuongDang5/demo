@@ -1,4 +1,4 @@
-src/main/resources/application-local.yaml
+src/main/resources/application-local.yml
 .idea/
 target/
 *.iml
@@ -9,3 +9,4 @@ classes/
 node_modules/
 log/
 logImg/
+/bin/

@@ -26,3 +26,4 @@ public interface UserRepository extends JpaRepository<User, Integer>, CustomUser
     List<ListDTO> getAllOwnerOrMaintainerDetail();
     Optional<User> findByIdAndIsDeleted(int id, boolean isDeleted);
 }
+
