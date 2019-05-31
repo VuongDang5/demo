@@ -102,6 +102,6 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<ListDTO> listAllUser() {
-        return userRepository.findAllUser();
+        return userRepository.getAllOwnerOrMaintainerDetail();
     }
 }
