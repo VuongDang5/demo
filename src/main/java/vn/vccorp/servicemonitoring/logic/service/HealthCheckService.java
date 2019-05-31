@@ -9,5 +9,6 @@ public interface HealthCheckService {
 
     void checkResources();
 
+    void checkLogService();
 
 }

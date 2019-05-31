@@ -136,5 +136,4 @@ public class ServiceController {
         builder.setSuccessObject(monitorService.showService(serviceId));
         return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
     }
-
 }

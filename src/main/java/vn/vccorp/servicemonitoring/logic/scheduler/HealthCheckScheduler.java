@@ -31,7 +31,7 @@ public class HealthCheckScheduler implements SchedulingConfigurer {
         //TODO add health check 1 here
 
         //TODO add health check 2 here
-
+        healthCheckService.checkLogService();
         //health check 3: checking for usage resources
         healthCheckService.checkResources();
     }

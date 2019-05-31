@@ -23,6 +23,7 @@ import vn.vccorp.servicemonitoring.entity.Server;
 import vn.vccorp.servicemonitoring.entity.UserService;
 import vn.vccorp.servicemonitoring.enumtype.Role;
 import vn.vccorp.servicemonitoring.exception.ApplicationException;
+import vn.vccorp.servicemonitoring.logic.repository.LogServiceRepository;
 import vn.vccorp.servicemonitoring.logic.repository.ServerRepository;
 import vn.vccorp.servicemonitoring.logic.repository.ServiceRepository;
 import vn.vccorp.servicemonitoring.logic.repository.UserServiceRepository;
@@ -32,6 +33,8 @@ import vn.vccorp.servicemonitoring.security.CustomPermissionEvaluator;
 import vn.vccorp.servicemonitoring.utils.AppUtils;
 import vn.vccorp.servicemonitoring.utils.BeanUtils;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -42,7 +45,6 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-
 
 @Service
 public class MonitorServiceImpl implements MonitorService {
@@ -66,6 +68,9 @@ public class MonitorServiceImpl implements MonitorService {
     private ServerRepository serverRepository;
     @Autowired
     private ServiceRepository ServiceRepositoryCustom;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @Transactional
     @Override
@@ -303,9 +308,17 @@ public class MonitorServiceImpl implements MonitorService {
             throw new ApplicationException(messages.get("service.log.not-available"));
         }
         String command;
-        if (logServiceDTO.getStart() == 0 && logServiceDTO.getEnd() == 0) {
-            command = "ssh -p " + sshPort + " " + sshUsername + "@" + service.getServer().getIp() + " -t 'tail -n 1000 " + logRemoteFile.getAbsolutePath() + "'";
-        } else {
+        if (logServiceDTO.getEnd() == -1) {
+            int limit = 1000;
+            if (logServiceDTO.getStart() != 0) {
+                limit = (int)AppUtils.getLastLine(service.getServer().getIp(), logRemoteFile.getAbsolutePath(), sshPort, sshUsername) - logServiceDTO.getStart();
+                if (limit == -1) {
+                    throw new ApplicationException(messages.get("service.log.error"));
+                }
+            }
+            command = "ssh -p " + sshPort + " " + sshUsername + "@" + service.getServer().getIp() + " -t 'tail -n "+ limit +" " + logRemoteFile.getAbsolutePath() + "'";
+        }
+        else {
             command = "ssh -p " + sshPort + " " + sshUsername + "@" + service.getServer().getIp()
                     + " -t 'sed -n '" + logServiceDTO.getStart() + "," + logServiceDTO.getEnd() + "p'" + logRemoteFile.getAbsolutePath() + "'";
         }
@@ -317,21 +330,11 @@ public class MonitorServiceImpl implements MonitorService {
         return out;
     }
 
-
     @Override
     public void deleteLog(int id) {
         vn.vccorp.servicemonitoring.entity.Service service = serviceRepository.findById(id).orElseThrow(() -> new ApplicationException(messages.get("error.not.found.service")));
         String command = "ssh -p " + sshPort + " " + sshUsername + "@" + service.getServer().getIp() + " 'rm " + service.getLogDir() + service.getLogFile() + "; touch " + service.getLogDir() + service.getLogFile() + "'";
         AppUtils.executeCommand(command);
-    }
-
-    private boolean syncLogFromRemote(String serverIP, String remoteLog, String localLog, int limit) {
-        String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIP + " -t 'tail -n " + limit + " " + remoteLog + " >> " + localLog + "'; echo $?";
-        List<String> out = AppUtils.executeCommand(command);
-        if (!out.isEmpty() && out.get(0).equals("0")) {
-            return true;
-        }
-        return false;
     }
 
     @Override
@@ -350,5 +353,4 @@ public class MonitorServiceImpl implements MonitorService {
         //Kieu tra ve la Entity
         return service;
     }
-
 }
