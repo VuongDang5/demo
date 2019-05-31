@@ -11,6 +11,8 @@ import vn.vccorp.servicemonitoring.entity.User;
 import vn.vccorp.servicemonitoring.dto.ConfigurationDTO;
 import vn.vccorp.servicemonitoring.enumtype.Role;
 
+import java.util.List;
+
 public interface UserService {
     void addAccount(UserDTO userDTO);
 
@@ -26,5 +28,5 @@ public interface UserService {
     
     void updateConfig(ConfigurationDTO configurationDTO);
     
-List<ListDTO> listAllUser();
+    List<ListDTO> listAllUser();
 }
