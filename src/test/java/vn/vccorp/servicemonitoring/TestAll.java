@@ -71,7 +71,7 @@ public class TestAll {
 
     @Test
     public void testHealthCheck3(){
-        BeanUtils.getBean(HealthCheckService.class).checkResources();
+        BeanUtils.getBean(HealthCheckService.class).checkResources(null);
     }
 
     @Test
