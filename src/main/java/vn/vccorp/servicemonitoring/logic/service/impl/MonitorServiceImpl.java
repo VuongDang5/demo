@@ -351,4 +351,28 @@ public class MonitorServiceImpl implements MonitorService {
         return service;
     }
 
+    @Override
+    public void editService(int serviceId, ServiceDTO serviceDTO) {
+        vn.vccorp.servicemonitoring.entity.Service service = serviceRepository.findById(serviceId).orElseThrow(() -> new ApplicationException(messages.get("error.not.found.service")));
+            if (serviceDTO.getName() != null) {
+                service.setName(serviceDTO.getName());
+            }
+            if (serviceDTO.getDescription() != null) {
+                service.setDescription(serviceDTO.getDescription());
+            }
+            if (serviceDTO.getRamLimit() != null) {
+                service.setRamLimit(serviceDTO.getRamLimit());
+            }
+            if (serviceDTO.getCpuLimit() != null) {
+                service.setCpuLimit(serviceDTO.getCpuLimit());
+            }
+            if (serviceDTO.getGpuLimit() != null) {
+                service.setGpuLimit(serviceDTO.getGpuLimit());
+            }
+            if (serviceDTO.getDiskLimit() != null) {
+                service.setDiskLimit(serviceDTO.getDiskLimit());
+            }
+        serviceRepository.save(service);
+    }
+
 }

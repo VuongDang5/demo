@@ -36,4 +36,7 @@ public interface MonitorService {
                        MultipartFile modelFile,
                        MultipartFile sourceCode,
                        MultipartFile dockerFile) throws IOException;
+
+    void editService(int serviceId, ServiceDTO serviceDTO);
+
 }
