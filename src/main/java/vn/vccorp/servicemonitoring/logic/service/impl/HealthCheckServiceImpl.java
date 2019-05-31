@@ -183,16 +183,10 @@ public class HealthCheckServiceImpl implements HealthCheckService {
                     logFile.createNewFile();
                 }
 
-                //sync log from that host to current host
-                int newLine = (int)AppUtils.getLastLine(service.getServer().getIp(), logRemoteFile.getAbsolutePath(), sshPort, sshUsername);
-                if (!AppUtils.syncLogFromRemote(service.getServer().getIp(), logRemoteFile.getAbsolutePath(), logFile.getAbsolutePath(), newLine, sshPort, sshUsername)) {
+                //sync logs had been checked
+                if (!AppUtils.syncLogFromRemote(service.getServer().getIp(), logRemoteFile.getAbsolutePath(), logFile.getAbsolutePath(), (int)logService.getCheckedLine(), sshPort, sshUsername)) {
                     throw new ApplicationException(messages.get("service.log.sync.error"));
                 }
-
-                //save last check
-                logService.setCheckedLine(newLine);
-                logService.setUpdatedDate(LocalDateTime.now());
-                logService.setLastLoggingDate(LocalDateTime.now());
 
                 if (!logFile.exists()) {
                     msg = "Log file not found: " + logFile.getAbsolutePath() + ". Service: " + service.getName();
@@ -210,7 +204,7 @@ public class HealthCheckServiceImpl implements HealthCheckService {
             if (newLine == -1) {
                 throw new ApplicationException(messages.get("service.check-log.error"));
             }
-            long lastLine = Files.lines(logFile.toPath()).count();
+            long lastLine = logService.getCheckedLine();
 
             //Service don't have new log
             if (newLine == lastLine) {
