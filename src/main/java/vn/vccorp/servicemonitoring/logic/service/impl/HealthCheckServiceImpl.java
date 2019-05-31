@@ -10,12 +10,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.transaction.annotation.Transactional;
+import vn.vccorp.servicemonitoring.dto.ServiceErrorDTO;
+import vn.vccorp.servicemonitoring.entity.IssueTracking;
 import vn.vccorp.servicemonitoring.entity.LogService;
 import vn.vccorp.servicemonitoring.entity.Service;
 import vn.vccorp.servicemonitoring.entity.Snapshot;
+import vn.vccorp.servicemonitoring.entity.User;
+import vn.vccorp.servicemonitoring.enumtype.IssueType;
+import vn.vccorp.servicemonitoring.enumtype.Role;
+import vn.vccorp.servicemonitoring.logic.repository.*;
+import vn.vccorp.servicemonitoring.logic.service.EmailService;
 import vn.vccorp.servicemonitoring.exception.ApplicationException;
 import vn.vccorp.servicemonitoring.logic.repository.LogServiceRepository;
 import vn.vccorp.servicemonitoring.logic.repository.ServiceRepository;
@@ -51,50 +56,97 @@ public class HealthCheckServiceImpl implements HealthCheckService {
     @Autowired
     private Messages messages;
     @Autowired
+
     private LogServiceRepository logServiceRepository;
     private int lastUpdateLogMax = 24;
     private String folderLogName = "LogService";
+    private EmailService emailService;
+    @Autowired
+    private UserRepository userRepository;
+    @Autowired
+    private IssueTrackingRepository issueTrackingRepository;
+
     @Transactional
     @Override
-    public void checkLogService() {
-        Page<Service> services;
-        do {
-            //get all services
-            services = serviceRepository.findAll(PageRequest.of(0, 10));
-
-            //loop through all services and check one by one
-            for (Service service : services.getContent()) {
-                //check log all services
-                LogService logService = checkLog(service);
-                //save log service
-                logServiceRepository.save(logService);
-            }
-        } while (services.hasNext());
+    public void checkLogService(Service service) {
+        //check log services
+        LogService logService = checkLog(service);
+        //save log service
+        logServiceRepository.save(logService);
     }
 
     @Transactional
     @Override
-    public void checkResources() {
-        Page<Service> services;
-        do {
-            //get all services
-            services = serviceRepository.findAll(PageRequest.of(0, 10));
+    public void checkResources(Service service) {
 
-            //loop through all services and check one by one
-            for (Service service : services.getContent()) {
-                //get cpu,ram usage
-                Snapshot snapshot = getCpuAndMemUsage(service.getPid(), service.getServer().getIp());
-                snapshot.setService(service);
+        //get cpu,ram usage
+        Snapshot snapshot = getCpuAndMemUsage(service.getPid(), service.getServer().getIp());
+        snapshot.setService(service);
 
-                //get disk usage
-                snapshot.setDiskUsed(getDiskUsage(service.getDeployDir(), service.getLogDir(), service.getServer().getIp()));
+        //get disk usage
+        snapshot.setDiskUsed(getDiskUsage(service.getDeployDir(), service.getLogDir(), service.getServer().getIp()));
 
-                //save snapshot
-                snapshotRepository.save(snapshot);
+        //save snapshot
+        snapshotRepository.save(snapshot);
 
-                //check if limit threshold is over
-            }
-        } while (services.hasNext());
+        //check if limit threshold is over
+        checkLimitResource(service, snapshot);
+
+    }
+
+    /**
+     * Check if service is consumed more resources than it's limit
+     *
+     * @param service  service to check
+     * @param snapshot current snapshot of service to compare
+     */
+    private void checkLimitResource(Service service, Snapshot snapshot) {
+        if (service.getRamLimit() != null && service.getRamLimit() > 0 && service.getRamLimit() <= snapshot.getRamUsed()) {
+            String detailMessage = String.format("Your service has bean reached RAM limited. Current percent of RAM used: %s, limit: %s", snapshot.getRamUsed(), service.getRamLimit());
+            addingIssueTrackingAndSendReport(service, detailMessage, IssueType.WARNING);
+        }
+        if (service.getCpuLimit() != null && service.getCpuLimit() > 0 && service.getCpuLimit() <= snapshot.getCpuUsed()) {
+            String detailMessage = String.format("Your service has bean reached CPU limited. Current percent of CPU used: %s, limit: %s", snapshot.getCpuUsed(), service.getCpuLimit());
+            addingIssueTrackingAndSendReport(service, detailMessage, IssueType.WARNING);
+        }
+        if (service.getDiskLimit() != null && service.getDiskLimit() > 0 && service.getDiskLimit() >= snapshot.getDiskUsed()) {
+            String detailMessage = String.format("Your service has bean reached disk limited. Current percent of disk used: %s, limit: %s", snapshot.getDiskUsed(), service.getDiskLimit());
+            addingIssueTrackingAndSendReport(service, detailMessage, IssueType.WARNING);
+        }
+    }
+
+    /**
+     * Adding a new issue_tracking to db and send warning report with specific detail message
+     *  @param service       service that got warning
+     * @param detailMessage detail message of warning
+     * @param issueType
+     */
+    private void addingIssueTrackingAndSendReport(Service service, String detailMessage, IssueType issueType) {
+        //create a new record for issue_tracking
+        IssueTracking issueTracking = new IssueTracking();
+        issueTracking.setIssueType(issueType);
+        issueTracking.setDetail(detailMessage);
+        issueTracking.setService(service);
+        issueTracking.setTrackingTime(LocalDateTime.now().toDate());
+        issueTrackingRepository.save(issueTracking);
+
+        //build error object to send warning email
+        ServiceErrorDTO errorDTO = ServiceErrorDTO.builder()
+                .serviceName(service.getName())
+                .deployedServer(service.getServer().getIp())
+                .detail(detailMessage)
+                .linkOnTool("will be updated")
+                .problem(issueType.name())
+                .status(service.getStatus().name())
+                .build();
+
+        //build recipients from owner, maintainers and admins
+        List<String> recipients = service.getUserServices().parallelStream().map(u -> u.getUser().getEmail()).collect(Collectors.toList());
+        recipients.addAll(userRepository.findAllByRole(Role.ADMIN).parallelStream().map(User::getEmail).collect(Collectors.toList()));
+        recipients = recipients.parallelStream().distinct().collect(Collectors.toList());
+
+        //send email
+        emailService.sendServiceReachLimitWarning(errorDTO, recipients);
     }
 
     /**
@@ -170,7 +222,6 @@ public class HealthCheckServiceImpl implements HealthCheckService {
         List<String> lassErr = new ArrayList<>();
         boolean isBeginErr = false;
 
-        String msg = "Service is still logging normally";
         if (!logFile.exists()) {
             try {
                 //create a folder for saving local log which is mapped to remote log
@@ -205,10 +256,11 @@ public class HealthCheckServiceImpl implements HealthCheckService {
 
             //Service don't have new log
             if (newLine == lastLine) {
-                msg = "Service don't have new log: " + logService.getLastLoggingDate();
                 // send notify if service not write any thing after 24h
                 if (logService.getLastLoggingDate().plusHours(lastUpdateLogMax).isBefore(LocalDateTime.now())) {
-                    sendNotify(logService, " is running without writing any log since: " + logService.getLastLoggingDate());
+                    //
+                    String detailMessage = String.format("Service don't have new log: " + logService.getLastLoggingDate());
+                    addingIssueTrackingAndSendReport(service, detailMessage, IssueType.WARNING);
                 }
                 logService.setUpdatedDate(LocalDateTime.now());
                 return logService;
@@ -248,10 +300,9 @@ public class HealthCheckServiceImpl implements HealthCheckService {
                 logService.setConsecutiveErrCount(0);
             } else { //if error
                 logService.setConsecutiveErrCount(logService.getConsecutiveErrCount() + 1);
-                //Create a issue tracking
-
-                //send notify cuz service have error
-                sendNotify(logService, " is running with " + logService.getConsecutiveErrCount() + " consecutive errors since last checks.");
+                //
+                String detailMessage = String.format(" is running with " + logService.getConsecutiveErrCount() + " consecutive errors since last checks.");
+                addingIssueTrackingAndSendReport(service, detailMessage, IssueType.ERROR);
             }
 
             //save last check
@@ -270,21 +321,23 @@ public class HealthCheckServiceImpl implements HealthCheckService {
         return logService;
     }
 
-    //Send notify
-    private void sendNotify(LogService logService, String title){
-
-    }
-
     //read tail file
     private List<String> fileTail(final Path source, final int limit) throws IOException {
         final String[] data = new String[limit];
         AtomicInteger counter = new AtomicInteger(0);
 
         try (Stream<String> stream = Files.lines(source)) {
-            stream.forEach(line ->  data[counter.getAndIncrement() % limit] = line);
+            stream.forEach(line -> data[counter.getAndIncrement() % limit] = line);
             return IntStream.range(counter.get() < limit ? 0 : counter.get() - limit, counter.get())
                     .mapToObj(index -> data[index % limit])
                     .collect(Collectors.toList());
+        }
+    }
+
+    public void healthCheck1(Service service) {
+        if (!AppUtils.isProcessAlive(service.getServer().getIp(), service.getPid(), sshPort, sshUsername)) {
+            String detailMessage = "Your service has died";
+            addingIssueTrackingAndSendReport(service, detailMessage, IssueType.ERROR);
         }
     }
 }

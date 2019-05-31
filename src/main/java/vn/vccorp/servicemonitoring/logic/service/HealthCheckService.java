@@ -5,10 +5,14 @@
 
 package vn.vccorp.servicemonitoring.logic.service;
 
+import vn.vccorp.servicemonitoring.entity.Service;
+
 public interface HealthCheckService {
 
-    void checkResources();
+    void checkResources(Service service);
 
-    void checkLogService();
+    void healthCheck1(Service service);
+    
+    void checkLogService(Service service);
 
 }
