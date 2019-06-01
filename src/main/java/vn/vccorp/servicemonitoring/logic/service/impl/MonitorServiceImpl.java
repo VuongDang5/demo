@@ -354,38 +354,23 @@ public class MonitorServiceImpl implements MonitorService {
     }
     
     @Override
-    public Page<UserService> showServiceOwners(int currentPage, int pageSize, Integer serviceId) {
-        //dung pageable de them currentPage va Pagesize vao Page
-        Pageable pageNumber = PageRequest.of(currentPage, pageSize);
-        Page<UserService> results = ServiceRepositoryCustom.showServiceOwners(pageNumber, serviceId);
-        //kieu tra ve Pagination
-        return results;
-    }
-    
-    @Override
-    public void changeRoleServiceOwner(int userId, int serviceId, Role role) {
-    	List<UserService> user = userServiceRepository.findAllByRoleAndServiceId(Role.OWNER, serviceId);
-    	//Check Unique Owner
-        if(user.size() == 1 && user.get(0).getUser().getId() == userId && role == Role.MAINTAINER) {
-            throw new ApplicationException(messages.get("error.user.change.owner"));
-        }
-        try {
-        	UserService userService = userServiceRepository.findByUserIdAndServiceId(userId, serviceId);
-        	userService.setRole(role);
-        	userServiceRepository.save(userService);
-        } catch (Exception e) {
-        	throw new ApplicationException(messages.get("error.not.valid.user.or.service"));
-        }
-    	
-    }
-    
-    @Override
     public void addServiceOwner(int userId, int serviceId, Role role) {
-        if (userServiceRepository.findByUserIdAndServiceId(userId, serviceId) != null) {
-        	throw new ApplicationException(messages.get("error.user.already.exist"));
+    	if (userServiceRepository.findByUserIdAndServiceId(userId, serviceId) != null) {
+    		// update role
+    		List<UserService> user = userServiceRepository.findAllByRoleAndServiceId(Role.OWNER, serviceId);
+        	//Check Unique Owner
+            if(user.size() == 1 && user.get(0).getUser().getId() == userId && role == Role.MAINTAINER) {
+                throw new ApplicationException(messages.get("error.cannot.change.owner"));
+            } else {
+            	UserService userService = userServiceRepository.findByUserIdAndServiceId(userId, serviceId);
+            	userService.setRole(role);
+            	userServiceRepository.save(userService);
+            }
+        } else {
+        	// add role
+        	UserService userService = new UserService(userId, serviceId, role);
+        	userServiceRepository.save(userService);
         }
-    	UserService userService = new UserService(userId, serviceId, role);
-    	userServiceRepository.save(userService);
     }
 
 }

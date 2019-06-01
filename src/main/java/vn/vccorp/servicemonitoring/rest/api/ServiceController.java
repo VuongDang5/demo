@@ -140,27 +140,6 @@ public class ServiceController {
         return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
     }
     
-    @RequestMapping(value = "/show-service-owners/{serviceId}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    @ApiOperation(value = "Show service owners", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    @OwnerAuthorize(serviceId = "#serviceId")
-    public ResponseEntity<Object> showServiceOwner(@CurrentUser UserPrincipal currentUser,@RequestParam int currentPage, @RequestParam int pageSize, 
-    		@PathVariable Integer serviceId) {
-        monitorService.showServiceOwners(currentPage, pageSize,serviceId);
-        BaseResponse.Builder builder = new BaseResponse.Builder();
-        builder.setSuccessObject(monitorService.showServiceOwners(currentPage, pageSize, serviceId));
-        return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
-    }
-    
-    @RequestMapping(value = "/change-service-owner-role/{serviceId}/{userId}", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    @ApiOperation(value = "Change service owner role", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    @OwnerAuthorize(serviceId = "#serviceId")
-    public ResponseEntity<Object> changeRoleServiceOwner(@CurrentUser UserPrincipal currentUser, @PathVariable int serviceId, @PathVariable int userId, @RequestBody String role) {
-        monitorService.changeRoleServiceOwner(userId, serviceId, Role.valueOf(role));
-        BaseResponse.Builder builder = new BaseResponse.Builder();
-        builder.setSuccessObject(true);
-        return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
-    }
-    
     @RequestMapping(value = "/add-service-owner/{serviceId}/{userId}", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ApiOperation(value = "add service owner", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @OwnerAuthorize(serviceId = "#serviceId")

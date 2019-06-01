@@ -18,7 +18,5 @@ public interface ServiceRepositoryCustom {
     PageImpl<Service> showAllService(Pageable firstPageWithFourElements);
 
     Service showService(int serviceId);
-    
-    PageImpl<UserService> showServiceOwners(Pageable firstPageWithFourElements, Integer serviceId);
-    
+
 }

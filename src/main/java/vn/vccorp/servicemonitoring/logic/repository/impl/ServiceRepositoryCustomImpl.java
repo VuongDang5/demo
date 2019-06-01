@@ -56,23 +56,5 @@ public class ServiceRepositoryCustomImpl implements ServiceRepositoryCustom {
         //Ket qua tra ve la Entity
         return service;
     }
-    
-    @Override
-    public PageImpl<UserService> showServiceOwners(Pageable page, Integer serviceId) {
-        //Query hien thi cac thong tin can thiet cua service
-        String queryStr = "SELECT u.email, u.username, u.name, u.phone, us.role " +
-                "FROM User u " +
-                //Ghep cac table lai voi nhau. Neu thanh phan trong table co dau gach duoi thi thay bang dau cham
-                "JOIN UserService us ON u.id = us.user.id " +
-                "WHERE us.service.id = " + serviceId.toString();
-        Query query = entityManager.createQuery(queryStr)
-                //Sets the offset position in the result set to start pagination
-                .setFirstResult(page.getPageSize() * (page.getPageNumber() - 1))
-                //Sets the maximum number of entities that should be included in the page
-                .setMaxResults(page.getPageSize());
-        List<UserService> resultList = query.getResultList();
-        //Ket qua tra ve la PageImpl
-        return new PageImpl<>(resultList, page, page.getPageSize());
-    }
 
 }

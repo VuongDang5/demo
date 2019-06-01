@@ -10,7 +10,6 @@ import org.springframework.web.multipart.MultipartFile;
 import vn.vccorp.servicemonitoring.dto.LogServiceDTO;
 import vn.vccorp.servicemonitoring.dto.ServiceDTO;
 import vn.vccorp.servicemonitoring.entity.Service;
-import vn.vccorp.servicemonitoring.entity.UserService;
 import vn.vccorp.servicemonitoring.enumtype.Role;
 
 import java.io.IOException;
@@ -28,10 +27,6 @@ public interface MonitorService {
     Page<Service> showAllService(int currentPage, int pageSize);
 
     Service showService(int serviceId);
-    
-    Page<UserService> showServiceOwners(int currentPage, int pageSize, Integer serviceId);
-    
-    void changeRoleServiceOwner(int userId,int serviceId, Role role);
     
     void addServiceOwner(int userId,int serviceId, Role role);
 
