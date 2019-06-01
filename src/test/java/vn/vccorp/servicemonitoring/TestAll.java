@@ -1,17 +1,21 @@
 package vn.vccorp.servicemonitoring;
 
+import com.google.common.collect.ImmutableMap;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import vn.vccorp.servicemonitoring.dto.ServiceDTO;
+import vn.vccorp.servicemonitoring.dto.ServiceErrorDTO;
 import vn.vccorp.servicemonitoring.enumtype.Status;
+import vn.vccorp.servicemonitoring.logic.service.EmailService;
 import vn.vccorp.servicemonitoring.logic.service.HealthCheckService;
 import vn.vccorp.servicemonitoring.logic.service.MonitorService;
 import vn.vccorp.servicemonitoring.utils.AppUtils;
 import vn.vccorp.servicemonitoring.utils.BeanUtils;
 
+import java.util.Arrays;
 import java.util.Collections;
 
 /**
@@ -67,6 +71,25 @@ public class TestAll {
 
     @Test
     public void testHealthCheck3(){
-        BeanUtils.getBean(HealthCheckService.class).checkResources();
+        BeanUtils.getBean(HealthCheckService.class).checkResources(null);
+    }
+
+    @Test
+    public void testSendServiceErrorReport(){
+        ServiceErrorDTO errorDTO = ServiceErrorDTO.builder()
+                .serviceName("test")
+                .deployedServer("localhost")
+                .detail("test")
+                .linkOnTool("link")
+                .problem("pro")
+                .status("active")
+                .build();
+        EmailService emailService = BeanUtils.getBean(EmailService.class);
+        String body = emailService.createBodyEmailFromTemplate(ImmutableMap.of("service", errorDTO), "healthcheck-service-error-template.ftl");
+        try {
+            emailService.sendEmail(Arrays.asList("anhtuyenpro94@gmail.com"), null, null, "test", body, null);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

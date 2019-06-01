@@ -137,4 +137,23 @@ public class ServiceController {
         return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
     }
 
+    @RequestMapping(value = "/edit-service/{serviceId}", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @ApiOperation(value = "Edit Information Service", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @MaintainerAuthorize(serviceId = "#serviceId")
+    public ResponseEntity<Object> editService(@CurrentUser UserPrincipal currentUser, @PathVariable int serviceId, @RequestBody ServiceDTO serviceDTO) {
+        LOGGER.info("Receive request to edit a service with id: " + serviceId);
+        monitorService.editService(serviceId, serviceDTO);
+        BaseResponse.Builder builder = new BaseResponse.Builder();
+        //builder.setSuccessObject(true);
+        try {
+            monitorService.editService(serviceId, serviceDTO);
+            builder.setSuccessObject(true);
+        } catch (Exception e) {
+            LOGGER.error("Exception while edit service", e);
+            builder.setFailObject(e);
+            builder.setErrorMessage(messages.get("service.edit.fail"));
+        }
+        return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
+    }
+
 }
