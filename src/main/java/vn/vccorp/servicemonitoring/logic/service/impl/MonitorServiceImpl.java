@@ -23,7 +23,6 @@ import vn.vccorp.servicemonitoring.entity.Server;
 import vn.vccorp.servicemonitoring.entity.UserService;
 import vn.vccorp.servicemonitoring.enumtype.Role;
 import vn.vccorp.servicemonitoring.exception.ApplicationException;
-import vn.vccorp.servicemonitoring.logic.repository.LogServiceRepository;
 import vn.vccorp.servicemonitoring.logic.repository.ServerRepository;
 import vn.vccorp.servicemonitoring.logic.repository.ServiceRepository;
 import vn.vccorp.servicemonitoring.logic.repository.UserServiceRepository;
@@ -33,8 +32,6 @@ import vn.vccorp.servicemonitoring.security.CustomPermissionEvaluator;
 import vn.vccorp.servicemonitoring.utils.AppUtils;
 import vn.vccorp.servicemonitoring.utils.BeanUtils;
 
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -68,9 +65,6 @@ public class MonitorServiceImpl implements MonitorService {
     private ServerRepository serverRepository;
     @Autowired
     private ServiceRepository ServiceRepositoryCustom;
-
-    @PersistenceContext
-    private EntityManager entityManager;
 
     @Transactional
     @Override

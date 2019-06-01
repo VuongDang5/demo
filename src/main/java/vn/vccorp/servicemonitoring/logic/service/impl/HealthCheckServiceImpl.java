@@ -32,6 +32,7 @@ import vn.vccorp.servicemonitoring.utils.AppUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.Inet4Address;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -56,10 +57,11 @@ public class HealthCheckServiceImpl implements HealthCheckService {
     @Autowired
     private Messages messages;
     @Autowired
-
     private LogServiceRepository logServiceRepository;
-    private int lastUpdateLogMax = 24;
-    private String folderLogName = "LogService";
+    @Value("${service.last-update-log.max}")
+    private int lastUpdateLogMax;
+    @Value("${service.log-folder.name}")
+    private String folderLogName;
     private EmailService emailService;
     @Autowired
     private UserRepository userRepository;
@@ -191,14 +193,7 @@ public class HealthCheckServiceImpl implements HealthCheckService {
     }
 
     private LogService checkLog(Service service) {
-        //check if log remote file is available
-        File logRemoteFile = new File(service.getLogDir() + service.getLogFile());
-        if (!AppUtils.isFileExist(service.getServer().getIp(), logRemoteFile.getAbsolutePath(), sshPort, sshUsername)) {
-            throw new ApplicationException(messages.get("service.log.not-available"));
-        }
-        File localLogDir = new File(folderLogName + File.separator + service.getName());
-        File logFile = new File(localLogDir.getAbsolutePath() + File.separator + service.getLogFile());
-
+        File logFile = new File(service.getLogDir() + service.getLogFile());
         //Create new LogService if it = null
         LogService logService = logServiceRepository.findByServiceId(service.getId()).orElse(
                 LogService.builder()
@@ -208,7 +203,6 @@ public class HealthCheckServiceImpl implements HealthCheckService {
                         .createdDate(LocalDateTime.now())
                         .lastLoggingDate(LocalDateTime.now())
                         .checkedLine(0)
-                        .logDir(localLogDir.getAbsolutePath())
                         .logFile(service.getLogFile())
                         .consecutiveErrCount(0)
                         .errorPerHourCount(0)
@@ -217,67 +211,92 @@ public class HealthCheckServiceImpl implements HealthCheckService {
                         .build()
         );
 
+        //check if service run other service
+        try {
+            //check logfile is exist
+            if (!AppUtils.isFileExist(service.getServer().getIp(), logFile.getAbsolutePath(), sshPort, sshUsername)) {
+                throw new ApplicationException(messages.get("service.log.not-available"));
+            }
+            logService.setLogDir(service.getLogDir());
+
+            if (!Inet4Address.getLocalHost().getHostAddress().equals(service.getServer().getIp())) {
+                File logRemoteFile = new File(service.getLogDir() + service.getLogFile());
+                File localLogDir = new File(folderLogName + File.separator + service.getName());
+                //create new logfile on current server
+                logFile = new File(localLogDir.getAbsolutePath() + File.separator + service.getLogFile());
+                logService.setLogDir(localLogDir.getAbsolutePath());
+
+                if (!logFile.exists()) {
+                    //create a folder for saving local log which is mapped to remote log
+                    if (!logFile.getParentFile().exists()) {
+                        logFile.getParentFile().mkdirs();
+                    }
+                    if (!logFile.exists()) {
+                        logFile.createNewFile();
+                    }
+
+                    //sync logs had been checked
+                    if (!AppUtils.syncLogFromRemote(service.getServer().getIp(), logRemoteFile.getAbsolutePath(), logFile.getAbsolutePath(), (int) logService.getCheckedLine(), sshPort, sshUsername)) {
+                        throw new ApplicationException(messages.get("service.log.sync.error"));
+                    }
+
+                    if (!logFile.exists()) {
+                        throw new ApplicationException(messages.get("Log file not found: " + logFile.getAbsolutePath() + ". Service: " + service.getName()));
+                    }
+                }
+
+                //sync log
+                long newLine = AppUtils.getLastLine(service.getServer().getIp(), logRemoteFile.getAbsolutePath(), sshPort, sshUsername);
+                if (newLine == -1) {
+                    throw new ApplicationException(messages.get("service.check-log.error"));
+                }
+                long lastLine = Files.lines(logFile.toPath()).count();
+
+                //log remote is deleted
+                if (newLine < lastLine) {
+                    //delete file and sync
+                    org.apache.commons.io.FileUtils.write(logFile, "");
+                    lastLine = 0;
+                }
+
+                //sync log
+                int limit = Math.toIntExact(newLine - lastLine);
+                if (!AppUtils.syncLogFromRemote(service.getServer().getIp(), logRemoteFile.getAbsolutePath(), logFile.getAbsolutePath(), limit, sshPort, sshUsername)) {
+                    throw new ApplicationException(messages.get("service.log.sync.error"));
+                }
+            }
+        }
+        catch (IOException e) {
+            throw new ApplicationException(messages.get("service.server.ip.not-available"));
+        }
+
         //
         int errCount = 0;
         List<String> lassErr = new ArrayList<>();
         boolean isBeginErr = false;
 
-        if (!logFile.exists()) {
-            try {
-                //create a folder for saving local log which is mapped to remote log
-                if (!logFile.getParentFile().exists()) {
-                    logFile.getParentFile().mkdirs();
-                }
-                if (!logFile.exists()) {
-                    logFile.createNewFile();
-                }
-
-                //sync logs had been checked
-                if (!AppUtils.syncLogFromRemote(service.getServer().getIp(), logRemoteFile.getAbsolutePath(), logFile.getAbsolutePath(), (int)logService.getCheckedLine(), sshPort, sshUsername)) {
-                    throw new ApplicationException(messages.get("service.log.sync.error"));
-                }
-
-                if (!logFile.exists()) {
-                    throw new ApplicationException(messages.get("Log file not found: " + logFile.getAbsolutePath() + ". Service: " + service.getName()));
-                }
-            }
-            catch (IOException e){
-                throw new ApplicationException(messages.get("service.log.not-available"));
-            }
-        }
-
-        //
+        //check log file service
         try {
-            long newLine = AppUtils.getLastLine(service.getServer().getIp(), logRemoteFile.getAbsolutePath(), sshPort, sshUsername);
-            if (newLine == -1) {
-                throw new ApplicationException(messages.get("service.check-log.error"));
-            }
-            long lastLine = Files.lines(logFile.toPath()).count();
+            long newLine = Files.lines(logFile.toPath()).count();
+            long lastLine = logService.getCheckedLine();
 
             //Service don't have new log
             if (newLine == lastLine) {
                 // send notify if service not write any thing after 24h
                 if (logService.getLastLoggingDate().plusHours(lastUpdateLogMax).isBefore(LocalDateTime.now())) {
                     //
-                    String detailMessage = String.format("Service don't have new log: " + logService.getLastLoggingDate());
+                    String detailMessage = String.format("Service dit not write any things since: %s, service: %s", logService.getLastLoggingDate(), service.getName());
                     addingIssueTrackingAndSendReport(service, detailMessage, IssueType.WARNING);
                 }
                 logService.setUpdatedDate(LocalDateTime.now());
                 return logService;
             }
-            //log remote is deleted
+            //log file had deleted
             if (newLine < lastLine) {
-                //delete file and sync
-                org.apache.commons.io.FileUtils.write(logFile, "");
                 lastLine = 0;
             }
 
-            //sync log
             int limit = Math.toIntExact(newLine - lastLine);
-            if (!AppUtils.syncLogFromRemote(service.getServer().getIp(), logRemoteFile.getAbsolutePath(), logFile.getAbsolutePath(), limit, sshPort, sshUsername)) {
-                throw new ApplicationException(messages.get("service.log.sync.error"));
-            }
-
             //Get new logs and check error
             List<String> logs = fileTail(logFile.toPath(), limit);
             for (String line : logs) {
@@ -301,7 +320,7 @@ public class HealthCheckServiceImpl implements HealthCheckService {
             } else { //if error
                 logService.setConsecutiveErrCount(logService.getConsecutiveErrCount() + 1);
                 //
-                String detailMessage = String.format(" is running with " + logService.getConsecutiveErrCount() + " consecutive errors since last checks.");
+                String detailMessage = String.format("Service is running with %s errors, with error: %s",logService.getConsecutiveErrCount(), lassErr);
                 addingIssueTrackingAndSendReport(service, detailMessage, IssueType.ERROR);
             }
 

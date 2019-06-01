@@ -14,12 +14,17 @@ spring:
         dialect: org.hibernate.dialect.MySQL5InnoDBDialect
   datasource:
     url: jdbc:mysql://localhost:3306/service_monitoring?autoReconnect=true&useSSL=false&useUnicode=yes&characterEncoding=UTF-8
-    username: tuyennta
-    password:
+    username: root
+    password: 123456
     datasource:
       connectionProperties: useUnicode=true;characterEncoding=utf-8;
     driver-class-name: com.mysql.cj.jdbc.Driver
+service:
+  last-update-log:
+    max: 24
+  log-folder:
+    name: LogService
 
 ssh:
   port: 22
-  username: tuyennta
+  username: monitoring
