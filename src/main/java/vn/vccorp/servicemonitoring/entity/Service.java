@@ -79,13 +79,13 @@ public class Service {
     @Size(max = 1000)
     private String deployCommand;
 
-    private Integer ramLimit;
+    private Float ramLimit;
 
-    private Integer cpuLimit;
+    private Float cpuLimit;
 
-    private Integer gpuLimit;
+    private Float gpuLimit;
 
-    private Integer diskLimit;
+    private Float diskLimit;
 
     @Enumerated(EnumType.STRING)
     private Status status;
