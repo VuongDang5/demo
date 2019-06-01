@@ -355,20 +355,20 @@ public class MonitorServiceImpl implements MonitorService {
     
     @Override
     public void addServiceOwner(int userId, int serviceId, Role role) {
-    	if (userServiceRepository.findByUserIdAndServiceId(userId, serviceId) != null) {
+    	UserService userService = userServiceRepository.findByUserIdAndServiceId(userId, serviceId);
+    	if (userService != null) {
     		// update role
     		List<UserService> user = userServiceRepository.findAllByRoleAndServiceId(Role.OWNER, serviceId);
         	//Check Unique Owner
             if(user.size() == 1 && user.get(0).getUser().getId() == userId && role == Role.MAINTAINER) {
                 throw new ApplicationException(messages.get("error.cannot.change.owner"));
             } else {
-            	UserService userService = userServiceRepository.findByUserIdAndServiceId(userId, serviceId);
             	userService.setRole(role);
             	userServiceRepository.save(userService);
             }
         } else {
         	// add role
-        	UserService userService = new UserService(userId, serviceId, role);
+        	userService = new UserService(userId, serviceId, role);
         	userServiceRepository.save(userService);
         }
     }
