@@ -15,6 +15,7 @@ import org.springframework.scheduling.annotation.SchedulingConfigurer;
 import org.springframework.scheduling.config.ScheduledTaskRegistrar;
 import org.springframework.scheduling.support.CronTrigger;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import vn.vccorp.servicemonitoring.entity.Service;
 import vn.vccorp.servicemonitoring.logic.repository.ConfigurationRepository;
 import vn.vccorp.servicemonitoring.logic.repository.ServiceRepository;
@@ -33,8 +34,10 @@ public class HealthCheckScheduler implements SchedulingConfigurer {
     @Autowired
     private ServiceRepository serviceRepository;
 
-
-    private void frequentlyCheck() {
+    /**
+     * This function is called frequently to check services' health including resources usage, logging status, service status
+     */
+    void frequentlyCheck() {
         Page<Service> services;
         do {
             //get all services
@@ -43,20 +46,20 @@ public class HealthCheckScheduler implements SchedulingConfigurer {
             //loop through all services and check one by one
             for (Service service : services.getContent()) {
 
-                //TODO add health check 1 here
-                healthCheckService.healthCheck1(service);
+                //health check 1: check service status
+                healthCheckService.checkServiceStatus(service);
 
-                //TODO add health check 2 here
+                //health check 2: check service log
                 healthCheckService.checkLogService(service);
 
                 //health check 3: checking for usage resources
-                healthCheckService.checkResources(service);
+                healthCheckService.checkResourcesUsage(service);
 
             }
         } while (services.hasNext());
     }
 
-    public String getCronExpression() {
+    private String getCronExpression() {
         String cron = configurationRepository.findHealthCheckScheduleCron();
         //for the first time we deploy our application then cron expression will not available, so we return default value
         return cron == null ? defaultCron : cron;
@@ -66,7 +69,6 @@ public class HealthCheckScheduler implements SchedulingConfigurer {
     public void configureTasks(ScheduledTaskRegistrar taskRegistrar) {
         taskRegistrar.addTriggerTask(this::frequentlyCheck, triggerContext -> {
             String cron = getCronExpression();
-            LOGGER.info(cron);
             CronTrigger trigger = new CronTrigger(cron);
             return trigger.nextExecutionTime(triggerContext);
         });

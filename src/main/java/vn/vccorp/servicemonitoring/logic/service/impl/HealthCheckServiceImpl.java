@@ -12,19 +12,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.transaction.annotation.Transactional;
 import vn.vccorp.servicemonitoring.dto.ServiceErrorDTO;
-import vn.vccorp.servicemonitoring.entity.IssueTracking;
-import vn.vccorp.servicemonitoring.entity.LogService;
-import vn.vccorp.servicemonitoring.entity.Service;
-import vn.vccorp.servicemonitoring.entity.Snapshot;
-import vn.vccorp.servicemonitoring.entity.User;
+import vn.vccorp.servicemonitoring.entity.*;
 import vn.vccorp.servicemonitoring.enumtype.IssueType;
 import vn.vccorp.servicemonitoring.enumtype.Role;
-import vn.vccorp.servicemonitoring.logic.repository.*;
-import vn.vccorp.servicemonitoring.logic.service.EmailService;
 import vn.vccorp.servicemonitoring.exception.ApplicationException;
+import vn.vccorp.servicemonitoring.logic.repository.IssueTrackingRepository;
 import vn.vccorp.servicemonitoring.logic.repository.LogServiceRepository;
-import vn.vccorp.servicemonitoring.logic.repository.ServiceRepository;
 import vn.vccorp.servicemonitoring.logic.repository.SnapshotRepository;
+import vn.vccorp.servicemonitoring.logic.repository.UserRepository;
+import vn.vccorp.servicemonitoring.logic.service.EmailService;
 import vn.vccorp.servicemonitoring.logic.service.HealthCheckService;
 import vn.vccorp.servicemonitoring.message.Messages;
 import vn.vccorp.servicemonitoring.utils.AppConstants;
@@ -51,8 +47,6 @@ public class HealthCheckServiceImpl implements HealthCheckService {
     @Value("${ssh.username}")
     private String sshUsername;
     @Autowired
-    private ServiceRepository serviceRepository;
-    @Autowired
     private SnapshotRepository snapshotRepository;
     @Autowired
     private Messages messages;
@@ -62,24 +56,15 @@ public class HealthCheckServiceImpl implements HealthCheckService {
     private int lastUpdateLogMax;
     @Value("${service.log-folder.name}")
     private String folderLogName;
+    @Autowired
     private EmailService emailService;
     @Autowired
     private UserRepository userRepository;
     @Autowired
     private IssueTrackingRepository issueTrackingRepository;
 
-    @Transactional
     @Override
-    public void checkLogService(Service service) {
-        //check log services
-        LogService logService = checkLog(service);
-        //save log service
-        logServiceRepository.save(logService);
-    }
-
-    @Transactional
-    @Override
-    public void checkResources(Service service) {
+    public void checkResourcesUsage(Service service) {
 
         //get cpu,ram usage
         Snapshot snapshot = getCpuAndMemUsage(service.getPid(), service.getServer().getIp());
@@ -94,6 +79,15 @@ public class HealthCheckServiceImpl implements HealthCheckService {
         //check if limit threshold is over
         checkLimitResource(service, snapshot);
 
+    }
+
+    @Transactional
+    @Override
+    public void checkLogService(Service service) {
+        //check log services
+        LogService logService = checkLog(service);
+        //save log service
+        logServiceRepository.save(logService);
     }
 
     /**
@@ -119,7 +113,8 @@ public class HealthCheckServiceImpl implements HealthCheckService {
 
     /**
      * Adding a new issue_tracking to db and send warning report with specific detail message
-     *  @param service       service that got warning
+     *
+     * @param service       service that got warning
      * @param detailMessage detail message of warning
      * @param issueType
      */
@@ -265,8 +260,7 @@ public class HealthCheckServiceImpl implements HealthCheckService {
                     throw new ApplicationException(messages.get("service.log.sync.error"));
                 }
             }
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             throw new ApplicationException(messages.get("service.server.ip.not-available"));
         }
 
@@ -320,7 +314,7 @@ public class HealthCheckServiceImpl implements HealthCheckService {
             } else { //if error
                 logService.setConsecutiveErrCount(logService.getConsecutiveErrCount() + 1);
                 //
-                String detailMessage = String.format("Service is running with %s errors, with error: %s",logService.getConsecutiveErrCount(), lassErr);
+                String detailMessage = String.format("Service is running with %s errors, with error: %s", logService.getConsecutiveErrCount(), lassErr);
                 addingIssueTrackingAndSendReport(service, detailMessage, IssueType.ERROR);
             }
 
@@ -332,8 +326,7 @@ public class HealthCheckServiceImpl implements HealthCheckService {
             logService.setLastLoggingDate(LocalDateTime.now());
             //save log service
             logServiceRepository.save(logService);
-        }
-        catch (IOException e){
+        } catch (IOException e) {
             throw new ApplicationException(messages.get("service.check-log.error"));
         }
 
@@ -353,7 +346,7 @@ public class HealthCheckServiceImpl implements HealthCheckService {
         }
     }
 
-    public void healthCheck1(Service service) {
+    public void checkServiceStatus(Service service) {
         if (!AppUtils.isProcessAlive(service.getServer().getIp(), service.getPid(), sshPort, sshUsername)) {
             String detailMessage = "Your service has died";
             addingIssueTrackingAndSendReport(service, detailMessage, IssueType.ERROR);

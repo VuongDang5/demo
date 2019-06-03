@@ -9,9 +9,9 @@ import vn.vccorp.servicemonitoring.entity.Service;
 
 public interface HealthCheckService {
 
-    void checkResources(Service service);
+     void checkResourcesUsage(Service service);
 
-    void healthCheck1(Service service);
+    void checkServiceStatus(Service service);
     
     void checkLogService(Service service);
 
