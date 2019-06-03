@@ -12,4 +12,7 @@ public interface HealthCheckService {
     void checkResources(Service service);
 
     void healthCheck1(Service service);
+    
+    void checkLogService(Service service);
+
 }
