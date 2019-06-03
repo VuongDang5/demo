@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -84,7 +85,7 @@ public class AppUtils {
      * @return true if folder existed otherwise false
      */
     public static boolean isFolderExist(String serverIP, String filePath, String sshPort, String sshUsername) {
-        String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIP + " -t 'test -d " + filePath + "'; echo $?";
+        String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIP + " -t 'sudo test -d " + filePath + "'; echo $?";
         List<String> out = executeCommand(command);
         if (!out.isEmpty() && out.get(0).equals("0")) {
             return true;
@@ -102,7 +103,7 @@ public class AppUtils {
      * @return true if file is existed otherwise false
      */
     public static boolean isFileExist(String serverIP, String filePath, String sshPort, String sshUsername) {
-        String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIP + " -t 'test -f " + filePath + "'; echo $?";
+        String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIP + " -t 'sudo test -f " + filePath + "'; echo $?";
         List<String> out = executeCommand(command);
         if (!out.isEmpty() && out.get(0).equals("0")) {
             return true;
@@ -222,7 +223,12 @@ public class AppUtils {
     }
 
     public static void putFile(String serverId, String sshUsername, String sshPort, String sourceFile, String destination) {
-        String command = "scp -P " + sshPort + " " + sourceFile + " " + sshUsername + "@" + serverId + ":" + destination;
+        String fileName = new File(sourceFile).getName();
+        //first we need to upload file to /tmp folder where we dont need permission
+        String command = "scp -P " + sshPort + " " + sourceFile + " " + sshUsername + "@" + serverId + ":/tmp";
         executeCommand(command);
+        //after that using ssh connection to move file from tmp to your final destination
+        String sshMoveCommand = String.format("ssh -p %s %s@%s -t 'sudo mv /tmp/%s %s'", sshPort, sshUsername, serverId, fileName, destination);
+        executeCommand(sshMoveCommand);
     }
 }

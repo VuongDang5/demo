@@ -32,10 +32,6 @@ public class ServiceDTO {
     @Size(max = 1000)
     private String description;
 
-    @NotBlank
-    @Size(max = 15)
-    private String serverIp;
-
     @NotNull
     private Integer serverId;
 
@@ -66,18 +62,8 @@ public class ServiceDTO {
     @Size(max = 100)
     private String logFile;
 
-    @NotBlank
     @Size(max = 15)
     private String language;
-
-    @Size(max = 100)
-    private String mainJar;
-
-    @Size(max = 100)
-    private String originalJar;
-
-    @Size(max = 100)
-    private String dependencies;
 
     @NotBlank
     @Size(max = 1000)

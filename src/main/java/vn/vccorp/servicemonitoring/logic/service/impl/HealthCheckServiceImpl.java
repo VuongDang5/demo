@@ -48,9 +48,8 @@ public class HealthCheckServiceImpl implements HealthCheckService {
     @Autowired
     private IssueTrackingRepository issueTrackingRepository;
 
-    @Transactional
     @Override
-    public void checkResources(Service service) {
+    public void checkResourcesUsage(Service service) {
 
         //get cpu,ram usage
         Snapshot snapshot = getCpuAndMemUsage(service.getPid(), service.getServer().getIp());
@@ -163,7 +162,7 @@ public class HealthCheckServiceImpl implements HealthCheckService {
         return snapshot;
     }
 
-    public void healthCheck1(Service service) {
+    public void checkServiceStatus(Service service) {
         if (!AppUtils.isProcessAlive(service.getServer().getIp(), service.getPid(), sshPort, sshUsername)) {
             String detailMessage = "Your service has died";
             addingIssueTrackingAndSendReport(service, detailMessage, IssueType.ERROR);

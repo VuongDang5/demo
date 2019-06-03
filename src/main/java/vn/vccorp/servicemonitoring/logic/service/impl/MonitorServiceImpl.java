@@ -16,6 +16,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.multipart.MultipartFile;
 import vn.vccorp.servicemonitoring.dto.LogServiceDTO;
 import vn.vccorp.servicemonitoring.dto.ServiceDTO;
@@ -39,6 +40,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -75,26 +77,29 @@ public class MonitorServiceImpl implements MonitorService {
                 .orElseThrow(() -> new ApplicationException(messages.get("service.server.not-available", new String[]{String.valueOf(serviceDTO.getServerId())})));
 
         //check if service with specified info is correct on the system
-        if (!AppUtils.isProcessAlive(serviceDTO.getServerIp(), serviceDTO.getPid(), sshPort, sshUsername)) {
-            throw new ApplicationException(messages.get("service.pid.not-available", new String[]{serviceDTO.getPid(), serviceDTO.getServerIp()}));
+        if (!AppUtils.isProcessAlive(server.getIp(), serviceDTO.getPid(), sshPort, sshUsername)) {
+            throw new ApplicationException(messages.get("service.pid.not-available", new String[]{serviceDTO.getPid(), server.getIp()}));
         }
         //check if log file is available
         File logFile = new File(serviceDTO.getLogDir() + serviceDTO.getLogFile());
-        if (!AppUtils.isFileExist(serviceDTO.getServerIp(), logFile.getAbsolutePath(), sshPort, sshUsername)) {
-            throw new ApplicationException(messages.get("service.log.not-available", new String[]{logFile.getAbsolutePath(), serviceDTO.getServerIp()}));
+        if (!AppUtils.isFileExist(server.getIp(), logFile.getAbsolutePath(), sshPort, sshUsername)) {
+            throw new ApplicationException(messages.get("service.log.not-available", new String[]{logFile.getAbsolutePath(), server.getIp()}));
         }
         //check if deploy dir is available
         createStartServiceScript(serviceDTO, server.getIp());
 
         vn.vccorp.servicemonitoring.entity.Service service = dozerBeanMapper.map(serviceDTO, vn.vccorp.servicemonitoring.entity.Service.class);
-        service.setStartTime(AppUtils.getStartedDateOfProcess(serviceDTO.getServerIp(), sshUsername, sshPort, service.getPid()));
+        service.setStartTime(AppUtils.getStartedDateOfProcess(server.getIp(), sshUsername, sshPort, service.getPid()));
         service.setServer(server);
         serviceRepository.save(service);
 
         //save UserService
-        List<UserService> userServices = serviceDTO.getMaintainerIds()
-                .parallelStream().map(id -> new UserService(id, service.getId(), Role.MAINTAINER)).collect(Collectors.toList());
+        List<UserService> userServices = new ArrayList<>();
         userServices.add(new UserService(serviceDTO.getOwnerId(), service.getId(), Role.OWNER));
+        if (!CollectionUtils.isEmpty(serviceDTO.getMaintainerIds())) {
+            serviceDTO.getMaintainerIds().parallelStream()
+                    .map(id -> new UserService(id, service.getId(), Role.MAINTAINER)).collect(Collectors.toList());
+        }
         userServiceRepository.saveAll(userServices);
     }
 
@@ -220,7 +225,11 @@ public class MonitorServiceImpl implements MonitorService {
             deployCommand += "cd " + serviceDTO.getDeployDir() + " \n";
             deployCommand += serviceDTO.getDeployCommand() + "\n";
             deployCommand += "echo $! > pid";
-            File runFile = new File(getRunFileName(serviceDTO.getName()));
+            File upload = new File(uploadDir);
+            if (!upload.exists()) {
+                upload.mkdirs();
+            }
+            File runFile = new File(uploadDir + getRunFileName(serviceDTO.getName()));
             try {
                 runFile.createNewFile();
                 BufferedWriter br = new BufferedWriter(new FileWriter(runFile));
@@ -354,24 +363,24 @@ public class MonitorServiceImpl implements MonitorService {
     @Override
     public void editService(int serviceId, ServiceDTO serviceDTO) {
         vn.vccorp.servicemonitoring.entity.Service service = serviceRepository.findById(serviceId).orElseThrow(() -> new ApplicationException(messages.get("error.not.found.service")));
-            if (serviceDTO.getName() != null) {
-                service.setName(serviceDTO.getName());
-            }
-            if (serviceDTO.getDescription() != null) {
-                service.setDescription(serviceDTO.getDescription());
-            }
-            if (serviceDTO.getRamLimit() != null) {
-                service.setRamLimit(serviceDTO.getRamLimit());
-            }
-            if (serviceDTO.getCpuLimit() != null) {
-                service.setCpuLimit(serviceDTO.getCpuLimit());
-            }
-            if (serviceDTO.getGpuLimit() != null) {
-                service.setGpuLimit(serviceDTO.getGpuLimit());
-            }
-            if (serviceDTO.getDiskLimit() != null) {
-                service.setDiskLimit(serviceDTO.getDiskLimit());
-            }
+        if (serviceDTO.getName() != null) {
+            service.setName(serviceDTO.getName());
+        }
+        if (serviceDTO.getDescription() != null) {
+            service.setDescription(serviceDTO.getDescription());
+        }
+        if (serviceDTO.getRamLimit() != null) {
+            service.setRamLimit(serviceDTO.getRamLimit());
+        }
+        if (serviceDTO.getCpuLimit() != null) {
+            service.setCpuLimit(serviceDTO.getCpuLimit());
+        }
+        if (serviceDTO.getGpuLimit() != null) {
+            service.setGpuLimit(serviceDTO.getGpuLimit());
+        }
+        if (serviceDTO.getDiskLimit() != null) {
+            service.setDiskLimit(serviceDTO.getDiskLimit());
+        }
         serviceRepository.save(service);
     }
 

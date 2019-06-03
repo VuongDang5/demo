@@ -8,6 +8,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import vn.vccorp.servicemonitoring.dto.ServiceDTO;
 import vn.vccorp.servicemonitoring.dto.ServiceErrorDTO;
+import vn.vccorp.servicemonitoring.enumtype.Language;
 import vn.vccorp.servicemonitoring.enumtype.Status;
 import vn.vccorp.servicemonitoring.logic.service.EmailService;
 import vn.vccorp.servicemonitoring.logic.service.HealthCheckService;
@@ -39,16 +40,16 @@ public class TestAll {
                 .name("test")
                 .status(Status.ACTIVE)
                 .deployCommand("nohup java -jar target/tdcd-crawler-service.jar > out.log &")
-                .deployDir("/home/tuyennta/projects/freelance/blogcrawler")
+                .deployDir("/home/tuyennta/test/freelance/blogcrawler")
                 .description("test")
-                .language("java")
-                .logDir("/home/tuyennta/projects/freelance/blogcrawler/")
+                .language(Language.JAVA.name())
+                .logDir("/home/tuyennta/test/freelance/blogcrawler/")
                 .logFile("out.log")
-                .pid("17702")
+                .pid("6218")
                 .project("test")
                 .serverId(1)
 //                .serverIp("localhost")
-                .maintainerIds(Collections.singletonList(2))
+                .maintainerIds(Collections.singletonList(1))
                 .ownerId(1)
                 .build();
         BeanUtils.getBean(MonitorService.class).registerService(serviceDTO);
@@ -71,7 +72,7 @@ public class TestAll {
 
     @Test
     public void testHealthCheck3(){
-        BeanUtils.getBean(HealthCheckService.class).checkResources(null);
+        BeanUtils.getBean(HealthCheckService.class).checkResourcesUsage(null);
     }
 
     @Test
