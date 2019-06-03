@@ -37,7 +37,6 @@ public class HealthCheckScheduler implements SchedulingConfigurer {
     /**
      * This function is called frequently to check services' health including resources usage, logging status, service status
      */
-    @Transactional
     void frequentlyCheck() {
         Page<Service> services;
         do {
@@ -47,10 +46,11 @@ public class HealthCheckScheduler implements SchedulingConfigurer {
             //loop through all services and check one by one
             for (Service service : services.getContent()) {
 
-                //TODO add health check 1 here
+                //health check 1: check service status
                 healthCheckService.checkServiceStatus(service);
 
-                //TODO add health check 2 here
+                //health check 2: check service log
+                healthCheckService.checkLogService(service);
 
                 //health check 3: checking for usage resources
                 healthCheckService.checkResourcesUsage(service);

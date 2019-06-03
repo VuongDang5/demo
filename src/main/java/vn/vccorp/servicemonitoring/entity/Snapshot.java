@@ -44,11 +44,11 @@ public class Snapshot {
 
     private Float diskUsed;
 
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne
     @JoinColumn(name = "serverId")
     private Server server;
 
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne
     @JoinColumn(name = "serviceId")
     private Service service;
 }

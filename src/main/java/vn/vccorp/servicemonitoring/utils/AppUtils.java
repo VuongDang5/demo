@@ -112,6 +112,45 @@ public class AppUtils {
     }
 
     /**
+     * sync log from that host to current host
+     *
+     * @param serverIP    server to check
+     * @param remoteLog   file log remote in service
+     * @param localLog    file log in local
+     * @param sshPort
+     * @param sshUsername
+     * @return true if sync success
+     */
+    public static boolean syncLogFromRemote(String serverIP, String remoteLog, String localLog, int limit, String sshPort, String sshUsername) {
+        String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIP + " -t 'tail -n " + limit + " " + remoteLog + "' >> " + localLog + "; echo $?";
+        List<String> out = AppUtils.executeCommand(command);
+        if (!out.isEmpty() && out.get(0).equals("0")) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * sync log from that host to current host
+     *
+     * @param serverIP    server to check
+     * @param path   file log remote in service
+     * @param sshPort
+     * @param sshUsername
+     * @return last line if true , -1 if exception
+     */
+    public static long getLastLine(String serverIP, String path, String sshPort, String sshUsername){
+        try {
+            //get last line in file log remote
+            String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIP + " -t 'cat " + path + " | wc -l'; echo $?";
+            List<String> outline = AppUtils.executeCommand(command);
+            return Long.parseLong(outline.get(0));
+        } catch (NumberFormatException nfe) {
+            return -1;
+        }
+    }
+
+    /**
      * Change user mod of a file on specific server
      *
      * @param file        file to change
