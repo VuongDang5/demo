@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -84,7 +85,7 @@ public class AppUtils {
      * @return true if folder existed otherwise false
      */
     public static boolean isFolderExist(String serverIP, String filePath, String sshPort, String sshUsername) {
-        String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIP + " -t 'test -d " + filePath + "'; echo $?";
+        String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIP + " -t 'sudo test -d " + filePath + "'; echo $?";
         List<String> out = executeCommand(command);
         if (!out.isEmpty() && out.get(0).equals("0")) {
             return true;
@@ -102,12 +103,51 @@ public class AppUtils {
      * @return true if file is existed otherwise false
      */
     public static boolean isFileExist(String serverIP, String filePath, String sshPort, String sshUsername) {
-        String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIP + " -t 'test -f " + filePath + "'; echo $?";
+        String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIP + " -t 'sudo test -f " + filePath + "'; echo $?";
         List<String> out = executeCommand(command);
         if (!out.isEmpty() && out.get(0).equals("0")) {
             return true;
         }
         return false;
+    }
+
+    /**
+     * sync log from that host to current host
+     *
+     * @param serverIP    server to check
+     * @param remoteLog   file log remote in service
+     * @param localLog    file log in local
+     * @param sshPort
+     * @param sshUsername
+     * @return true if sync success
+     */
+    public static boolean syncLogFromRemote(String serverIP, String remoteLog, String localLog, int limit, String sshPort, String sshUsername) {
+        String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIP + " -t 'tail -n " + limit + " " + remoteLog + "' >> " + localLog + "; echo $?";
+        List<String> out = AppUtils.executeCommand(command);
+        if (!out.isEmpty() && out.get(0).equals("0")) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * sync log from that host to current host
+     *
+     * @param serverIP    server to check
+     * @param path   file log remote in service
+     * @param sshPort
+     * @param sshUsername
+     * @return last line if true , -1 if exception
+     */
+    public static long getLastLine(String serverIP, String path, String sshPort, String sshUsername){
+        try {
+            //get last line in file log remote
+            String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIP + " -t 'cat " + path + " | wc -l'; echo $?";
+            List<String> outline = AppUtils.executeCommand(command);
+            return Long.parseLong(outline.get(0));
+        } catch (NumberFormatException nfe) {
+            return -1;
+        }
     }
 
     /**
@@ -222,7 +262,12 @@ public class AppUtils {
     }
 
     public static void putFile(String serverId, String sshUsername, String sshPort, String sourceFile, String destination) {
-        String command = "scp -P " + sshPort + " " + sourceFile + " " + sshUsername + "@" + serverId + ":" + destination;
+        String fileName = new File(sourceFile).getName();
+        //first we need to upload file to /tmp folder where we dont need permission
+        String command = "scp -P " + sshPort + " " + sourceFile + " " + sshUsername + "@" + serverId + ":/tmp";
         executeCommand(command);
+        //after that using ssh connection to move file from tmp to your final destination
+        String sshMoveCommand = String.format("ssh -p %s %s@%s -t 'sudo mv /tmp/%s %s'", sshPort, sshUsername, serverId, fileName, destination);
+        executeCommand(sshMoveCommand);
     }
 }
