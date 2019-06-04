@@ -11,7 +11,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.transaction.annotation.Transactional;
 import vn.vccorp.servicemonitoring.dto.ServiceErrorDTO;
 import vn.vccorp.servicemonitoring.entity.*;
 import vn.vccorp.servicemonitoring.enumtype.IssueType;
@@ -58,6 +57,8 @@ public class HealthCheckServiceImpl implements HealthCheckService {
     private UserRepository userRepository;
     @Autowired
     private IssueTrackingRepository issueTrackingRepository;
+    @Autowired
+    private ServiceRepository serviceRepository;
 
     @Override
     public void checkResourcesUsage(Service service) {
@@ -155,10 +156,11 @@ public class HealthCheckServiceImpl implements HealthCheckService {
 
     /**
      * Adding a new issue_tracking to db and send warning report with specific detail message
-     *  @param service       service that got warning
+     *
+     * @param service       service that got warning
      * @param detailMessage detail message of warning
-     * @param issueType type of issue
-     * @param problemAt line number in log file where problem happen
+     * @param issueType     type of issue
+     * @param problemAt     line number in log file where problem happen
      */
     private void addingIssueTrackingAndSendReport(Service service, String detailMessage, IssueType issueType, Long problemAt) {
         //create a new record for issue_tracking
@@ -245,8 +247,15 @@ public class HealthCheckServiceImpl implements HealthCheckService {
 
     public void checkServiceStatus(Service service) {
         if (!AppUtils.isProcessAlive(service.getServer().getIp(), service.getPid(), sshPort, sshUsername)) {
-            String detailMessage = "Your service has died";
-            addingIssueTrackingAndSendReport(service, detailMessage, IssueType.ERROR, null);
+            //if the old pid is not alive, then we would try to get a new pid from service's port
+            String newPid = AppUtils.getPidFromPort(service.getServer().getIp(), service.getServerPort(), sshPort, sshUsername);
+            if (StringUtils.isEmpty(newPid)) { //if we can not get pid from port, then service is died
+                String detailMessage = "Your service has died";
+                addingIssueTrackingAndSendReport(service, detailMessage, IssueType.ERROR, null);
+            } else {
+                service.setPid(newPid);
+                serviceRepository.save(service);
+            }
         }
     }
 }

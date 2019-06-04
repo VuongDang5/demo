@@ -77,27 +77,27 @@ public class MonitorServiceImpl implements MonitorService {
                 .orElseThrow(() -> new ApplicationException(messages.get("service.server.not-available", new String[]{String.valueOf(serviceDTO.getServerId())})));
 
         //check if service with specified info is correct on the target server
-        if (StringUtils.isEmpty(serviceDTO.getPid())){
-            if (StringUtils.isEmpty(serviceDTO.getServerPort())){
+        if (StringUtils.isEmpty(serviceDTO.getPid())) {
+            if (StringUtils.isEmpty(serviceDTO.getServerPort())) {
                 throw new ApplicationException(messages.get("service.info.missing"));
             } else {
                 String pid = AppUtils.getPidFromPort(server.getIp(), serviceDTO.getServerPort(), sshPort, sshUsername);
-                if (StringUtils.isEmpty(pid)){
+                if (StringUtils.isEmpty(pid)) {
                     throw new ApplicationException(messages.get("service.pid.not-available", new String[]{serviceDTO.getServerPort(), server.getIp()}));
                 } else {
                     serviceDTO.setPid(pid);
                 }
             }
         } else {
-            if (StringUtils.isEmpty(serviceDTO.getServerPort())){
+            if (StringUtils.isEmpty(serviceDTO.getServerPort())) {
                 String port = AppUtils.getPortFromPid(server.getIp(), serviceDTO.getPid(), sshPort, sshUsername);
-                if (StringUtils.isEmpty(port)){
+                if (StringUtils.isEmpty(port)) {
                     throw new ApplicationException(messages.get("service.port.not-available", new String[]{serviceDTO.getPid(), server.getIp()}));
                 }
                 serviceDTO.setServerPort(port);
             } else {
                 String pid = AppUtils.getPidFromPort(server.getIp(), serviceDTO.getServerPort(), sshPort, sshUsername);
-                if (StringUtils.isEmpty(pid) || !pid.equals(serviceDTO.getPid())){
+                if (StringUtils.isEmpty(pid) || !pid.equals(serviceDTO.getPid())) {
                     throw new ApplicationException(messages.get("service.info.incorrect", new String[]{serviceDTO.getPid(), serviceDTO.getServerPort(), server.getIp()}));
                 }
             }
@@ -142,8 +142,15 @@ public class MonitorServiceImpl implements MonitorService {
         vn.vccorp.servicemonitoring.entity.Service service = serviceRepository.findById(serviceId).orElseThrow(() -> new ApplicationException(messages.get("service.id.not-found")));
 
         //check if service is already run then we do nothing
-        if (isServiceRunning(String.valueOf(serviceId), service.getPid())) {
+        if (AppUtils.isProcessAlive(service.getServer().getIp(), service.getPid(), sshPort, sshUsername)) {
             return;
+        } else {
+            String newPid = AppUtils.getPidFromPort(service.getServer().getIp(), service.getServerPort(), sshPort, sshUsername);
+            if (!org.apache.commons.lang3.StringUtils.isEmpty(newPid)) { //if we can not get pid from port, then service is died
+                service.setPid(newPid);
+                serviceRepository.save(service);
+                return;
+            }
         }
 
         String startCommand = "ssh -p " + sshPort + " " + sshUsername + "@" + service.getServer().getIp()
@@ -159,12 +166,6 @@ public class MonitorServiceImpl implements MonitorService {
             service.setPid(out.get(0));
             serviceRepository.save(service);
         }
-    }
-
-    private boolean isServiceRunning(String serverId, String pid) {
-        String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverId + " -t 'ps -p " + pid + "'";
-        List<String> out = AppUtils.executeCommand(command);
-        return out.size() > 1 && out.get(1).split(" ")[0].equals(pid);
     }
 
     @Override
@@ -195,7 +196,7 @@ public class MonitorServiceImpl implements MonitorService {
             }
 
             //stop old service
-            stopService(serviceDTO.getId());
+            stopService(oldService.getId());
         }
 
         //create deploy dir
@@ -343,17 +344,13 @@ public class MonitorServiceImpl implements MonitorService {
                     throw new ApplicationException(messages.get("service.log.error"));
                 }
             }
-            command = "ssh -p " + sshPort + " " + sshUsername + "@" + service.getServer().getIp() + " -t 'tail -n " + limit + " " + logRemoteFile.getAbsolutePath() + "'";
+            command = "ssh -p " + sshPort + " " + sshUsername + "@" + service.getServer().getIp() + " -t 'sudo tail -n " + limit + " " + logRemoteFile.getAbsolutePath() + "'";
         } else {
             command = "ssh -p " + sshPort + " " + sshUsername + "@" + service.getServer().getIp()
-                    + " -t 'sed -n '" + logServiceDTO.getStart() + "," + logServiceDTO.getEnd() + "p'" + logRemoteFile.getAbsolutePath() + "'";
+                    + " -t 'sudo sed -n '" + logServiceDTO.getStart() + "," + logServiceDTO.getEnd() + "p' " + logRemoteFile.getAbsolutePath() + "'";
         }
 
-        List<String> out = AppUtils.executeCommand(command);
-        if (out.isEmpty() || !out.get(0).equals("0")) {
-            throw new ApplicationException(messages.get("service.error.getLog"));
-        }
-        return out;
+        return AppUtils.executeCommand(command);
     }
 
     @Override
