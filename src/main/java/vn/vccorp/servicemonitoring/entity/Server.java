@@ -20,7 +20,15 @@ import java.util.List;
 @Table(indexes = {
         @Index(columnList = "ip"),
         @Index(columnList = "name")
-})
+        },
+        uniqueConstraints = {
+                @UniqueConstraint(columnNames = {
+                        "ip"
+                }),
+                @UniqueConstraint(columnNames = {
+                        "name"
+                })
+        })
 public class Server {
 
     @Id
@@ -39,8 +47,6 @@ public class Server {
     @Size(max = 1000)
     private String description;
 
-    @NotBlank
-    @Size(max = 10)
     @Enumerated(EnumType.STRING)
     private Status status;
 
