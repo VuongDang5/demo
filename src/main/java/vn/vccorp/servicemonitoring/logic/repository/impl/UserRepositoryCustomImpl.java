@@ -4,14 +4,11 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.apache.commons.collections.ArrayStack;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import vn.vccorp.servicemonitoring.dto.ListDTO;
 import vn.vccorp.servicemonitoring.dto.ServerInfo;
 import vn.vccorp.servicemonitoring.dto.ServiceInfo;
-import vn.vccorp.servicemonitoring.dto.UserServiceDTO;
-import vn.vccorp.servicemonitoring.entity.User;
 import vn.vccorp.servicemonitoring.logic.repository.UserRepositoryCustom;
 
 import javax.persistence.EntityManager;
@@ -41,14 +38,13 @@ public class UserRepositoryCustomImpl implements UserRepositoryCustom {
             String servers;
         }
 
-        //Query hien thi cac thong tin can thiet cua service
         String queryStr = "SELECT u.name, u.username, u.email, u.phone, u.id, " +
                 "GROUP_CONCAT( " +
                 "CONCAT_WS(',', IFNULL(service.name, 'null'), IFNULL(service.pid, 'null'), IFNULL(user_service.role, 'null'), IFNULL(service.description, 'null'), IFNULL(service.status, 'null')) " +
                 "ORDER BY service.pid " +
                 "SEPARATOR ';' " +
                 ") AS serviceInfo, " +
-                "GROUP_CONCAT( " +
+                "GROUP_CONCAT(DISTINCT " +
                 "CONCAT_WS(',', IFNULL(server.name, 'null'), IFNULL(server.ip, 'null'), IFNULL(user_server.groups, 'null'), IFNULL(server.description, 'null'), IFNULL(server.status, 'null')) " +
                 "ORDER BY server.ip " +
                 "SEPARATOR ';' " +
@@ -61,18 +57,34 @@ public class UserRepositoryCustomImpl implements UserRepositoryCustom {
                 "WHERE user_service.role = 'OWNER' " +
                 "OR user_service.role = 'MAINTAINER' ";
 
-        Query query = entityManager.createNativeQuery(queryStr, "userDetailsMapping")
+        Query query = entityManager.createNativeQuery(queryStr)
                 //Sets the offset position in the result set to start pagination
                 .setFirstResult(page.getPageSize() * (page.getPageNumber() - 1))
                 //Sets the maximum number of entities that should be included in the page
                 .setMaxResults(page.getPageSize());
-        List<UserServiceDTO> resultList = query.getResultList();
-        List<ListDTO> list = new ArrayList<>();
-        /*for(UserServiceDTO r: resultList) {
+        List<Object[]> resultList = query.getResultList();
+        List<returnedQueryResult> convertedResultList = new ArrayList<>(resultList.size());
+
+        //Unwind the list returned from query, convert each obj into returnQueryResult and add them into a list
+        for(Object [] row: resultList) {
+            convertedResultList.add(
+                    new
+                    returnedQueryResult(
+                            (String) row[0], // name
+                            (String) row[1], // username
+                            (String) row[2], // email
+                            (String) row[3], // phone
+                            (String) row[5], // services
+                            (String) row[6]  // servers
+                    )
+            );
+        }
+
+        List<ListDTO> finalResultList = new ArrayList<>();
+        for(returnedQueryResult r: convertedResultList) {
                 ListDTO dto = new ListDTO();
                 List<ServiceInfo> serviceInfoList = new ArrayList<>();
                 List<ServerInfo> serverInfoList = new ArrayList<>();
-
 
                 dto.setName(r.getName());
                 dto.setUsername(r.getUsername());
@@ -106,10 +118,10 @@ public class UserRepositoryCustomImpl implements UserRepositoryCustom {
 
                 dto.setServices(serviceInfoList);
                 dto.setServers(serverInfoList);
-                list.add(dto);
-        }*/
+                finalResultList.add(dto);
+        }
 
         //Ket qua tra ve la PageImpl
-        return new PageImpl<>(list, page, page.getPageSize());
+        return new PageImpl<>(finalResultList, page, page.getPageSize());
     }
 }
