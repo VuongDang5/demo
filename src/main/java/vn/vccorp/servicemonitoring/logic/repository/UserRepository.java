@@ -23,5 +23,8 @@ public interface UserRepository extends JpaRepository<User, Integer> {
     List<User> findAllByRole(Role role);
 
     Optional<User> findByIdAndIsDeleted(int id, boolean isDeleted);
+
+    @Query(value = "select u.email from user u join user_service us on u.id = us.user_id where us.service_id = ?1", nativeQuery = true)
+    List<String> findAllByServiceId(int serviceId);
 }
 
