@@ -5,30 +5,25 @@
 
 package vn.vccorp.servicemonitoring.logic.service.impl;
 
+import org.apache.commons.lang3.StringUtils;
 import org.joda.time.LocalDateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.transaction.annotation.Transactional;
 import vn.vccorp.servicemonitoring.dto.ServiceErrorDTO;
 import vn.vccorp.servicemonitoring.entity.*;
 import vn.vccorp.servicemonitoring.enumtype.IssueType;
 import vn.vccorp.servicemonitoring.enumtype.Role;
 import vn.vccorp.servicemonitoring.exception.ApplicationException;
-import vn.vccorp.servicemonitoring.logic.repository.IssueTrackingRepository;
-import vn.vccorp.servicemonitoring.logic.repository.LogServiceRepository;
-import vn.vccorp.servicemonitoring.logic.repository.SnapshotRepository;
-import vn.vccorp.servicemonitoring.logic.repository.UserRepository;
+import vn.vccorp.servicemonitoring.logic.repository.*;
 import vn.vccorp.servicemonitoring.logic.service.EmailService;
 import vn.vccorp.servicemonitoring.logic.service.HealthCheckService;
 import vn.vccorp.servicemonitoring.message.Messages;
 import vn.vccorp.servicemonitoring.utils.AppConstants;
 import vn.vccorp.servicemonitoring.utils.AppUtils;
 
-import java.io.File;
 import java.io.IOException;
-import java.net.Inet4Address;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -62,6 +57,8 @@ public class HealthCheckServiceImpl implements HealthCheckService {
     private UserRepository userRepository;
     @Autowired
     private IssueTrackingRepository issueTrackingRepository;
+    @Autowired
+    private ServiceRepository serviceRepository;
 
     @Override
     public void checkResourcesUsage(Service service) {
@@ -81,11 +78,57 @@ public class HealthCheckServiceImpl implements HealthCheckService {
 
     }
 
-    @Transactional
     @Override
     public void checkLogService(Service service) {
-        //check log services
-        LogService logService = checkLog(service);
+        //Create new LogService if it = null
+        LogService logService = logServiceRepository.findByServiceId(service.getId()).orElse(
+                LogService.builder()
+                        .serviceId(service.getId())
+                        .checkedLine(-1)
+                        .build()
+        );
+        String logFilePath = service.getLogDir() + service.getLogFile();
+        long lastLineRemote = AppUtils.getLastLine(service.getServer().getIp(), logFilePath, sshPort, sshUsername);
+        if (lastLineRemote == -1) {
+            throw new ApplicationException(messages.get("service.check-log.error"));
+        }
+
+        //if this is the first time we check log, then we will only check for the last 10 lines
+        //because we dont care what happen before the service is registered to the tool
+        long limit = logService.getCheckedLine() == -1 ? 10 : lastLineRemote - logService.getCheckedLine();
+
+        //get log
+        List<String> logs = AppUtils.getLog(service.getServer().getIp(), service.getLogDir() + service.getLogFile(), limit, sshPort, sshUsername);
+
+        List<String> lassErr = new ArrayList<>();
+        List<String> lassWarn = new ArrayList<>();
+
+        //check log file service
+        String line;
+        long problemAt = -1;
+        for (int i = 0; i < logs.size(); i++) {
+            line = logs.get(i);
+            if (StringUtils.containsIgnoreCase(line, AppConstants.ERROR_REGEX)) {
+                lassErr.add(line);
+                problemAt = logService.getCheckedLine() + i;
+            } else if (StringUtils.containsIgnoreCase(line, AppConstants.WARN_REGEX)) {
+                lassWarn.add(line);
+                problemAt = logService.getCheckedLine() + i;
+            }
+        }
+
+        if (!lassErr.isEmpty()) {
+            String detailMessage = String.format("Service is running with error: %s", lassErr);
+            addingIssueTrackingAndSendReport(service, detailMessage, IssueType.ERROR, problemAt);
+        }
+
+        if (!lassWarn.isEmpty()) {
+            String detailMessage = String.format("Service is running with warning: %s", lassWarn);
+            addingIssueTrackingAndSendReport(service, detailMessage, IssueType.WARNING, problemAt);
+        }
+
+        //save last check
+        logService.setCheckedLine(lastLineRemote);
         //save log service
         logServiceRepository.save(logService);
     }
@@ -99,15 +142,15 @@ public class HealthCheckServiceImpl implements HealthCheckService {
     private void checkLimitResource(Service service, Snapshot snapshot) {
         if (service.getRamLimit() != null && service.getRamLimit() > 0 && service.getRamLimit() <= snapshot.getRamUsed()) {
             String detailMessage = String.format("Your service has bean reached RAM limited. Current percent of RAM used: %s, limit: %s", snapshot.getRamUsed(), service.getRamLimit());
-            addingIssueTrackingAndSendReport(service, detailMessage, IssueType.WARNING);
+            addingIssueTrackingAndSendReport(service, detailMessage, IssueType.WARNING, null);
         }
         if (service.getCpuLimit() != null && service.getCpuLimit() > 0 && service.getCpuLimit() <= snapshot.getCpuUsed()) {
             String detailMessage = String.format("Your service has bean reached CPU limited. Current percent of CPU used: %s, limit: %s", snapshot.getCpuUsed(), service.getCpuLimit());
-            addingIssueTrackingAndSendReport(service, detailMessage, IssueType.WARNING);
+            addingIssueTrackingAndSendReport(service, detailMessage, IssueType.WARNING, null);
         }
         if (service.getDiskLimit() != null && service.getDiskLimit() > 0 && service.getDiskLimit() >= snapshot.getDiskUsed()) {
             String detailMessage = String.format("Your service has bean reached disk limited. Current percent of disk used: %s, limit: %s", snapshot.getDiskUsed(), service.getDiskLimit());
-            addingIssueTrackingAndSendReport(service, detailMessage, IssueType.WARNING);
+            addingIssueTrackingAndSendReport(service, detailMessage, IssueType.WARNING, null);
         }
     }
 
@@ -116,9 +159,10 @@ public class HealthCheckServiceImpl implements HealthCheckService {
      *
      * @param service       service that got warning
      * @param detailMessage detail message of warning
-     * @param issueType
+     * @param issueType     type of issue
+     * @param problemAt     line number in log file where problem happen
      */
-    private void addingIssueTrackingAndSendReport(Service service, String detailMessage, IssueType issueType) {
+    private void addingIssueTrackingAndSendReport(Service service, String detailMessage, IssueType issueType, Long problemAt) {
         //create a new record for issue_tracking
         IssueTracking issueTracking = new IssueTracking();
         issueTracking.setIssueType(issueType);
@@ -132,13 +176,14 @@ public class HealthCheckServiceImpl implements HealthCheckService {
                 .serviceName(service.getName())
                 .deployedServer(service.getServer().getIp())
                 .detail(detailMessage)
+                //TODO we will create a link to view log file from problemAt line
                 .linkOnTool("will be updated")
                 .problem(issueType.name())
                 .status(service.getStatus().name())
                 .build();
 
         //build recipients from owner, maintainers and admins
-        List<String> recipients = service.getUserServices().parallelStream().map(u -> u.getUser().getEmail()).collect(Collectors.toList());
+        List<String> recipients = userRepository.findAllByServiceId(service.getId());
         recipients.addAll(userRepository.findAllByRole(Role.ADMIN).parallelStream().map(User::getEmail).collect(Collectors.toList()));
         recipients = recipients.parallelStream().distinct().collect(Collectors.toList());
 
@@ -187,152 +232,6 @@ public class HealthCheckServiceImpl implements HealthCheckService {
         return snapshot;
     }
 
-    private LogService checkLog(Service service) {
-        File logFile = new File(service.getLogDir() + service.getLogFile());
-        //Create new LogService if it = null
-        LogService logService = logServiceRepository.findByServiceId(service.getId()).orElse(
-                LogService.builder()
-                        .serviceId(service.getId())
-                        .errorCount(0)
-                        .updatedDate(LocalDateTime.now())
-                        .createdDate(LocalDateTime.now())
-                        .lastLoggingDate(LocalDateTime.now())
-                        .checkedLine(0)
-                        .logFile(service.getLogFile())
-                        .consecutiveErrCount(0)
-                        .errorPerHourCount(0)
-                        .hourlyCheck(LocalDateTime.now())
-                        .logSize(0.0f)
-                        .build()
-        );
-
-        //check if service run other service
-        try {
-            //check logfile is exist
-            if (!AppUtils.isFileExist(service.getServer().getIp(), logFile.getAbsolutePath(), sshPort, sshUsername)) {
-                throw new ApplicationException(messages.get("service.log.not-available"));
-            }
-            logService.setLogDir(service.getLogDir());
-
-            if (!Inet4Address.getLocalHost().getHostAddress().equals(service.getServer().getIp())) {
-                File logRemoteFile = new File(service.getLogDir() + service.getLogFile());
-                File localLogDir = new File(folderLogName + File.separator + service.getName());
-                //create new logfile on current server
-                logFile = new File(localLogDir.getAbsolutePath() + File.separator + service.getLogFile());
-                logService.setLogDir(localLogDir.getAbsolutePath());
-
-                if (!logFile.exists()) {
-                    //create a folder for saving local log which is mapped to remote log
-                    if (!logFile.getParentFile().exists()) {
-                        logFile.getParentFile().mkdirs();
-                    }
-                    if (!logFile.exists()) {
-                        logFile.createNewFile();
-                    }
-
-                    //sync logs had been checked
-                    if (!AppUtils.syncLogFromRemote(service.getServer().getIp(), logRemoteFile.getAbsolutePath(), logFile.getAbsolutePath(), (int) logService.getCheckedLine(), sshPort, sshUsername)) {
-                        throw new ApplicationException(messages.get("service.log.sync.error"));
-                    }
-
-                    if (!logFile.exists()) {
-                        throw new ApplicationException(messages.get("Log file not found: " + logFile.getAbsolutePath() + ". Service: " + service.getName()));
-                    }
-                }
-
-                //sync log
-                long newLine = AppUtils.getLastLine(service.getServer().getIp(), logRemoteFile.getAbsolutePath(), sshPort, sshUsername);
-                if (newLine == -1) {
-                    throw new ApplicationException(messages.get("service.check-log.error"));
-                }
-                long lastLine = Files.lines(logFile.toPath()).count();
-
-                //log remote is deleted
-                if (newLine < lastLine) {
-                    //delete file and sync
-                    org.apache.commons.io.FileUtils.write(logFile, "");
-                    lastLine = 0;
-                }
-
-                //sync log
-                int limit = Math.toIntExact(newLine - lastLine);
-                if (!AppUtils.syncLogFromRemote(service.getServer().getIp(), logRemoteFile.getAbsolutePath(), logFile.getAbsolutePath(), limit, sshPort, sshUsername)) {
-                    throw new ApplicationException(messages.get("service.log.sync.error"));
-                }
-            }
-        } catch (IOException e) {
-            throw new ApplicationException(messages.get("service.server.ip.not-available"));
-        }
-
-        //
-        int errCount = 0;
-        List<String> lassErr = new ArrayList<>();
-        boolean isBeginErr = false;
-
-        //check log file service
-        try {
-            long newLine = Files.lines(logFile.toPath()).count();
-            long lastLine = logService.getCheckedLine();
-
-            //Service don't have new log
-            if (newLine == lastLine) {
-                // send notify if service not write any thing after 24h
-                if (logService.getLastLoggingDate().plusHours(lastUpdateLogMax).isBefore(LocalDateTime.now())) {
-                    //
-                    String detailMessage = String.format("Service dit not write any things since: %s, service: %s", logService.getLastLoggingDate(), service.getName());
-                    addingIssueTrackingAndSendReport(service, detailMessage, IssueType.WARNING);
-                }
-                logService.setUpdatedDate(LocalDateTime.now());
-                return logService;
-            }
-            //log file had deleted
-            if (newLine < lastLine) {
-                lastLine = 0;
-            }
-
-            int limit = Math.toIntExact(newLine - lastLine);
-            //Get new logs and check error
-            List<String> logs = fileTail(logFile.toPath(), limit);
-            for (String line : logs) {
-                if (line.matches(AppConstants.ERROR_REGEX)) {
-                    lassErr.clear();
-                    errCount++;
-                    isBeginErr = true;
-                    lassErr.add(line);
-                } else {
-                    if (line.matches(AppConstants.INFO_REGEX) || line.matches(AppConstants.DEBUG_REGEX) || line.matches(AppConstants.WARN_REGEX)) {
-                        isBeginErr = false;
-                    }
-                    if (isBeginErr) {
-                        lassErr.add(line);
-                    }
-                }
-            }
-
-            if (lassErr.isEmpty()) {
-                logService.setConsecutiveErrCount(0);
-            } else { //if error
-                logService.setConsecutiveErrCount(logService.getConsecutiveErrCount() + 1);
-                //
-                String detailMessage = String.format("Service is running with %s errors, with error: %s", logService.getConsecutiveErrCount(), lassErr);
-                addingIssueTrackingAndSendReport(service, detailMessage, IssueType.ERROR);
-            }
-
-            //save last check
-            logService.setCheckedLine(newLine);
-            logService.setErrorCount(logService.getErrorCount() + errCount);
-            logService.setErrorMsg(String.join("\r\n", lassErr));
-            logService.setUpdatedDate(LocalDateTime.now());
-            logService.setLastLoggingDate(LocalDateTime.now());
-            //save log service
-            logServiceRepository.save(logService);
-        } catch (IOException e) {
-            throw new ApplicationException(messages.get("service.check-log.error"));
-        }
-
-        return logService;
-    }
-
     //read tail file
     private List<String> fileTail(final Path source, final int limit) throws IOException {
         final String[] data = new String[limit];
@@ -348,8 +247,15 @@ public class HealthCheckServiceImpl implements HealthCheckService {
 
     public void checkServiceStatus(Service service) {
         if (!AppUtils.isProcessAlive(service.getServer().getIp(), service.getPid(), sshPort, sshUsername)) {
-            String detailMessage = "Your service has died";
-            addingIssueTrackingAndSendReport(service, detailMessage, IssueType.ERROR);
+            //if the old pid is not alive, then we would try to get a new pid from service's port
+            String newPid = AppUtils.getPidFromPort(service.getServer().getIp(), service.getServerPort(), sshPort, sshUsername);
+            if (StringUtils.isEmpty(newPid)) { //if we can not get pid from port, then service is died
+                String detailMessage = "Your service has died";
+                addingIssueTrackingAndSendReport(service, detailMessage, IssueType.ERROR, null);
+            } else {
+                service.setPid(newPid);
+                serviceRepository.save(service);
+            }
         }
     }
 }
