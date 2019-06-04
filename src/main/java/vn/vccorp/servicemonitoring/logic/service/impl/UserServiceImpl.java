@@ -10,12 +10,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import vn.vccorp.servicemonitoring.dto.ListDTO;
+import vn.vccorp.servicemonitoring.dto.UserInfoDTO;
 import vn.vccorp.servicemonitoring.dto.UserDTO;
 import vn.vccorp.servicemonitoring.dto.ConfigurationDTO;
 import vn.vccorp.servicemonitoring.entity.Configuration;
@@ -35,7 +34,6 @@ import vn.vccorp.servicemonitoring.utils.BeanUtils;
 
 import org.quartz.CronExpression;
 
-import javax.management.Query;
 import java.util.List;
 
 @Service
@@ -155,7 +153,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public Page<ListDTO> listAllUser(int currentPage, int pageSize) {
+    public Page<UserInfoDTO> listAllUser(int currentPage, int pageSize) {
 
         Pageable pageNumber = PageRequest.of(currentPage, pageSize);
         return userRepository.getAllUser(pageNumber);

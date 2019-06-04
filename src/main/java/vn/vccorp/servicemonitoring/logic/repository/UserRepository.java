@@ -5,11 +5,8 @@
 
 package vn.vccorp.servicemonitoring.logic.repository;
 
-import org.bouncycastle.asn1.DERTaggedObject;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
-import vn.vccorp.servicemonitoring.dto.ListDTO;
 import vn.vccorp.servicemonitoring.entity.User;
 import vn.vccorp.servicemonitoring.enumtype.Role;
 
@@ -23,7 +20,7 @@ public interface UserRepository extends JpaRepository<User, Integer>, UserReposi
     List<User> findAllByRoleAndIsDeleted(Role role, boolean isDeleted);
     List<User> findAllByRole(Role role);
 /*    @Query(nativeQuery = true)
-    List<ListDTO> getAllOwnerOrMaintainerDetail();*/
+    List<UserInfoDTO> getAllOwnerOrMaintainerDetail();*/
     Optional<User> findByIdAndIsDeleted(int id, boolean isDeleted);
 }
 

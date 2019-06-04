@@ -8,7 +8,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 
-public class ListDTO {
+public class UserInfoDTO {
         //User info
         private String name;
         private String username;
@@ -18,7 +18,7 @@ public class ListDTO {
         private List<ServiceInfo> services;
         private List<ServerInfo> servers;
 
-        public ListDTO(String name, String username, String email, String phone, List<ServiceInfo> services, List<ServerInfo> servers) {
+        public UserInfoDTO(String name, String username, String email, String phone, List<ServiceInfo> services, List<ServerInfo> servers) {
                 this.name = name;
                 this.username = username;
                 this.email = email;

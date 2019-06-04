@@ -5,7 +5,6 @@ import io.swagger.annotations.ApiOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -19,15 +18,12 @@ import org.springframework.security.web.savedrequest.RequestCache;
 import org.springframework.security.web.savedrequest.SavedRequest;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
-import vn.vccorp.servicemonitoring.dto.ListDTO;
 import vn.vccorp.servicemonitoring.dto.RoleDTO;
 import vn.vccorp.servicemonitoring.dto.UserDTO;
 import vn.vccorp.servicemonitoring.dto.ConfigurationDTO;
-import vn.vccorp.servicemonitoring.entity.Service;
 import vn.vccorp.servicemonitoring.enumtype.ApplicationError;
 import vn.vccorp.servicemonitoring.enumtype.Role;
 import vn.vccorp.servicemonitoring.exception.ApplicationException;
-import vn.vccorp.servicemonitoring.logic.service.MonitorService;
 import vn.vccorp.servicemonitoring.logic.service.UserService;
 import vn.vccorp.servicemonitoring.message.Messages;
 import vn.vccorp.servicemonitoring.rest.response.BaseResponse;
@@ -39,7 +35,6 @@ import vn.vccorp.servicemonitoring.utils.BeanUtils;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
-import java.util.List;
 
 /**
  * Name: tuyennta

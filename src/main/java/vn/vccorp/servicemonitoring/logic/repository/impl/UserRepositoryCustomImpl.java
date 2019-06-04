@@ -6,7 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import vn.vccorp.servicemonitoring.dto.ListDTO;
+import vn.vccorp.servicemonitoring.dto.UserInfoDTO;
 import vn.vccorp.servicemonitoring.dto.ServerInfo;
 import vn.vccorp.servicemonitoring.dto.ServiceInfo;
 import vn.vccorp.servicemonitoring.logic.repository.UserRepositoryCustom;
@@ -23,7 +23,7 @@ public class UserRepositoryCustomImpl implements UserRepositoryCustom {
     private EntityManager entityManager;
 
     @Override
-    public PageImpl<ListDTO> getAllUser(Pageable page) {
+    public PageImpl<UserInfoDTO> getAllUser(Pageable page) {
 
         @Getter
         @Setter
@@ -80,9 +80,9 @@ public class UserRepositoryCustomImpl implements UserRepositoryCustom {
             );
         }
 
-        List<ListDTO> finalResultList = new ArrayList<>();
+        List<UserInfoDTO> finalResultList = new ArrayList<>();
         for(returnedQueryResult r: convertedResultList) {
-                ListDTO dto = new ListDTO();
+                UserInfoDTO dto = new UserInfoDTO();
                 List<ServiceInfo> serviceInfoList = new ArrayList<>();
                 List<ServerInfo> serverInfoList = new ArrayList<>();
 

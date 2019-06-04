@@ -6,13 +6,10 @@
 package vn.vccorp.servicemonitoring.logic.service;
 
 import org.springframework.data.domain.Page;
-import vn.vccorp.servicemonitoring.dto.ListDTO;
+import vn.vccorp.servicemonitoring.dto.UserInfoDTO;
 import vn.vccorp.servicemonitoring.dto.UserDTO;
-import vn.vccorp.servicemonitoring.entity.User;
 import vn.vccorp.servicemonitoring.dto.ConfigurationDTO;
 import vn.vccorp.servicemonitoring.enumtype.Role;
-
-import java.util.List;
 
 public interface UserService {
     void addAccount(UserDTO userDTO);
@@ -29,5 +26,5 @@ public interface UserService {
     
     void updateConfig(ConfigurationDTO configurationDTO);
     
-    Page<ListDTO> listAllUser(int currentPage, int pageSize);
+    Page<UserInfoDTO> listAllUser(int currentPage, int pageSize);
 }
