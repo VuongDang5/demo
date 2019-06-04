@@ -1,5 +1,6 @@
 package vn.vccorp.servicemonitoring.utils;
 
+import org.apache.commons.lang3.StringUtils;
 import org.joda.time.LocalDateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -75,6 +76,42 @@ public class AppUtils {
             return true;
         }
         return false;
+    }
+
+    /**
+     * Get listened ports of a pid from a remote server via ssh connection
+     * @param serverIP  destination server
+     * @param pid   pid to get ports
+     * @param sshPort   ssh port to connect to destination server
+     * @param sshUsername   ssh user to connect to destination server
+     * @return  all ports being listened by pid, each port separated by a semi-colon
+     */
+    public static String getPortFromPid(String serverIP, String pid, String sshPort, String sshUsername) {
+        String command = String.format("ssh -p %s %s@%s -t 'sudo lsof -aPi -p %s | grep LISTEN'", sshPort, sshUsername, serverIP, pid);
+        List<String> out = executeCommand(command);
+        String ports = "";
+        for (String line : out) {
+            ports = ports.concat(StringUtils.substringBetween(line, ":", " (LISTEN)")).concat(";");
+        }
+        return ports.substring(0, ports.length() - 1);
+    }
+
+    /**
+     * Get pid of a process which is listened on a specific port on a remote server
+     * @param serverIP  remote server
+     * @param port  port which service is listening on
+     * @param sshPort   ssh port to connect to destination server
+     * @param sshUsername   ssh username to connect to destination server
+     * @return  pid of service which is listening that port
+     */
+    public static String getPidFromPort(String serverIP, String port, String sshPort, String sshUsername) {
+        String command = String.format("ssh -p %s %s@%s -t 'sudo ss -ntpl 'sport = :%s''", sshPort, sshUsername, serverIP, port);
+        List<String> out = executeCommand(command);
+        String pid = "";
+        for (String line : out) {
+            pid = StringUtils.substringBetween(line, "pid=", ",");
+        }
+        return pid;
     }
 
     /**

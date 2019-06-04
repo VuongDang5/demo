@@ -17,6 +17,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 import vn.vccorp.servicemonitoring.dto.LogServiceDTO;
 import vn.vccorp.servicemonitoring.dto.ServiceDTO;
@@ -75,10 +76,33 @@ public class MonitorServiceImpl implements MonitorService {
         Server server = serverRepository.findById(serviceDTO.getServerId())
                 .orElseThrow(() -> new ApplicationException(messages.get("service.server.not-available", new String[]{String.valueOf(serviceDTO.getServerId())})));
 
-        //check if service with specified info is correct on the system
-        if (!AppUtils.isProcessAlive(server.getIp(), serviceDTO.getPid(), sshPort, sshUsername)) {
-            throw new ApplicationException(messages.get("service.pid.not-available", new String[]{serviceDTO.getPid(), server.getIp()}));
+        //check if service with specified info is correct on the target server
+        if (StringUtils.isEmpty(serviceDTO.getPid())){
+            if (StringUtils.isEmpty(serviceDTO.getServerPort())){
+                throw new ApplicationException(messages.get("service.info.missing"));
+            } else {
+                String pid = AppUtils.getPidFromPort(server.getIp(), serviceDTO.getServerPort(), sshPort, sshUsername);
+                if (StringUtils.isEmpty(pid)){
+                    throw new ApplicationException(messages.get("service.pid.not-available", new String[]{serviceDTO.getServerPort(), server.getIp()}));
+                } else {
+                    serviceDTO.setPid(pid);
+                }
+            }
+        } else {
+            if (StringUtils.isEmpty(serviceDTO.getServerPort())){
+                String port = AppUtils.getPortFromPid(server.getIp(), serviceDTO.getPid(), sshPort, sshUsername);
+                if (StringUtils.isEmpty(port)){
+                    throw new ApplicationException(messages.get("service.port.not-available", new String[]{serviceDTO.getPid(), server.getIp()}));
+                }
+                serviceDTO.setServerPort(port);
+            } else {
+                String pid = AppUtils.getPidFromPort(server.getIp(), serviceDTO.getServerPort(), sshPort, sshUsername);
+                if (StringUtils.isEmpty(pid) || !pid.equals(serviceDTO.getPid())){
+                    throw new ApplicationException(messages.get("service.info.incorrect", new String[]{serviceDTO.getPid(), serviceDTO.getServerPort(), server.getIp()}));
+                }
+            }
         }
+
         //check if log file is available
         File logFile = new File(serviceDTO.getLogDir() + serviceDTO.getLogFile());
         if (!AppUtils.isFileExist(server.getIp(), logFile.getAbsolutePath(), sshPort, sshUsername)) {

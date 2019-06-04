@@ -17,10 +17,7 @@ import vn.vccorp.servicemonitoring.entity.*;
 import vn.vccorp.servicemonitoring.enumtype.IssueType;
 import vn.vccorp.servicemonitoring.enumtype.Role;
 import vn.vccorp.servicemonitoring.exception.ApplicationException;
-import vn.vccorp.servicemonitoring.logic.repository.IssueTrackingRepository;
-import vn.vccorp.servicemonitoring.logic.repository.LogServiceRepository;
-import vn.vccorp.servicemonitoring.logic.repository.SnapshotRepository;
-import vn.vccorp.servicemonitoring.logic.repository.UserRepository;
+import vn.vccorp.servicemonitoring.logic.repository.*;
 import vn.vccorp.servicemonitoring.logic.service.EmailService;
 import vn.vccorp.servicemonitoring.logic.service.HealthCheckService;
 import vn.vccorp.servicemonitoring.message.Messages;
@@ -80,7 +77,6 @@ public class HealthCheckServiceImpl implements HealthCheckService {
 
     }
 
-    @Transactional
     @Override
     public void checkLogService(Service service) {
         //Create new LogService if it = null
@@ -185,7 +181,7 @@ public class HealthCheckServiceImpl implements HealthCheckService {
                 .build();
 
         //build recipients from owner, maintainers and admins
-        List<String> recipients = service.getUserServices().parallelStream().map(u -> u.getUser().getEmail()).collect(Collectors.toList());
+        List<String> recipients = userRepository.findAllByServiceId(service.getId());
         recipients.addAll(userRepository.findAllByRole(Role.ADMIN).parallelStream().map(User::getEmail).collect(Collectors.toList()));
         recipients = recipients.parallelStream().distinct().collect(Collectors.toList());
 
