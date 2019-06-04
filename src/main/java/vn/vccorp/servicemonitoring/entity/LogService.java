@@ -19,31 +19,5 @@ public class LogService {
 
     private int serviceId;
 
-    private int errorCount;
-
-    private LocalDateTime updatedDate;
-
-    private LocalDateTime createdDate;
-
-    private LocalDateTime lastLoggingDate;
-
     private long checkedLine;
-
-    @Column(length = Integer.MAX_VALUE)
-    private String errorMsg;
-
-    private String logDir;
-    public String getLogDir() {
-        return logDir.endsWith("/") ? logDir : logDir + "/";
-    }
-
-    private String logFile;
-
-    private int consecutiveErrCount;
-
-    private int errorPerHourCount;
-
-    private LocalDateTime hourlyCheck;
-
-    private float logSize;
 }
