@@ -164,6 +164,12 @@ public class MonitorServiceImpl implements MonitorService {
             throw new ApplicationException(messages.get("service.error.starting"));
         } else {
             service.setPid(out.get(0));
+            String port = AppUtils.getPortFromPid(service.getServer().getIp(), service.getPid(), sshPort, sshUsername);
+            if (StringUtils.isEmpty(port)) {
+                LOGGER.error(messages.get("service.port.not-available", new String[]{service.getPid(), service.getServer().getIp()}));
+            } else {
+                service.setServerPort(port);
+            }
             serviceRepository.save(service);
         }
     }
