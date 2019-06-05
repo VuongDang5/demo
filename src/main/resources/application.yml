@@ -40,6 +40,12 @@ default:
 path:
   upload: ./uploads/
 
+service:
+  last-update-log:
+    max: 24
+  log-folder:
+    name: LogService
+
 smtp:
   host: smtp.gmail.com
   port: 587

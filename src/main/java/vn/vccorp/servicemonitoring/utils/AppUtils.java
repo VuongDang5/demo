@@ -1,10 +1,12 @@
 package vn.vccorp.servicemonitoring.utils;
 
+import org.apache.commons.lang3.StringUtils;
 import org.joda.time.LocalDateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -21,16 +23,17 @@ public class AppUtils {
 
     /**
      * Get total size of a folder on remote server
-     * @param folder    folder to get size
-     * @param serverIp  server ip address of folder
-     * @param sshPort   ssh port to connect to the server
-     * @param sshUsername   username to connect to server via ssh command
-     * @return  size of folder (Kb)
+     *
+     * @param folder      folder to get size
+     * @param serverIp    server ip address of folder
+     * @param sshPort     ssh port to connect to the server
+     * @param sshUsername username to connect to server via ssh command
+     * @return size of folder (Kb)
      */
-    public static Integer getFolderSize(String folder, String serverIp, String sshPort, String sshUsername){
+    public static Integer getFolderSize(String folder, String serverIp, String sshPort, String sshUsername) {
         String command = String.format("ssh -p %s %s@%s -t 'sudo du -s %s'", sshPort, sshUsername, serverIp, folder);
         List<String> out = executeCommand(command);
-        if (out.isEmpty()){
+        if (out.isEmpty()) {
             return 0;
         } else {
             return Integer.parseInt(out.get(0).split("\\s")[0]);
@@ -39,19 +42,20 @@ public class AppUtils {
 
     /**
      * Get size of the disk on remote server which is having folder
-     * @param folder    absolute path to folder on the disk
-     * @param serverIp  server to check disk size
-     * @param sshPort   ssh port to connect to that server
-     * @param sshUsername   ssh user to connect to that server
-     * @return  size of disk (Kb)
+     *
+     * @param folder      absolute path to folder on the disk
+     * @param serverIp    server to check disk size
+     * @param sshPort     ssh port to connect to that server
+     * @param sshUsername ssh user to connect to that server
+     * @return size of disk (Kb)
      */
-    public static Integer getDiskSize(String folder, String serverIp, String sshPort, String sshUsername){
+    public static Integer getDiskSize(String folder, String serverIp, String sshPort, String sshUsername) {
         String command = String.format("ssh -p %s %s@%s -t 'sudo df -h %s --output=size'", sshPort, sshUsername, serverIp, folder);
         List<String> out = executeCommand(command);
-        if (out.size() <= 1){
+        if (out.size() <= 1) {
             return 0;
         } else {
-            return Integer.parseInt(out.get(1).replace("G", "").trim()) * 1024  * 1024;
+            return Integer.parseInt(out.get(1).replace("G", "").trim()) * 1024 * 1024;
         }
     }
 
@@ -75,6 +79,42 @@ public class AppUtils {
     }
 
     /**
+     * Get listened ports of a pid from a remote server via ssh connection
+     * @param serverIP  destination server
+     * @param pid   pid to get ports
+     * @param sshPort   ssh port to connect to destination server
+     * @param sshUsername   ssh user to connect to destination server
+     * @return  all ports being listened by pid, each port separated by a semi-colon
+     */
+    public static String getPortFromPid(String serverIP, String pid, String sshPort, String sshUsername) {
+        String command = String.format("ssh -p %s %s@%s -t 'sudo lsof -aPi -p %s | grep LISTEN'", sshPort, sshUsername, serverIP, pid);
+        List<String> out = executeCommand(command);
+        String ports = "";
+        for (String line : out) {
+            ports = ports.concat(StringUtils.substringBetween(line, ":", " (LISTEN)")).concat(";");
+        }
+        return ports.substring(0, ports.length() - 1);
+    }
+
+    /**
+     * Get pid of a process which is listened on a specific port on a remote server
+     * @param serverIP  remote server
+     * @param port  port which service is listening on
+     * @param sshPort   ssh port to connect to destination server
+     * @param sshUsername   ssh username to connect to destination server
+     * @return  pid of service which is listening that port
+     */
+    public static String getPidFromPort(String serverIP, String port, String sshPort, String sshUsername) {
+        String command = String.format("ssh -p %s %s@%s -t 'sudo ss -ntpl 'sport = :%s''", sshPort, sshUsername, serverIP, port);
+        List<String> out = executeCommand(command);
+        String pid = "";
+        for (String line : out) {
+            pid = StringUtils.substringBetween(line, "pid=", ",");
+        }
+        return pid;
+    }
+
+    /**
      * Check if a folder is existed on a remote server
      *
      * @param serverIP    server to check
@@ -84,7 +124,7 @@ public class AppUtils {
      * @return true if folder existed otherwise false
      */
     public static boolean isFolderExist(String serverIP, String filePath, String sshPort, String sshUsername) {
-        String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIP + " -t 'test -d " + filePath + "'; echo $?";
+        String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIP + " -t 'sudo test -d " + filePath + "'; echo $?";
         List<String> out = executeCommand(command);
         if (!out.isEmpty() && out.get(0).equals("0")) {
             return true;
@@ -102,12 +142,59 @@ public class AppUtils {
      * @return true if file is existed otherwise false
      */
     public static boolean isFileExist(String serverIP, String filePath, String sshPort, String sshUsername) {
-        String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIP + " -t 'test -f " + filePath + "'; echo $?";
+        String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIP + " -t 'sudo test -f " + filePath + "'; echo $?";
         List<String> out = executeCommand(command);
         if (!out.isEmpty() && out.get(0).equals("0")) {
             return true;
         }
         return false;
+    }
+
+    /**
+     * sync log from that host to current host
+     *
+     * @param serverIP    server to check
+     * @param remoteLog   file log remote in service
+     * @param localLog    file log in local
+     * @param sshPort
+     * @param sshUsername
+     * @return true if sync success
+     */
+    public static boolean syncLogFromRemote(String serverIP, String remoteLog, String localLog, int limit, String sshPort, String sshUsername) {
+        String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIP + " -t 'sudo tail -n " + limit + " " + remoteLog + "' >> " + localLog + "; echo $?";
+        if (limit == -1) {
+            command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIP + " -t 'sudo cat " + remoteLog + "' > " + localLog + "; echo $?";
+        }
+        List<String> out = AppUtils.executeCommand(command);
+        if (!out.isEmpty() && out.get(0).equals("0")) {
+            return true;
+        }
+        return false;
+    }
+
+    public static List<String> getLog(String serverIP, String remoteLog, long limit, String sshPort, String sshUsername) {
+        String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIP + " -t 'sudo tail -n " + limit + " " + remoteLog + "'";
+        return AppUtils.executeCommand(command);
+    }
+
+    /**
+     * sync log from that host to current host
+     *
+     * @param serverIP    server to check
+     * @param path        file log remote in service
+     * @param sshPort
+     * @param sshUsername
+     * @return last line if true , -1 if exception
+     */
+    public static long getLastLine(String serverIP, String path, String sshPort, String sshUsername) {
+        try {
+            //get last line in file log remote
+            String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIP + " -t 'sudo cat " + path + " | wc -l'";
+            List<String> outline = AppUtils.executeCommand(command);
+            return Long.parseLong(outline.get(0));
+        } catch (NumberFormatException nfe) {
+            return -1;
+        }
     }
 
     /**
@@ -222,7 +309,12 @@ public class AppUtils {
     }
 
     public static void putFile(String serverId, String sshUsername, String sshPort, String sourceFile, String destination) {
-        String command = "scp -P " + sshPort + " " + sourceFile + " " + sshUsername + "@" + serverId + ":" + destination;
+        String fileName = new File(sourceFile).getName();
+        //first we need to upload file to /tmp folder where we dont need permission
+        String command = "scp -P " + sshPort + " " + sourceFile + " " + sshUsername + "@" + serverId + ":/tmp";
         executeCommand(command);
+        //after that using ssh connection to move file from tmp to your final destination
+        String sshMoveCommand = String.format("ssh -p %s %s@%s -t 'sudo mv /tmp/%s %s'", sshPort, sshUsername, serverId, fileName, destination);
+        executeCommand(sshMoveCommand);
     }
 }

@@ -63,9 +63,7 @@ public class EmailServiceImpl implements EmailService {
             throw new Exception("Subject is missing");
         }
         boolean authFlag = (!StringUtils.isEmpty(emailConfig.getAuthentication())) ? Boolean.valueOf(emailConfig.getAuthentication()) : false;
-        LOGGER.info("sendEmail info=" + emailConfig.toString());
         Properties properties = createPropertiesMail(emailConfig.getHost(), emailConfig.getPort(), authFlag);
-        LOGGER.info("sendEmail properties=" + properties);
         Session session = Session.getInstance(properties, new GMailAuthenticator(emailConfig.getUser(), emailConfig.getPwd()));
         MimeMessage message = new MimeMessage(session);
         message.setSubject(subject);

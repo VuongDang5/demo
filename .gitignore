@@ -1,5 +1,7 @@
 *-local.yml
 src/main/resources/application-local.yml
+Log*
+uploads
 .idea/
 target/
 *.iml

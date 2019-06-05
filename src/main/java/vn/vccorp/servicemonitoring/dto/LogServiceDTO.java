@@ -18,6 +18,6 @@ public class LogServiceDTO {
     @Min(0)
     private Integer start = 0;
 
-    @Min(0)
-    private Integer end = 0;
+    @Min(-1)
+    private Integer end = -1;
 }

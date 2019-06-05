@@ -24,28 +24,27 @@ public class IssueTracking {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @ManyToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "serviceId", insertable = false, updatable = false)
+    @ManyToOne
+    @JoinColumn(name = "serviceId")
     private Service service;
 
-    @ManyToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "serverId", insertable = false, updatable = false)
+    @ManyToOne
+    @JoinColumn(name = "serverId")
     private Server server;
 
     private Date trackingTime;
 
     @Enumerated(EnumType.STRING)
-    @Size(max = 10)
     private IssueType issueType;
 
     @NotBlank
-    @Size(max = 1000)
+    @Size(max = 10000)
     private String detail;
 
     @Size(max = 1000)
     private String userAction;
 
-    @ManyToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "userId", insertable = false, updatable = false)
+    @ManyToOne
+    @JoinColumn(name = "userId")
     private User user;
 }
