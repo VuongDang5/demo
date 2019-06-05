@@ -9,4 +9,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import vn.vccorp.servicemonitoring.entity.Server;
 
 public interface ServerRepository extends JpaRepository<Server, Integer> {
+
 }
