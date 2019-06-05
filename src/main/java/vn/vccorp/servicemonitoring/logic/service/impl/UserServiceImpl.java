@@ -31,8 +31,8 @@ import vn.vccorp.servicemonitoring.message.Messages;
 import vn.vccorp.servicemonitoring.config.RootConfig;
 import vn.vccorp.servicemonitoring.security.RootUser;
 import vn.vccorp.servicemonitoring.utils.BeanUtils;
+import vn.vccorp.servicemonitoring.utils.CronExpression;
 
-import org.quartz.CronExpression;
 
 import java.util.List;
 
@@ -142,7 +142,7 @@ public class UserServiceImpl implements UserService {
             config.setHealthCheckSchedule(configurationDTO.getHealthCheckSchedule());
         }
         if (configurationDTO.getReportSchedule()!=null) {
-        	if (CronExpression.isValidExpression(configurationDTO.getReportSchedule())) {       	
+        	if (CronExpression.isValidExpression(configurationDTO.getReportSchedule())) {
         		config.setReportSchedule(configurationDTO.getReportSchedule());
         	}
         	else {
