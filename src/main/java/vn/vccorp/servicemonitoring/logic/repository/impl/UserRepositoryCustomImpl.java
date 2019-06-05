@@ -17,6 +17,7 @@ import javax.persistence.Query;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class UserRepositoryCustomImpl implements UserRepositoryCustom {
     @PersistenceContext
@@ -29,7 +30,7 @@ public class UserRepositoryCustomImpl implements UserRepositoryCustom {
         @Setter
         @NoArgsConstructor
         @AllArgsConstructor
-        class returnedQueryResult {
+        class ReturnedQueryResult {
             String name;
             String username;
             String email;
@@ -38,7 +39,7 @@ public class UserRepositoryCustomImpl implements UserRepositoryCustom {
             String servers;
         }
 
-        String queryStr = "SELECT u.name, u.username, u.email, u.phone, u.id, " +
+        String queryStr = "SELECT u.name, u.username, u.email, u.phone, " +
                 "GROUP_CONCAT( " +
                 "CONCAT_WS(',', IFNULL(service.name, 'null'), IFNULL(service.pid, 'null'), IFNULL(user_service.role, 'null'), IFNULL(service.description, 'null'), IFNULL(service.status, 'null')) " +
                 "ORDER BY service.pid " +
@@ -63,25 +64,25 @@ public class UserRepositoryCustomImpl implements UserRepositoryCustom {
                 //Sets the maximum number of entities that should be included in the page
                 .setMaxResults(page.getPageSize());
         List<Object[]> resultList = query.getResultList();
-        List<returnedQueryResult> convertedResultList = new ArrayList<>(resultList.size());
+        List<ReturnedQueryResult> convertedResultList = new ArrayList<>(resultList.size());
 
         //Unwind the list returned from query, convert each obj into returnQueryResult and add them into a list
         for(Object [] row: resultList) {
             convertedResultList.add(
                     new
-                    returnedQueryResult(
+                    ReturnedQueryResult(
                             (String) row[0], // name
                             (String) row[1], // username
                             (String) row[2], // email
                             (String) row[3], // phone
-                            (String) row[5], // services
-                            (String) row[6]  // servers
+                            (String) row[4], // services
+                            (String) row[5]  // servers
                     )
             );
         }
 
         List<UserInfoDTO> finalResultList = new ArrayList<>();
-        for(returnedQueryResult r: convertedResultList) {
+        for(ReturnedQueryResult r: convertedResultList) {
                 UserInfoDTO dto = new UserInfoDTO();
                 List<ServiceInfo> serviceInfoList = new ArrayList<>();
                 List<ServerInfo> serverInfoList = new ArrayList<>();
@@ -97,22 +98,23 @@ public class UserRepositoryCustomImpl implements UserRepositoryCustom {
                 for(String s: serviceList) {
                     ServiceInfo serviceInfo = new ServiceInfo();
                     List<String> info = Arrays.asList(s.split(",",-1));
-                    serviceInfo.setName(info.get(0));
-                    serviceInfo.setPid(info.get(1));
-                    serviceInfo.setRole(info.get(2));
-                    serviceInfo.setDescription(info.get(3));
-                    serviceInfo.setStatus(info.get(4));
+
+                    serviceInfo.setName(getReplaceNullString(info, 0));
+                    serviceInfo.setPid(getReplaceNullString(info, 1));
+                    serviceInfo.setRole(getReplaceNullString(info, 2));
+                    serviceInfo.setDescription(getReplaceNullString(info, 3));
+                    serviceInfo.setStatus(getReplaceNullString(info, 4));
                     serviceInfoList.add(serviceInfo);
                 }
 
                 for(String s: serverList) {
                     ServerInfo serverInfo = new ServerInfo();
                     List<String> info = Arrays.asList(s.split(",", -1));
-                    serverInfo.setName(info.get(0));
-                    serverInfo.setIp(info.get(1));
-                    serverInfo.setGroups(info.get(2));
-                    serverInfo.setDescription(info.get(3));
-                    serverInfo.setStatus(info.get(4));
+                    serverInfo.setName(getReplaceNullString(info, 0));
+                    serverInfo.setIp(getReplaceNullString(info, 1));
+                    serverInfo.setGroups(getReplaceNullString(info, 2));
+                    serverInfo.setDescription(getReplaceNullString(info, 3));
+                    serverInfo.setStatus(getReplaceNullString(info, 4));
                     serverInfoList.add(serverInfo);
                 }
 
@@ -121,7 +123,11 @@ public class UserRepositoryCustomImpl implements UserRepositoryCustom {
                 finalResultList.add(dto);
         }
 
-        //Ket qua tra ve la PageImpl
         return new PageImpl<>(finalResultList, page, page.getPageSize());
+    }
+    
+    private String getReplaceNullString(List<String> list, int index) {
+        String s = list.get(index);
+        return s.equalsIgnoreCase("null")?null:s;
     }
 }
