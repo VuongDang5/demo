@@ -49,8 +49,17 @@ public class MonitorServerImpl implements MonitorServer{
         List<String> out = AppUtils.executeCommand(commandSSH);
         //if command execute success not return 0 error
         if (out.isEmpty() || !(out.get(0).equals("0"))) {
-            throw new ApplicationException(messages.get("service.register.failed", new String[]{serverDTO.getIp()}));
+            throw new ApplicationException(messages.get("server.register.ssh.failed", new String[]{serverDTO.getIp()}));
         }
+
+        //check sudo user on server
+        String commandSudo = "ssh -p " + sshPort + " " + sshUsername + "@" + serverDTO.getIp() + " -t 'sudo -nv'; echo $?";
+        List<String> outSudo = AppUtils.executeCommand(commandSudo);
+        //if command execute success not return 0 error
+        if (outSudo.isEmpty() || !(outSudo.get(0).equals("0"))) {
+            throw new ApplicationException(messages.get("server.register.not.sudoUser", new String[]{serverDTO.getIp()}));
+        }
+
         //save server active status
         Server server = dozerBeanMapper.map(serverDTO, Server.class);
         server.setStatus(Status.ACTIVE);
