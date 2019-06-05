@@ -22,7 +22,9 @@ import org.springframework.web.multipart.MultipartFile;
 import vn.vccorp.servicemonitoring.dto.LogServiceDTO;
 import vn.vccorp.servicemonitoring.dto.ServiceDTO;
 import vn.vccorp.servicemonitoring.entity.Server;
+import vn.vccorp.servicemonitoring.entity.User;
 import vn.vccorp.servicemonitoring.entity.UserService;
+import vn.vccorp.servicemonitoring.enumtype.ApplicationError;
 import vn.vccorp.servicemonitoring.enumtype.Role;
 import vn.vccorp.servicemonitoring.exception.ApplicationException;
 import vn.vccorp.servicemonitoring.logic.repository.ServerRepository;
@@ -381,6 +383,26 @@ public class MonitorServiceImpl implements MonitorService {
         vn.vccorp.servicemonitoring.entity.Service service = ServiceRepositoryCustom.showService(serviceId);
         //Kieu tra ve la Entity
         return service;
+    }
+    
+    @Override
+    public void addServiceOwner(int userId, int serviceId, Role role) {
+    	UserService userService = userServiceRepository.findByUserIdAndServiceId(userId, serviceId);
+    	if (userService != null) {
+    		// update role
+    		List<UserService> user = userServiceRepository.findAllByRoleAndServiceId(Role.OWNER, serviceId);
+        	//Check Unique Owner
+            if(user.size() == 1 && user.get(0).getUser().getId() == userId && role == Role.MAINTAINER) {
+                throw new ApplicationException(messages.get("error.cannot.change.owner"));
+            } else {
+            	userService.setRole(role);
+            	userServiceRepository.save(userService);
+            }
+        } else {
+        	// add role
+        	userService = new UserService(userId, serviceId, role);
+        	userServiceRepository.save(userService);
+        }
     }
 
     @Override

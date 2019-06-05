@@ -15,12 +15,16 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import vn.vccorp.servicemonitoring.dto.LogServiceDTO;
 import vn.vccorp.servicemonitoring.dto.ServiceDTO;
+import vn.vccorp.servicemonitoring.dto.UserServiceDTO;
+import vn.vccorp.servicemonitoring.enumtype.Role;
 import vn.vccorp.servicemonitoring.logic.service.MonitorService;
 import vn.vccorp.servicemonitoring.message.Messages;
 import vn.vccorp.servicemonitoring.rest.response.BaseResponse;
 import vn.vccorp.servicemonitoring.rest.response.RestResponseBuilder;
+import vn.vccorp.servicemonitoring.security.AdminAuthorize;
 import vn.vccorp.servicemonitoring.security.CurrentUser;
 import vn.vccorp.servicemonitoring.security.MaintainerAuthorize;
+import vn.vccorp.servicemonitoring.security.OwnerAuthorize;
 import vn.vccorp.servicemonitoring.security.UserAuthorize;
 import vn.vccorp.servicemonitoring.security.UserPrincipal;
 import vn.vccorp.servicemonitoring.utils.AppConstants;
@@ -134,6 +138,16 @@ public class ServiceController {
         monitorService.showService(serviceId);
         BaseResponse.Builder builder = new BaseResponse.Builder();
         builder.setSuccessObject(monitorService.showService(serviceId));
+        return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
+    }
+    
+    @RequestMapping(value = "/add-service-manager", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @ApiOperation(value = "add service magager", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @OwnerAuthorize(serviceId = "#serviceId")
+    public ResponseEntity<Object> addServiceOwner(@CurrentUser UserPrincipal currentUser, @RequestBody UserServiceDTO userServiceDTO) {
+        monitorService.addServiceOwner(userServiceDTO.getUserId(), userServiceDTO.getServiceId(), Role.valueOf(userServiceDTO.getRole()));
+        BaseResponse.Builder builder = new BaseResponse.Builder();
+        builder.setSuccessObject(true);
         return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
     }
 
