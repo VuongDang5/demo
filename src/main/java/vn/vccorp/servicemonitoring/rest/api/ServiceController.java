@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import vn.vccorp.servicemonitoring.dto.LogServiceDTO;
 import vn.vccorp.servicemonitoring.dto.ServiceDTO;
+import vn.vccorp.servicemonitoring.dto.UserServiceDTO;
 import vn.vccorp.servicemonitoring.enumtype.Role;
 import vn.vccorp.servicemonitoring.logic.service.MonitorService;
 import vn.vccorp.servicemonitoring.message.Messages;
@@ -140,11 +141,11 @@ public class ServiceController {
         return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
     }
     
-    @RequestMapping(value = "/add-service-owner/{serviceId}/{userId}", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    @ApiOperation(value = "add service owner", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @RequestMapping(value = "/add-service-manager", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @ApiOperation(value = "add service magager", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @OwnerAuthorize(serviceId = "#serviceId")
-    public ResponseEntity<Object> addServiceOwner(@CurrentUser UserPrincipal currentUser, @PathVariable int serviceId, @PathVariable int userId, @RequestBody String role) {
-        monitorService.addServiceOwner(userId, serviceId, Role.valueOf(role));
+    public ResponseEntity<Object> addServiceOwner(@CurrentUser UserPrincipal currentUser, @RequestBody UserServiceDTO userServiceDTO) {
+        monitorService.addServiceOwner(userServiceDTO.getUserId(), userServiceDTO.getServiceId(), Role.valueOf(userServiceDTO.getRole()));
         BaseResponse.Builder builder = new BaseResponse.Builder();
         builder.setSuccessObject(true);
         return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
