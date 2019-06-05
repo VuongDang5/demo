@@ -9,8 +9,12 @@ import org.dozer.DozerBeanMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import vn.vccorp.servicemonitoring.dto.UserInfoDTO;
 import vn.vccorp.servicemonitoring.dto.UserDTO;
 import vn.vccorp.servicemonitoring.dto.ConfigurationDTO;
 import vn.vccorp.servicemonitoring.entity.Configuration;
@@ -119,7 +123,7 @@ public class UserServiceImpl implements UserService {
         user.setRole(role);
         userRepository.save(user);
     }
-    
+
     public void updateConfig(ConfigurationDTO configurationDTO) {
         Configuration config = configurationRepository.getOne(1);
         if (configurationDTO.getCpuLimit()!=null) {
@@ -147,5 +151,11 @@ public class UserServiceImpl implements UserService {
         }
         configurationRepository.save(config);
     }
-    
+
+    @Override
+    public Page<UserInfoDTO> listAllUser(int currentPage, int pageSize) {
+
+        Pageable pageNumber = PageRequest.of(currentPage, pageSize);
+        return userRepository.getAllUser(pageNumber);
+    }
 }

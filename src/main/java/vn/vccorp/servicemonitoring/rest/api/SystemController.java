@@ -21,11 +21,9 @@ import org.springframework.web.bind.annotation.*;
 import vn.vccorp.servicemonitoring.dto.RoleDTO;
 import vn.vccorp.servicemonitoring.dto.UserDTO;
 import vn.vccorp.servicemonitoring.dto.ConfigurationDTO;
-import vn.vccorp.servicemonitoring.entity.Service;
 import vn.vccorp.servicemonitoring.enumtype.ApplicationError;
 import vn.vccorp.servicemonitoring.enumtype.Role;
 import vn.vccorp.servicemonitoring.exception.ApplicationException;
-import vn.vccorp.servicemonitoring.logic.service.MonitorService;
 import vn.vccorp.servicemonitoring.logic.service.UserService;
 import vn.vccorp.servicemonitoring.message.Messages;
 import vn.vccorp.servicemonitoring.rest.response.BaseResponse;
@@ -50,6 +48,7 @@ public class SystemController {
 
     @Autowired
     private Messages messages;
+
     @Autowired
     AuthenticationManager authenticationManager;
     @Autowired
@@ -120,6 +119,17 @@ public class SystemController {
         LOGGER.info("Receive request of user: {}, mail: {}, role: {}", currentUser.getName(), currentUser.getEmail(), currentUser.getAuthorities());
         BaseResponse.Builder builder = new BaseResponse.Builder();
         userService.deleteAccount(deleteUserId);
+        return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
+    }
+
+
+    @RequestMapping(value = "list-all-user", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @ApiOperation(value = "List all user and relevant information", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @AdminAuthorize
+    public ResponseEntity<Object> listAllUser(@CurrentUser UserPrincipal currentUser, @RequestParam int currentPage, @RequestParam int pageSize) {
+        LOGGER.info("Receive request of user: {}, mail: {}, role: {}", currentUser.getName(), currentUser.getEmail(), currentUser.getAuthorities());
+        BaseResponse.Builder builder = new BaseResponse.Builder();
+        builder.setSuccessObject(userService.listAllUser(currentPage, pageSize));
         return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
     }
 
