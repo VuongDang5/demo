@@ -317,4 +317,22 @@ public class AppUtils {
         String sshMoveCommand = String.format("ssh -p %s %s@%s -t 'sudo mv /tmp/%s %s'", sshPort, sshUsername, serverId, fileName, destination);
         executeCommand(sshMoveCommand);
     }
+
+    /**
+     * sync log from that host to current host
+     *
+     * @param serverIP    server need check
+     * @param userName    use name
+     * @param sshPort
+     * @param sshUsername
+     * @return if user exist return groups user else null
+     */
+    public static String getGroupUser(String serverIP, String userName, String sshPort, String sshUsername){
+        String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIP + " -t 'groups " + userName + "'";
+        List<String> out = AppUtils.executeCommand(command);
+        if (out.isEmpty()) {
+            return  null;
+        }
+        return out.get(0).split(userName + " : ", 2)[1].replace(" ", ",");
+    }
 }
