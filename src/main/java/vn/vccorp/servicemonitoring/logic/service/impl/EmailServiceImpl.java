@@ -42,7 +42,7 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
-    public void sendServiceReachLimitWarning(ServiceErrorDTO serviceErrorDTO, List<String> recipients) {
+    public void sendServiceErrorMessage(ServiceErrorDTO serviceErrorDTO, List<String> recipients) {
         String body = createBodyEmailFromTemplate(ImmutableMap.of("service", serviceErrorDTO), "healthcheck-service-error-template.ftl");
         try {
             sendEmail(recipients, null, null, messages.get("service.error.report-title", new String[]{serviceErrorDTO.getServiceName(), serviceErrorDTO.getDeployedServer()}), body, null);

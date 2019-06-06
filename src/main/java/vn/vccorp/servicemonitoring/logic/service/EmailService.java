@@ -12,5 +12,5 @@ public interface EmailService {
 
     String createBodyEmailFromTemplate(Map<String, Object> model, String emailTemplateName);
 
-    void sendServiceReachLimitWarning(ServiceErrorDTO serviceErrorDTO, List<String> recipients);
+    void sendServiceErrorMessage(ServiceErrorDTO serviceErrorDTO, List<String> recipients);
 }

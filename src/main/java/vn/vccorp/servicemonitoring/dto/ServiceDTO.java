@@ -7,6 +7,7 @@ package vn.vccorp.servicemonitoring.dto;
 
 import lombok.*;
 import vn.vccorp.servicemonitoring.enumtype.Status;
+import vn.vccorp.servicemonitoring.validator.Path;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
@@ -44,6 +45,7 @@ public class ServiceDTO {
 
     @NotBlank
     @Size(max = 200)
+    @Path
     private String deployDir;
 
     public String getDeployDir(){
@@ -52,6 +54,7 @@ public class ServiceDTO {
 
     @NotBlank
     @Size(max = 200)
+    @Path
     private String logDir;
 
     public String getLogDir(){
