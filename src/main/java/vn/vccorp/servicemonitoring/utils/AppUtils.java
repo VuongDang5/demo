@@ -318,14 +318,21 @@ public class AppUtils {
         executeCommand(sshMoveCommand);
     }
 
-    public static String isUserServer(String serverIP, String userName, String sshPort, String sshUsername){
+    /**
+     * sync log from that host to current host
+     *
+     * @param serverIP    server need check
+     * @param userName    use name
+     * @param sshPort
+     * @param sshUsername
+     * @return if user exist return groups user else null
+     */
+    public static String getGroupUser(String serverIP, String userName, String sshPort, String sshUsername){
         String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIP + " -t 'groups " + userName + "'";
         List<String> out = AppUtils.executeCommand(command);
-        //if user not exist on server return null
         if (out.isEmpty()) {
             return  null;
         }
-        //return groups user
         return out.get(0).split(userName + " : ", 2)[1].replace(" ", ",");
     }
 }

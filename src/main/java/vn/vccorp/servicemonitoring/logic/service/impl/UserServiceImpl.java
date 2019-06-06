@@ -73,7 +73,7 @@ public class UserServiceImpl implements UserService {
         List<UserServer> userServer = new ArrayList<>();
         List<Server> allServer = serverRepository.findAll();
         for (Server server : allServer) {
-            String groups = AppUtils.isUserServer(server.getIp(), user.getUsername(), sshPort, sshUsername);
+            String groups = AppUtils.getGroupUser(server.getIp(), user.getUsername(), sshPort, sshUsername);
             if (groups == null){
                 continue;
             }

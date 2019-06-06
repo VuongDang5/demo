@@ -69,7 +69,7 @@ public class MonitorServerImpl implements MonitorServer{
         List<UserServer> userServer = new ArrayList<>();
         List<User> allUser = userRepository.findAll();
         for (User user : allUser) {
-            String groups = AppUtils.isUserServer(server.getIp(), user.getUsername(), sshPort, sshUsername);
+            String groups = AppUtils.getGroupUser(server.getIp(), user.getUsername(), sshPort, sshUsername);
             if (groups == null){
                 continue;
             }
