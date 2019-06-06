@@ -45,7 +45,7 @@ public class EmailServiceImpl implements EmailService {
     public void sendServiceReachLimitWarning(ServiceErrorDTO serviceErrorDTO, List<String> recipients) {
         String body = createBodyEmailFromTemplate(ImmutableMap.of("service", serviceErrorDTO), "healthcheck-service-error-template.ftl");
         try {
-            sendEmail(recipients, null, null, messages.get("service.warning.limit-reach"), body, null);
+            sendEmail(recipients, null, null, messages.get("service.error.report-title", new String[]{serviceErrorDTO.getServiceName(), serviceErrorDTO.getDeployedServer()}), body, null);
         } catch (Exception e) {
             LOGGER.error("Exception while sending warning message");
         }
