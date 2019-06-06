@@ -1,6 +1,7 @@
 package vn.vccorp.servicemonitoring.dto;
 
 import lombok.*;
+import vn.vccorp.servicemonitoring.enumtype.Role;
 import vn.vccorp.servicemonitoring.enumtype.Status;
 
 import java.util.Date;
@@ -20,7 +21,7 @@ public class ServiceInfoDTO {
 
     private String email;
 
-    private String role;
+    private Role role;
 
     private String description;
 
@@ -42,11 +43,13 @@ public class ServiceInfoDTO {
 
     private String note;
 
-    private String ramUsed;
+    private Date time;
 
-    private String cpuUsed;
+    private Float ramUsed;
 
-    private String gpuUsed;
+    private Float cpuUsed;
 
-    private String diskUsed;
+    private Float gpuUsed;
+
+    private Float diskUsed;
 }
