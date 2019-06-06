@@ -39,6 +39,7 @@ default:
 
 path:
   upload: ./uploads/
+  server-prefix: /data
 
 service:
   last-update-log:

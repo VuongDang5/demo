@@ -21,14 +21,10 @@ import vn.vccorp.servicemonitoring.logic.service.MonitorService;
 import vn.vccorp.servicemonitoring.message.Messages;
 import vn.vccorp.servicemonitoring.rest.response.BaseResponse;
 import vn.vccorp.servicemonitoring.rest.response.RestResponseBuilder;
-import vn.vccorp.servicemonitoring.security.AdminAuthorize;
-import vn.vccorp.servicemonitoring.security.CurrentUser;
-import vn.vccorp.servicemonitoring.security.MaintainerAuthorize;
-import vn.vccorp.servicemonitoring.security.OwnerAuthorize;
-import vn.vccorp.servicemonitoring.security.UserAuthorize;
-import vn.vccorp.servicemonitoring.security.UserPrincipal;
+import vn.vccorp.servicemonitoring.security.*;
 import vn.vccorp.servicemonitoring.utils.AppConstants;
 
+import javax.validation.Valid;
 import java.io.IOException;
 
 @RequestMapping(value = AppConstants.API_MAPPING + "/service")
@@ -44,7 +40,7 @@ public class ServiceController {
 
     @RequestMapping(value = "/register", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ApiOperation(value = "Register old service to monitor on this system", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity<Object> registerOldService(@RequestBody ServiceDTO serviceDTO) {
+    public ResponseEntity<Object> registerOldService(@RequestBody @Valid ServiceDTO serviceDTO) {
         LOGGER.info("Receive request to register old service to monitor on this system");
         monitorService.registerService(serviceDTO);
         BaseResponse.Builder builder = new BaseResponse.Builder();
@@ -55,7 +51,7 @@ public class ServiceController {
     @RequestMapping(value = "/start", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ApiOperation(value = "Start a service", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @MaintainerAuthorize(serviceId = "#serviceId")
-    public ResponseEntity<Object> startService(@CurrentUser UserPrincipal currentUser, @RequestBody int serviceId) {
+    public ResponseEntity<Object> startService(@RequestBody int serviceId) {
         LOGGER.info("Receive request to start a service with id: " + serviceId);
         monitorService.startService(serviceId);
         BaseResponse.Builder builder = new BaseResponse.Builder();
@@ -73,7 +69,7 @@ public class ServiceController {
         builder.setSuccessObject(true);
         return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
     }
-    
+
     @RequestMapping(value = "/delete-log", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ApiOperation(value = "Delete Log", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     public ResponseEntity<Object> deleteLog(@CurrentUser UserPrincipal currentUser, @RequestBody int id) {
@@ -90,7 +86,7 @@ public class ServiceController {
     @ApiOperation(value = "Deploy new service or re-deploy old service to monitor on this system", produces = MediaType.APPLICATION_JSON_UTF8_VALUE
             , consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Object> deployService(@CurrentUser UserPrincipal currentUser
-            , @RequestPart ServiceDTO serviceDTO
+            , @RequestPart @Valid ServiceDTO serviceDTO
             , @RequestPart(value = "jar", required = false) MultipartFile jar
             , @RequestPart(value = "original", required = false) MultipartFile originalJar
             , @RequestPart(value = "dependencies", required = false) MultipartFile dependencies
@@ -123,8 +119,7 @@ public class ServiceController {
     @RequestMapping(value = "/show-all-service/", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ApiOperation(value = "Show all service", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @UserAuthorize
-    public ResponseEntity<Object> showAllService(@CurrentUser UserPrincipal currentUser,
-                                                 @RequestParam int currentPage, @RequestParam int pageSize) {
+    public ResponseEntity<Object> showAllService(@RequestParam int currentPage, @RequestParam int pageSize) {
         monitorService.showAllService(currentPage, pageSize);
         BaseResponse.Builder builder = new BaseResponse.Builder();
         builder.setSuccessObject(monitorService.showAllService(currentPage, pageSize));
@@ -134,17 +129,17 @@ public class ServiceController {
     @RequestMapping(value = "/show-service/{serviceId}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ApiOperation(value = "Show service", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @UserAuthorize
-    public ResponseEntity<Object> showService(@CurrentUser UserPrincipal currentUser, @PathVariable int serviceId) {
+    public ResponseEntity<Object> showService(@PathVariable int serviceId) {
         monitorService.showService(serviceId);
         BaseResponse.Builder builder = new BaseResponse.Builder();
         builder.setSuccessObject(monitorService.showService(serviceId));
         return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
     }
-    
+
     @RequestMapping(value = "/add-service-manager", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ApiOperation(value = "add service magager", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @OwnerAuthorize(serviceId = "#serviceId")
-    public ResponseEntity<Object> addServiceOwner(@CurrentUser UserPrincipal currentUser, @RequestBody UserServiceDTO userServiceDTO) {
+    public ResponseEntity<Object> addServiceOwner(@RequestBody UserServiceDTO userServiceDTO) {
         monitorService.addServiceOwner(userServiceDTO.getUserId(), userServiceDTO.getServiceId(), Role.valueOf(userServiceDTO.getRole()));
         BaseResponse.Builder builder = new BaseResponse.Builder();
         builder.setSuccessObject(true);
@@ -154,7 +149,7 @@ public class ServiceController {
     @RequestMapping(value = "/edit-service/{serviceId}", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ApiOperation(value = "Edit Information Service", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @MaintainerAuthorize(serviceId = "#serviceId")
-    public ResponseEntity<Object> editService(@CurrentUser UserPrincipal currentUser, @PathVariable int serviceId, @RequestBody ServiceDTO serviceDTO) {
+    public ResponseEntity<Object> editService(@PathVariable int serviceId, @RequestBody ServiceDTO serviceDTO) {
         LOGGER.info("Receive request to edit a service with id: " + serviceId);
         monitorService.editService(serviceId, serviceDTO);
         BaseResponse.Builder builder = new BaseResponse.Builder();

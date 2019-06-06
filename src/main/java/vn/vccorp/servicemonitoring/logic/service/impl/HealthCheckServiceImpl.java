@@ -188,7 +188,7 @@ public class HealthCheckServiceImpl implements HealthCheckService {
         recipients = recipients.parallelStream().distinct().collect(Collectors.toList());
 
         //send email
-        emailService.sendServiceReachLimitWarning(errorDTO, recipients);
+        emailService.sendServiceErrorMessage(errorDTO, recipients);
     }
 
     /**
