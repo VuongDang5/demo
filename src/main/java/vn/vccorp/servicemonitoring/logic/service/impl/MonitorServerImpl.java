@@ -49,7 +49,7 @@ public class MonitorServerImpl implements MonitorServer{
         List<String> out = AppUtils.executeCommand(commandSSH);
         //if command execute success not return 0 error
         if (out.isEmpty() || !(out.get(0).equals("0"))) {
-            throw new ApplicationException(messages.get("server.register.ssh.failed", new String[]{serverDTO.getIp()}));
+            throw new ApplicationException(messages.get("server.register.ssh-not-available", new String[]{serverDTO.getIp()}));
         }
 
         //check sudo user on server
@@ -57,7 +57,7 @@ public class MonitorServerImpl implements MonitorServer{
         List<String> outSudo = AppUtils.executeCommand(commandSudo);
         //if command execute success not return 0 error
         if (outSudo.isEmpty() || !(outSudo.get(0).equals("0"))) {
-            throw new ApplicationException(messages.get("server.register.not.sudoUser", new String[]{serverDTO.getIp()}));
+            throw new ApplicationException(messages.get("server.register.not-sudo", new String[]{sshUsername, serverDTO.getIp()}));
         }
 
         //save server active status
@@ -69,12 +69,10 @@ public class MonitorServerImpl implements MonitorServer{
         List<UserServer> userServer = new ArrayList<>();
         List<User> allUser = userRepository.findAll();
         for (User user : allUser) {
-            String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverDTO.getIp() + " -t 'groups " + user.getUsername() + "'";
-            List<String> outUser = AppUtils.executeCommand(command);
-            if (outUser.isEmpty()) {
+            String groups = AppUtils.isUserServer(server.getIp(), user.getUsername(), sshPort, sshUsername);
+            if (groups == null){
                 continue;
             }
-            String groups = outUser.get(0).split(user.getUsername()+" : ", 2)[1].replace(" ", ",");
             userServer.add(new UserServer(server.getId(), user.getUsername(), user.getId(), groups));
         }
         userServerRepository.saveAll(userServer);

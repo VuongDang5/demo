@@ -9,6 +9,7 @@ import org.dozer.DozerBeanMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -18,28 +19,33 @@ import vn.vccorp.servicemonitoring.dto.UserInfoDTO;
 import vn.vccorp.servicemonitoring.dto.UserDTO;
 import vn.vccorp.servicemonitoring.dto.ConfigurationDTO;
 import vn.vccorp.servicemonitoring.entity.Configuration;
+import vn.vccorp.servicemonitoring.entity.Server;
 import vn.vccorp.servicemonitoring.entity.User;
+import vn.vccorp.servicemonitoring.entity.UserServer;
 import vn.vccorp.servicemonitoring.enumtype.ApplicationError;
 import vn.vccorp.servicemonitoring.enumtype.Role;
 import vn.vccorp.servicemonitoring.exception.ApplicationException;
-import vn.vccorp.servicemonitoring.logic.repository.ServiceRepository;
-import vn.vccorp.servicemonitoring.logic.repository.UserRepository;
-import vn.vccorp.servicemonitoring.logic.repository.ConfigurationRepository;
-import vn.vccorp.servicemonitoring.logic.repository.ServiceManagementRepository;
+import vn.vccorp.servicemonitoring.logic.repository.*;
 import vn.vccorp.servicemonitoring.logic.service.UserService;
 import vn.vccorp.servicemonitoring.message.Messages;
 import vn.vccorp.servicemonitoring.config.RootConfig;
 import vn.vccorp.servicemonitoring.security.RootUser;
+import vn.vccorp.servicemonitoring.utils.AppUtils;
 import vn.vccorp.servicemonitoring.utils.BeanUtils;
 
 import org.quartz.CronExpression;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
 public class UserServiceImpl implements UserService {
     private static final Logger LOGGER = LoggerFactory.getLogger(UserServiceImpl.class);
 
+    @Value("${ssh.port}")
+    private String sshPort;
+    @Value("${ssh.username}")
+    private String sshUsername;
     @Autowired
     UserRepository userRepository;
     @Autowired
@@ -53,13 +59,27 @@ public class UserServiceImpl implements UserService {
     @Autowired
     ConfigurationRepository configurationRepository;
 	@Autowired
-    private ServiceRepository serviceRepository;
-
+    private ServerRepository serverRepository;
+    @Autowired
+    private UserServerRepository userServerRepository;
 
     @Override
     public void addAccount(UserDTO userDTO) {
         userDTO.setPassword(passwordEncoder.encode(userDTO.getPassword()));
-        userRepository.save(dozerBeanMapper.map(userDTO, User.class));
+        User user = dozerBeanMapper.map(userDTO, User.class);
+        userRepository.save(user);
+
+        //save UserService
+        List<UserServer> userServer = new ArrayList<>();
+        List<Server> allServer = serverRepository.findAll();
+        for (Server server : allServer) {
+            String groups = AppUtils.isUserServer(server.getIp(), user.getUsername(), sshPort, sshUsername);
+            if (groups == null){
+                continue;
+            }
+            userServer.add(new UserServer(server.getId(), user.getUsername(), user.getId(), groups));
+        }
+        userServerRepository.saveAll(userServer);
     }
 
     @Override
