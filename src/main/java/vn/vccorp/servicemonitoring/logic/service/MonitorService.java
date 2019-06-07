@@ -25,6 +25,7 @@ public interface MonitorService {
     
     void deleteLog(int id);
 
+    //Page<ServiceInfoDTO> showAllService(int currentPage, int pageSize);
     Page<ServiceInfoDTO> showAllService(int currentPage, int pageSize);
 
     Service showService(int serviceId);

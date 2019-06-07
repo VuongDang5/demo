@@ -45,6 +45,7 @@ public class ServiceRepositoryCustomImpl implements ServiceRepositoryCustom {
             Integer id;
             String pid;
             String name;
+            String OWNER;
             String apiEndpoint;
             String description;
             String project;
@@ -53,63 +54,59 @@ public class ServiceRepositoryCustomImpl implements ServiceRepositoryCustom {
             String ip;
             String serverPort;
             Date startTime;
-            Status status;
-            String nameUser;
-            String email;
-            Role role;
-            Date time;
-            Float cpuUsed;
-            Float diskUsed;
-            Float gpuUsed;
-            Float ramUsed;
+            String status;
+            Double cpuUsed;
+            Double diskUsed;
+            Double gpuUsed;
+            Double ramUsed;
         }
 
         //Query hien thi cac thong tin can thiet cua service
-        String queryStr = "SELECT s.id, s.pid, s.name, s.apiEndpoint, s.description, s.project, s.kongMapping, " +
-                "s.note, sv.ip, s.serverPort, s.startTime, s.status, " +
-                "u.name, u.email, " +
-                "us.role, " +
-                "sn.time, sn.cpuUsed, sn.diskUsed, sn.gpuUsed, sn.ramUsed " +
-                "FROM Service s " +
-                //Ghep cac table lai voi nhau. Neu thanh phan trong table co dau gach duoi thi thay bang dau cham
-                "JOIN UserService us ON s.id = us.id.serviceId " +
-                "JOIN User u ON us.id.userId = u.id " +
-                "JOIN Snapshot sn ON s.id = sn.service.id " +
-                "JOIN Server sv ON s.server.id = sv.id ";
+        String queryStr = "SELECT s.id, s.pid, s.name, " +
+                "GROUP_CONCAT(DISTINCT CONCAT_WS(',', " +
+                        "IFNULL(u.username, 'NULL')) " +
+                //Khoang cach giua cac username
+                        "SEPARATOR '; ' ) AS userInfo, " +
+                "s.api_endpoint, s.description, s.project, s.kong_mapping, " +
+                "s.note, sv.ip, s.server_port, s.start_time, s.status, " +
+                "AVG(snapshot.cpu_used), AVG(snapshot.disk_used), AVG(snapshot.gpu_used), AVG(snapshot.ram_used) " +
+                "FROM service s " +
+                "JOIN user_service us ON s.id = us.service_id " +
+                "JOIN user u ON us.user_id = u.id " +
+                "JOIN snapshot ON s.id = snapshot.service_id " +
+                "JOIN server sv ON s.server_id = sv.id " +
+                "WHERE us.role = 'OWNER'" +
+                "GROUP BY s.id ";
 
-        Query query = entityManager.createQuery(queryStr)
+        Query query = entityManager.createNativeQuery(queryStr)
                 //Sets the offset position in the result set to start pagination
                 .setFirstResult(page.getPageSize() * (page.getPageNumber() - 1))
                 //Sets the maximum number of entities that should be included in the page
-                .setMaxResults(page.getPageSize());
+               .setMaxResults(page.getPageSize());
         List<Object[]> resultList = query.getResultList();
-
         //Dung 1 List moi de key vao cho tung value
         List<ReturnedQueryResult> convertedResultList = new ArrayList<>(resultList.size());
+
         for(Object [] row: resultList) {
             convertedResultList.add(
-                    new
-                            ReturnedQueryResult(
-                            (Integer) row[0],
-                            (String) row[1],
-                            (String) row[2],
-                            (String) row[3],
-                            (String) row[4],
-                            (String) row[5],
-                            (String) row[6],
-                            (String) row[7],
-                            (String) row[8],
-                            (String) row[9],
-                            (Date) row[10],
-                            (Status) row[11],
-                            (String) row[12],
-                            (String) row[13],
-                            (Role) row[14],
-                            (Date) row[15],
-                            (Float) row[16],
-                            (Float) row[17],
-                            (Float) row[18],
-                            (Float) row[19]
+                    new ReturnedQueryResult(
+                            (Integer) row[0], //id
+                            (String) row[1], //pid
+                            (String) row[2], //name
+                            (String) row[3], //owner
+                            (String) row[4], //apiEndpoint
+                            (String) row[5], // description
+                            (String) row[6], //project
+                            (String) row[7], //kongMapping
+                            (String) row[8], //note
+                            (String) row[9], //ip
+                            (String) row[10], //serverPort
+                            (Date) row[11], //startTime
+                            (String) row[12], //status
+                            (Double) row[13], //CPU
+                            (Double) row[14], //Disk
+                            (Double) row[15], //GPU
+                            (Double) row[16] //Ram
                             )
             );
         }
@@ -118,9 +115,26 @@ public class ServiceRepositoryCustomImpl implements ServiceRepositoryCustom {
         List<ServiceInfoDTO> finalResultList = new ArrayList<>();
         for(ReturnedQueryResult r: convertedResultList) {
             ServiceInfoDTO dto = new ServiceInfoDTO();
+            List<UserInformationDTO> userList = new ArrayList<>();
+
             dto.setId(r.getId());
             dto.setPid(r.getPid());
             dto.setServiceName(r.getName());
+
+            //Hien thi username theo dang List
+            //List<String> userInfoList = Arrays.asList(r.getOWNER().split(";", -1));
+
+            //Hien thi cac username cung mot hang
+            List<String> userInfoList = Arrays.asList(r.getOWNER());
+
+            for(String s: userInfoList) {
+                UserInformationDTO userDTO = new UserInformationDTO();
+                List<String> info = Arrays.asList(s.split(",",-1));
+                userDTO.setUsername(getReplaceNullString(info, 0));
+                userList.add(userDTO);
+            }
+
+            dto.setOWNER(userList);
             dto.setApiEndpoint(r.getApiEndpoint());
             dto.setDescription(r.getDescription());
             dto.setProject(r.getProject());
@@ -130,24 +144,24 @@ public class ServiceRepositoryCustomImpl implements ServiceRepositoryCustom {
             dto.setServerPort(r.getServerPort());
             dto.setStartTime(r.getStartTime());
             dto.setStatus(r.getStatus());
-            dto.setUserName(r.getNameUser());
-            dto.setEmail(r.getEmail());
-            dto.setRole(r.getRole());
-            dto.setTime(r.getTime());
             dto.setCpuUsed(r.getCpuUsed());
             dto.setDiskUsed(r.getDiskUsed());
             dto.setGpuUsed(r.getGpuUsed());
             dto.setRamUsed(r.getRamUsed());
+
             finalResultList.add(dto);
         }
 
+    //Ket qua tra ve la PageImpl
         return new PageImpl<>(finalResultList, page, page.getPageSize());
 
-
-        //Ket qua tra ve la PageImpl
-        //return new //PageImpl<>(resultList, page, page.getPageSize());
     }
 
+    private String getReplaceNullString(List<String> list, int index) {
+        String s = list.get(index);
+        return s.equalsIgnoreCase("null")?null:s;
+
+    }
 
     @Override
     public Service showService(int serviceId) {
@@ -155,6 +169,7 @@ public class ServiceRepositoryCustomImpl implements ServiceRepositoryCustom {
         Service service = entityManager.find(Service.class, serviceId);
         //Ket qua tra ve la Entity
         return service;
+
     }
 
 }
