@@ -115,28 +115,11 @@ public class ServiceRepositoryCustomImpl implements ServiceRepositoryCustom {
         List<ServiceInfoDTO> finalResultList = new ArrayList<>();
         for(ReturnedQueryResult r: convertedResultList) {
             ServiceInfoDTO dto = new ServiceInfoDTO();
-            //List<UserInformationDTO> userList = new ArrayList<>();
-            UserServiceDTO userServiceDTO = new UserServiceDTO();
 
             dto.setId(r.getId());
             dto.setPid(r.getPid());
             dto.setServiceName(r.getName());
-
-            //Hien thi username theo dang List
-            //List<String> userInfoList = Arrays.asList(r.getOWNER().split(";", -1));
-
-            //Hien thi cac username cung mot hang
-           /* List<String> userInfoList = Arrays.asList(r.getOwner());
-
-            for(String s: userInfoList) {
-                UserInformationDTO userDTO = new UserInformationDTO();
-                List<String> info = Arrays.asList(s.split(",",-1));
-                userDTO.setUsername(getReplaceNullString(info, 0));
-                userList.add(userDTO);
-            }
-
-            dto.setOWNER(userList);*/
-            dto.setOwner(userServiceDTO.getRole());
+            dto.setOwner(r.getOwner());
             dto.setApiEndpoint(r.getApiEndpoint());
             dto.setDescription(r.getDescription());
             dto.setProject(r.getProject());
@@ -156,12 +139,6 @@ public class ServiceRepositoryCustomImpl implements ServiceRepositoryCustom {
 
     //Ket qua tra ve la PageImpl
         return new PageImpl<>(finalResultList, page, page.getPageSize());
-
-    }
-
-    private String getReplaceNullString(List<String> list, int index) {
-        String s = list.get(index);
-        return s.equalsIgnoreCase("null")?null:s;
 
     }
 
