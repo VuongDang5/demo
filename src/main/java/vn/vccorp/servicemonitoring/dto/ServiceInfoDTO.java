@@ -46,6 +46,6 @@ public class ServiceInfoDTO {
 
     private Double diskUsed;
 
-    private List<UserInformationDTO> OWNER;
-
+   // private List<UserInformationDTO> Owner;
+    private String Owner;
 }

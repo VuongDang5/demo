@@ -45,7 +45,7 @@ public class ServiceRepositoryCustomImpl implements ServiceRepositoryCustom {
             Integer id;
             String pid;
             String name;
-            String OWNER;
+            String owner;
             String apiEndpoint;
             String description;
             String project;
@@ -115,7 +115,8 @@ public class ServiceRepositoryCustomImpl implements ServiceRepositoryCustom {
         List<ServiceInfoDTO> finalResultList = new ArrayList<>();
         for(ReturnedQueryResult r: convertedResultList) {
             ServiceInfoDTO dto = new ServiceInfoDTO();
-            List<UserInformationDTO> userList = new ArrayList<>();
+            //List<UserInformationDTO> userList = new ArrayList<>();
+            UserServiceDTO userServiceDTO = new UserServiceDTO();
 
             dto.setId(r.getId());
             dto.setPid(r.getPid());
@@ -125,7 +126,7 @@ public class ServiceRepositoryCustomImpl implements ServiceRepositoryCustom {
             //List<String> userInfoList = Arrays.asList(r.getOWNER().split(";", -1));
 
             //Hien thi cac username cung mot hang
-            List<String> userInfoList = Arrays.asList(r.getOWNER());
+           /* List<String> userInfoList = Arrays.asList(r.getOwner());
 
             for(String s: userInfoList) {
                 UserInformationDTO userDTO = new UserInformationDTO();
@@ -134,7 +135,8 @@ public class ServiceRepositoryCustomImpl implements ServiceRepositoryCustom {
                 userList.add(userDTO);
             }
 
-            dto.setOWNER(userList);
+            dto.setOWNER(userList);*/
+            dto.setOwner(userServiceDTO.getRole());
             dto.setApiEndpoint(r.getApiEndpoint());
             dto.setDescription(r.getDescription());
             dto.setProject(r.getProject());
