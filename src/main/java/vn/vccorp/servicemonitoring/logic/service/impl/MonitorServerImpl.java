@@ -68,7 +68,7 @@ public class MonitorServerImpl implements MonitorServer {
         }
 
         //check disk root n server
-            String commandoDisk = "ssh -p " + sshPort + " " + sshUsername + "@" + serverDTO.getIp() + " -t '[ -d "+ serverDTO.getRootPath() +" ] && echo '1' || echo '0''";
+            String commandoDisk = "ssh -p " + sshPort + " " + sshUsername + "@" + serverDTO.getIp() + " -t '[ -d "+ serverDTO.getRootPath() +" ] && echo '0' || echo '1''";
         List<String> outDisk = AppUtils.executeCommand(commandoDisk);
         //if command execute success not return 0 error
         if (outDisk.isEmpty() || !(outDisk.get(0).equals("0"))) {
