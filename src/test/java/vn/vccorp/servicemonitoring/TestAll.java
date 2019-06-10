@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableMap;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import vn.vccorp.servicemonitoring.dto.ServiceDTO;
@@ -12,6 +13,7 @@ import vn.vccorp.servicemonitoring.enumtype.Language;
 import vn.vccorp.servicemonitoring.enumtype.Status;
 import vn.vccorp.servicemonitoring.logic.service.EmailService;
 import vn.vccorp.servicemonitoring.logic.service.HealthCheckService;
+import vn.vccorp.servicemonitoring.logic.service.MonitorServer;
 import vn.vccorp.servicemonitoring.logic.service.MonitorService;
 import vn.vccorp.servicemonitoring.utils.AppUtils;
 import vn.vccorp.servicemonitoring.utils.BeanUtils;
@@ -93,6 +95,11 @@ public class TestAll {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    @Test
+    public void testGetAllServer(){
+        BeanUtils.getBean(MonitorServer.class).getAllServer(PageRequest.of(1, 10));
     }
 
 }

@@ -22,4 +22,7 @@ public class ServerDTO {
     @NotBlank
     @Size(max = 1000)
     private String description;
+
+    @NotBlank
+    private String rootPath;
 }
