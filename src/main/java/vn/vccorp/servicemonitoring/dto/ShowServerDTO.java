@@ -10,7 +10,6 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ShowServerDTO {
-    private int stt;
     private String name;
     private String ip;
     private String description;

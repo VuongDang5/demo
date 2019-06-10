@@ -104,7 +104,6 @@ public class MonitorServerImpl implements MonitorServer {
             String userServer = userServerRepository.findNameByServerId(server.getId());
 
             listInfoServer.add(new ShowServerDTO().builder()
-                    .stt(listInfoServer.size() + 1)
                     .name(server.getName())
                     .ip(server.getIp())
                     .description(server.getDescription())
