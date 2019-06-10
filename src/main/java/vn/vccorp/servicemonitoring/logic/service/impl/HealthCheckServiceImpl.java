@@ -171,6 +171,8 @@ public class HealthCheckServiceImpl implements HealthCheckService {
         }
         if (detailMessage.length() > 1000) {
             issueTracking.setDetail(detailMessage.substring(0, 1000));
+        } else {
+            issueTracking.setDetail(detailMessage);
         }
         issueTracking.setService(service);
         issueTracking.setTrackingTime(LocalDateTime.now().toDate());
