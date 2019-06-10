@@ -166,7 +166,14 @@ public class HealthCheckServiceImpl implements HealthCheckService {
         //create a new record for issue_tracking
         IssueTracking issueTracking = new IssueTracking();
         issueTracking.setIssueType(issueType);
-        issueTracking.setDetail(detailMessage);
+        if (problemAt != null) {
+            detailMessage = String.format("Your service has problem in log file at line: %s. \r\n Detail message: %s", problemAt, detailMessage);
+        }
+        if (detailMessage.length() > 1000) {
+            issueTracking.setDetail(detailMessage.substring(0, 1000));
+        } else {
+            issueTracking.setDetail(detailMessage);
+        }
         issueTracking.setService(service);
         issueTracking.setTrackingTime(LocalDateTime.now().toDate());
         issueTrackingRepository.save(issueTracking);

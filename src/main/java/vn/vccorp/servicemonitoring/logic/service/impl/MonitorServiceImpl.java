@@ -21,6 +21,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 import vn.vccorp.servicemonitoring.dto.LogServiceDTO;
 import vn.vccorp.servicemonitoring.dto.ServiceDTO;
+import vn.vccorp.servicemonitoring.dto.ServiceInfoDTO;
 import vn.vccorp.servicemonitoring.entity.Server;
 import vn.vccorp.servicemonitoring.entity.User;
 import vn.vccorp.servicemonitoring.entity.UserService;
@@ -369,10 +370,10 @@ public class MonitorServiceImpl implements MonitorService {
     }
 
     @Override
-    public Page<vn.vccorp.servicemonitoring.entity.Service> showAllService(int currentPage, int pageSize) {
+    public Page<ServiceInfoDTO> showAllService(int currentPage, int pageSize) {
         //dung pageable de them currentPage va Pagesize vao Page
         Pageable pageNumber = PageRequest.of(currentPage, pageSize);
-        Page<vn.vccorp.servicemonitoring.entity.Service> results = ServiceRepositoryCustom.showAllService(pageNumber);
+        Page<ServiceInfoDTO> results = ServiceRepositoryCustom.showAllService(pageNumber);
         //kieu tra ve Pagination
         return results;
     }
@@ -428,4 +429,5 @@ public class MonitorServiceImpl implements MonitorService {
         }
         serviceRepository.save(service);
     }
+
 }
