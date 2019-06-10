@@ -47,6 +47,9 @@ public class Server {
     @Size(max = 1000)
     private String description;
 
+    @NotBlank
+    private String rootPath;
+
     @Enumerated(EnumType.STRING)
     private Status status;
 
