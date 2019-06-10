@@ -67,6 +67,24 @@ public class MonitorServerImpl implements MonitorServer {
             throw new ApplicationException(messages.get("server.register.not-sudo", new String[]{sshUsername, serverDTO.getIp()}));
         }
 
+        //check disk root n server
+        String commandoDisk = "ssh -p " + sshPort + " " + sshUsername + "@" + serverDTO.getIp() + " -t 'df -h | grep "+serverDTO.getRootPath()+"' | awk '{print $6}'";
+        List<String> outDisk = AppUtils.executeCommand(commandoDisk);
+        //if command execute success not return 0 error
+        if (outDisk.isEmpty()) {
+            throw new ApplicationException(messages.get("server.register.path-root", new String[]{serverDTO.getRootPath(), serverDTO.getIp()}));
+        }
+        for (String diskPath : outDisk) {
+            //check correct path root
+            if (diskPath.equals(serverDTO.getRootPath())) {
+                break;
+            }
+            //Check all disk but no found path root
+            if (diskPath.equals(outDisk.get(outDisk.size()-1))){
+                throw new ApplicationException(messages.get("server.get-disk.error", new String[]{serverDTO.getIp(), serverDTO.getRootPath()}));
+            }
+        }
+
         //save server active status
         Server server = dozerBeanMapper.map(serverDTO, Server.class);
         server.setStatus(Status.ACTIVE);
@@ -134,20 +152,23 @@ public class MonitorServerImpl implements MonitorServer {
         monitorServer.put("ramUsed", outRam.get(1));
 
         //get disk: df -h
-        String commandDisk = "ssh -p " + sshPort + " " + sshUsername + "@" + server.getIp() + " -t 'df -h' | awk '{print $3 \"-\" $4 \"-\" $6}'";
+        String commandDisk = "ssh -p " + sshPort + " " + sshUsername + "@" + server.getIp() + " -t 'df -h | grep "+server.getRootPath()+"' | awk '{print $3 \"-\" $4 \"-\" $6}'";
         List<String> outDisk = AppUtils.executeCommand(commandDisk);
         if (outDisk.isEmpty()) {
-            throw new ApplicationException(messages.get("server.get-disk.error", new String[]{server.getIp()}));
+            throw new ApplicationException(messages.get("server.get-disk.error", new String[]{server.getIp(), server.getRootPath()}));
         }
         for (String diskInfo : outDisk) {
             String[] disk = diskInfo.split("-", 3);
             //check correct path root
-            if (!disk[2].equals(server.getRootPath())) {
-                continue;
+            if (disk[2].equals(server.getRootPath())) {
+                monitorServer.put("diskFree", disk[0]);
+                monitorServer.put("diskUsed", disk[1]);
+                break;
             }
-            monitorServer.put("diskFree", disk[0]);
-            monitorServer.put("diskUsed", disk[1]);
-            break;
+            //Check all disk but no found path root
+            if (diskInfo.equals(outDisk.get(outDisk.size()-1))){
+                throw new ApplicationException(messages.get("server.get-disk.error", new String[]{server.getIp(), server.getRootPath()}));
+            }
         }
 
         //get cpu; grep 'cpu' /proc/stat
@@ -157,7 +178,7 @@ public class MonitorServerImpl implements MonitorServer {
             throw new ApplicationException(messages.get("server.get-cpu-present.error", new String[]{server.getIp()}));
         }
         String[] prevCpu = outCpu.get(0).split(" ");
-        String[] cpu = outCpu.get(5).split(" ");
+        String[] cpu = outCpu.get((int)outCpu.size()/2).split(" ");
         float prevTotal=0, total=0;
         for (int i = 2; i < cpu.length; i++){
             prevTotal += Float.valueOf(prevCpu[i]);
