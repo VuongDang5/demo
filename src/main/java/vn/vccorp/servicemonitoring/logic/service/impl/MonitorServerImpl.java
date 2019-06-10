@@ -23,6 +23,8 @@ import vn.vccorp.servicemonitoring.logic.service.MonitorServer;
 import vn.vccorp.servicemonitoring.message.Messages;
 import vn.vccorp.servicemonitoring.utils.AppUtils;
 
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -99,13 +101,7 @@ public class MonitorServerImpl implements MonitorServer {
             }
 
             //get user
-            String userServer = "";
-            for (UserServer user : userServerRepository.findAllByServerId(server.getId())) {
-                if (userServer.equals(""))
-                    userServer += user.getUsername();
-                else
-                    userServer += ",  " + user.getUsername();
-            }
+            String userServer = userServerRepository.findNameByServerId(server.getId());
 
             listInfoServer.add(new ShowServerDTO().builder()
                     .stt(listInfoServer.size() + 1)
@@ -133,7 +129,7 @@ public class MonitorServerImpl implements MonitorServer {
         String commandRam = "ssh -p " + sshPort + " " + sshUsername + "@" + server.getIp() + " -t 'free -h | grep 'Mem:'' | awk '{print $3; print $7}'";
         List<String> outRam = AppUtils.executeCommand(commandRam);
         if (outRam.isEmpty()) {
-            return null;
+            throw new ApplicationException(messages.get("server.get-ram.error", new String[]{server.getIp()}));
         }
         monitorServer.put("ramFree", outRam.get(0));
         monitorServer.put("ramUsed", outRam.get(1));
@@ -142,7 +138,7 @@ public class MonitorServerImpl implements MonitorServer {
         String commandDisk = "ssh -p " + sshPort + " " + sshUsername + "@" + server.getIp() + " -t 'df -h' | awk '{print $3 \"-\" $4 \"-\" $6}'";
         List<String> outDisk = AppUtils.executeCommand(commandDisk);
         if (outDisk.isEmpty()) {
-            return null;
+            throw new ApplicationException(messages.get("server.get-disk.error", new String[]{server.getIp()}));
         }
         for (String diskInfo : outDisk) {
             String[] disk = diskInfo.split("-", 3);
@@ -152,13 +148,14 @@ public class MonitorServerImpl implements MonitorServer {
             }
             monitorServer.put("diskFree", disk[0]);
             monitorServer.put("diskUsed", disk[1]);
+            break;
         }
 
         //get cpu; grep 'cpu' /proc/stat
         String commandCpu = "ssh -p " + sshPort + " " + sshUsername + "@" + server.getIp() + " -t 'cat <(grep 'cpu' /proc/stat) <(sleep 1 && grep 'cpu' /proc/stat)'";
         List<String> outCpu = AppUtils.executeCommand(commandCpu);
         if (outCpu.isEmpty()) {
-            return null;
+            throw new ApplicationException(messages.get("server.get-cpu-present.error", new String[]{server.getIp()}));
         }
         String[] prevCpu = outCpu.get(0).split(" ");
         String[] cpu = outCpu.get(5).split(" ");
@@ -168,13 +165,15 @@ public class MonitorServerImpl implements MonitorServer {
             total += Float.valueOf(cpu[i]);
         }
         float cpuPresent = (1-(Float.valueOf(cpu[5]) - Float.valueOf(prevCpu[5]))/(total - prevTotal))*100;
-        monitorServer.put("cpuUsed", String.valueOf(cpuPresent)+"%");
+        DecimalFormat df = new DecimalFormat("#.##");
+        df.setRoundingMode(RoundingMode.CEILING);
+        monitorServer.put("cpuUsed", String.valueOf(df.format(cpuPresent))+"%");
 
         //get speed, core; /proc/cpuinfo | grep GHz
         String commandSpeed = "ssh -p " + sshPort + " " + sshUsername + "@" + server.getIp() + " -t 'cat /proc/cpuinfo | grep GHz'";
         List<String> outSpeed = AppUtils.executeCommand(commandSpeed);
         if (outSpeed.isEmpty()) {
-            return null;
+            throw new ApplicationException(messages.get("server.get-speed.error", new String[]{server.getIp()}));
         }
         String[] speed = outSpeed.get(0).split(" ");
         monitorServer.put("speed", speed[speed.length-1]);
