@@ -5,6 +5,7 @@ import vn.vccorp.servicemonitoring.enumtype.Role;
 import vn.vccorp.servicemonitoring.enumtype.Status;
 
 import java.util.Date;
+import java.util.List;
 
 @Getter
 @Setter
@@ -16,12 +17,6 @@ public class ServiceInfoDTO {
     private Integer id;
 
     private String serviceName;
-
-    private String userName;
-
-    private String email;
-
-    private Role role;
 
     private String description;
 
@@ -39,17 +34,18 @@ public class ServiceInfoDTO {
 
     private Date startTime;
 
-    private Status status;
+    private String status;
 
     private String note;
 
-    private Date time;
+    private Double ramUsed;
 
-    private Float ramUsed;
+    private Double cpuUsed;
 
-    private Float cpuUsed;
+    private Double gpuUsed;
 
-    private Float gpuUsed;
+    private Double diskUsed;
 
-    private Float diskUsed;
+    private String Owner;
+
 }
