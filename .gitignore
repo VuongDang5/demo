@@ -1,4 +1,6 @@
 *-local.yml
+**/application-local.yml
+application-local.yml
 src/main/resources/application-local.yml
 Log*
 uploads
