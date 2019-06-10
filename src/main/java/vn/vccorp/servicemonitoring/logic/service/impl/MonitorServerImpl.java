@@ -68,10 +68,10 @@ public class MonitorServerImpl implements MonitorServer {
         }
 
         //check disk root n server
-        String commandoDisk = "ssh -p " + sshPort + " " + sshUsername + "@" + serverDTO.getIp() + " -t 'df -h | grep "+serverDTO.getRootPath()+"' | awk '{print $6}'";
+            String commandoDisk = "ssh -p " + sshPort + " " + sshUsername + "@" + serverDTO.getIp() + " -t '[ -d "+ serverDTO.getRootPath() +" ] && echo '0' || echo '1''";
         List<String> outDisk = AppUtils.executeCommand(commandoDisk);
         //if command execute success not return 0 error
-        if (outDisk.isEmpty()) {
+        if (outDisk.isEmpty() || !(outDisk.get(0).equals("0"))) {
             throw new ApplicationException(messages.get("server.register.path-root", new String[]{serverDTO.getRootPath(), serverDTO.getIp()}));
         }
         for (String diskPath : outDisk) {
@@ -152,24 +152,15 @@ public class MonitorServerImpl implements MonitorServer {
         monitorServer.put("ramUsed", outRam.get(1));
 
         //get disk: df -h
-        String commandDisk = "ssh -p " + sshPort + " " + sshUsername + "@" + server.getIp() + " -t 'df -h | grep "+server.getRootPath()+"' | awk '{print $3 \"-\" $4 \"-\" $6}'";
+        String commandDisk = "ssh -p " + sshPort + " " + sshUsername + "@" + server.getIp() + " -t 'df -hT "+ server.getRootPath() +"' | awk '{if ($1 == \"df:\") print \"-1\"; print $4; print $5}'";
         List<String> outDisk = AppUtils.executeCommand(commandDisk);
-        if (outDisk.isEmpty()) {
+        //if not found path error return -1
+        if (outDisk.get(0).equals("-1")) {
             throw new ApplicationException(messages.get("server.get-disk.error", new String[]{server.getIp(), server.getRootPath()}));
         }
-        for (String diskInfo : outDisk) {
-            String[] disk = diskInfo.split("-", 3);
-            //check correct path root
-            if (disk[2].equals(server.getRootPath())) {
-                monitorServer.put("diskFree", disk[0]);
-                monitorServer.put("diskUsed", disk[1]);
-                break;
-            }
-            //Check all disk but no found path root
-            if (diskInfo.equals(outDisk.get(outDisk.size()-1))){
-                throw new ApplicationException(messages.get("server.get-disk.error", new String[]{server.getIp(), server.getRootPath()}));
-            }
-        }
+
+        monitorServer.put("diskUsed", outDisk.get(2));
+        monitorServer.put("diskFree", outDisk.get(3));
 
         //get cpu; grep 'cpu' /proc/stat
         String commandCpu = "ssh -p " + sshPort + " " + sshUsername + "@" + server.getIp() + " -t 'cat <(grep 'cpu' /proc/stat) <(sleep 1 && grep 'cpu' /proc/stat)'";
