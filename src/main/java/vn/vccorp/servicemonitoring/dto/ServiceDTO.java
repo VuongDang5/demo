@@ -39,7 +39,6 @@ public class ServiceDTO {
     @Size(max = 10)
     private String serverPort;
 
-    @NotBlank
     @Size(max = 10)
     private String pid;
 
