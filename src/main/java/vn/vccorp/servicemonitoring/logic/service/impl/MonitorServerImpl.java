@@ -108,7 +108,7 @@ public class MonitorServerImpl implements MonitorServer {
             }
 
             listInfoServer.add(new ShowServerDTO().builder()
-                    .STT(listInfoServer.size() + 1)
+                    .stt(listInfoServer.size() + 1)
                     .name(server.getName())
                     .ip(server.getIp())
                     .description(server.getDescription())
