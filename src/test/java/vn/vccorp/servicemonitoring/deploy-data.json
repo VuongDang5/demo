@@ -1,0 +1,15 @@
+{
+  "deployCommand": "nohup java -jar tdcd-crawler-service.jar > out.log &",
+  "deployDir": "/data1/tuyennta/deploy/blogcrawler",
+  "description": "test deploy service java",
+  "language": "JAVA",
+  "logDir": "/data1/tuyennta/deploy/blogcrawler/log",
+  "logFile": "out.log",
+
+  "name": "test-deploy-java",
+  "note": "string",
+  "ownerId": 1,
+  "project": "test-deploy",
+  "serverId": 2,
+  "status": "ACTIVE"
+}
