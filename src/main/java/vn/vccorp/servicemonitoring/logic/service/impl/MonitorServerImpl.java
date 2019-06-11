@@ -74,16 +74,6 @@ public class MonitorServerImpl implements MonitorServer {
         if (outDisk.isEmpty() || !(outDisk.get(0).equals("0"))) {
             throw new ApplicationException(messages.get("server.register.path-root", new String[]{serverDTO.getRootPath(), serverDTO.getIp()}));
         }
-        for (String diskPath : outDisk) {
-            //check correct path root
-            if (diskPath.equals(serverDTO.getRootPath())) {
-                break;
-            }
-            //Check all disk but no found path root
-            if (diskPath.equals(outDisk.get(outDisk.size()-1))){
-                throw new ApplicationException(messages.get("server.get-disk.error", new String[]{serverDTO.getIp(), serverDTO.getRootPath()}));
-            }
-        }
 
         //save server active status
         Server server = dozerBeanMapper.map(serverDTO, Server.class);
@@ -158,7 +148,6 @@ public class MonitorServerImpl implements MonitorServer {
         if (outDisk.get(0).equals("-1")) {
             throw new ApplicationException(messages.get("server.get-disk.error", new String[]{server.getIp(), server.getRootPath()}));
         }
-
         monitorServer.put("diskUsed", outDisk.get(2));
         monitorServer.put("diskFree", outDisk.get(3));
 
@@ -169,7 +158,7 @@ public class MonitorServerImpl implements MonitorServer {
             throw new ApplicationException(messages.get("server.get-cpu-present.error", new String[]{server.getIp()}));
         }
         String[] prevCpu = outCpu.get(0).split(" ");
-        String[] cpu = outCpu.get((int)outCpu.size()/2).split(" ");
+        String[] cpu = outCpu.get(outCpu.size()/2).split(" ");
         float prevTotal=0, total=0;
         for (int i = 2; i < cpu.length; i++){
             prevTotal += Float.valueOf(prevCpu[i]);
@@ -193,6 +182,3 @@ public class MonitorServerImpl implements MonitorServer {
         return monitorServer;
     }
 }
-
-
-
