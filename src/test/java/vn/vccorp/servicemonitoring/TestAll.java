@@ -7,6 +7,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
+import vn.vccorp.servicemonitoring.dto.ServerDTO;
 import vn.vccorp.servicemonitoring.dto.ServiceDTO;
 import vn.vccorp.servicemonitoring.dto.ServiceErrorDTO;
 import vn.vccorp.servicemonitoring.enumtype.Language;
@@ -98,8 +99,18 @@ public class TestAll {
     }
 
     @Test
+    public void testRegisterServer(){
+        ServerDTO serverDTO = ServerDTO.builder()
+                .name("testlocal")
+                .ip("127.0.0.1")
+                .description("test1")
+                .rootPath("/home/kibou")
+                .build();
+        BeanUtils.getBean(MonitorServer.class).registerServer(serverDTO);
+    }
+
+    @Test
     public void testGetAllServer(){
         BeanUtils.getBean(MonitorServer.class).getAllServer(PageRequest.of(1, 10));
     }
-
 }
