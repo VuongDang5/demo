@@ -39,24 +39,38 @@ public class UserRepositoryCustomImpl implements UserRepositoryCustom {
             String servers;
         }
 
-        String queryStr = "SELECT u.name, u.username, u.email, u.phone, " +
-                "GROUP_CONCAT( " +
-                "CONCAT_WS(',', IFNULL(service.name, 'null'), IFNULL(service.pid, 'null'), IFNULL(user_service.role, 'null'), IFNULL(service.description, 'null'), IFNULL(service.status, 'null')) " +
-                "ORDER BY service.pid " +
-                "SEPARATOR ';' " +
-                ") AS serviceInfo, " +
-                "GROUP_CONCAT(DISTINCT " +
-                "CONCAT_WS(',', IFNULL(server.name, 'null'), IFNULL(server.ip, 'null'), IFNULL(user_server.groups, 'null'), IFNULL(server.description, 'null'), IFNULL(server.status, 'null')) " +
-                "ORDER BY server.ip " +
-                "SEPARATOR ';' " +
-                ") AS serverInfo " +
-                "FROM user u " +
-                "JOIN user_service ON u.id = user_service.user_id " +
-                "JOIN service ON service.id = user_service.service_id " +
-                "JOIN user_server ON (u.id = user_server.user_id AND service.server_id = user_server.server_id) " +
-                "JOIN server ON server.id = user_server.server_id " +
-                "WHERE user_service.role = 'OWNER' " +
-                "OR user_service.role = 'MAINTAINER' ";
+        String queryStr = "SELECT \n" +
+                "    u.name,\n" +
+                "    u.username,\n" +
+                "    u.email,\n" +
+                "    u.phone,\n" +
+                "    GROUP_CONCAT(DISTINCT CONCAT_WS('--',\n" +
+                "                service.name,\n" +
+                "                service.pid,\n" +
+                "                user_service.role,\n" +
+                "                service.description,\n" +
+                "                service.status)\n" +
+                "        ORDER BY service.pid\n" +
+                "        SEPARATOR ';;') AS services,\n" +
+                "    GROUP_CONCAT(DISTINCT CONCAT_WS('--',\n" +
+                "                server.name,\n" +
+                "                server.ip,\n" +
+                "                user_server.groups,\n" +
+                "                server.description,\n" +
+                "                server.status)\n" +
+                "        ORDER BY server.ip\n" +
+                "        SEPARATOR ';;') AS servers\n" +
+                "FROM\n" +
+                "    user u\n" +
+                "        LEFT JOIN\n" +
+                "    user_service ON u.id = user_service.user_id\n" +
+                "        LEFT JOIN\n" +
+                "    service ON service.id = user_service.service_id\n" +
+                "        JOIN\n" +
+                "    user_server ON u.id = user_server.user_id\n" +
+                "        JOIN\n" +
+                "    server ON server.id = user_server.server_id\n" +
+                "GROUP BY u.name, u.username, u.email, u.phone";
 
         Query query = entityManager.createNativeQuery(queryStr)
                 //Sets the offset position in the result set to start pagination
@@ -83,21 +97,20 @@ public class UserRepositoryCustomImpl implements UserRepositoryCustom {
 
         List<UserInfoDTO> finalResultList = new ArrayList<>();
         for(ReturnedQueryResult r: convertedResultList) {
-                UserInfoDTO dto = new UserInfoDTO();
-                List<ServiceInfo> serviceInfoList = new ArrayList<>();
-                List<ServerInfo> serverInfoList = new ArrayList<>();
+            UserInfoDTO dto = new UserInfoDTO();
+            //user info
+            dto.setName(r.getName());
+            dto.setUsername(r.getUsername());
+            dto.setEmail(r.getEmail());
+            dto.setPhone(r.getPhone());
 
-                dto.setName(r.getName());
-                dto.setUsername(r.getUsername());
-                dto.setEmail(r.getEmail());
-                dto.setPhone(r.getPhone());
-
-                List<String> serviceList = Arrays.asList(r.getServices().split(";", -1));
-                List<String> serverList = Arrays.asList(r.getServers().split(";", -1));
-
-                for(String s: serviceList) {
+            //service info
+            List<ServiceInfo> serviceInfoList = new ArrayList<>();
+            if (!r.getServices().equals("")){
+                List<String> serviceList = Arrays.asList(r.getServices().split(";;", -1));
+                for (String s : serviceList) {
                     ServiceInfo serviceInfo = new ServiceInfo();
-                    List<String> info = Arrays.asList(s.split(",",-1));
+                    List<String> info = Arrays.asList(s.split("--", -1));
 
                     serviceInfo.setName(getReplaceNullString(info, 0));
                     serviceInfo.setPid(getReplaceNullString(info, 1));
@@ -106,10 +119,15 @@ public class UserRepositoryCustomImpl implements UserRepositoryCustom {
                     serviceInfo.setStatus(getReplaceNullString(info, 4));
                     serviceInfoList.add(serviceInfo);
                 }
+            }
 
-                for(String s: serverList) {
+            //server info
+            List<ServerInfo> serverInfoList = new ArrayList<>();
+            if (!r.getServers().equals("")) {
+                List<String> serverList = Arrays.asList(r.getServers().split(";;", -1));
+                for (String s : serverList) {
                     ServerInfo serverInfo = new ServerInfo();
-                    List<String> info = Arrays.asList(s.split(",", -1));
+                    List<String> info = Arrays.asList(s.split("--", -1));
                     serverInfo.setName(getReplaceNullString(info, 0));
                     serverInfo.setIp(getReplaceNullString(info, 1));
                     serverInfo.setGroups(getReplaceNullString(info, 2));
@@ -117,15 +135,16 @@ public class UserRepositoryCustomImpl implements UserRepositoryCustom {
                     serverInfo.setStatus(getReplaceNullString(info, 4));
                     serverInfoList.add(serverInfo);
                 }
+            }
 
-                dto.setServices(serviceInfoList);
-                dto.setServers(serverInfoList);
-                finalResultList.add(dto);
+            dto.setServices(serviceInfoList);
+            dto.setServers(serverInfoList);
+            finalResultList.add(dto);
         }
 
         return new PageImpl<>(finalResultList, page, page.getPageSize());
     }
-    
+
     private String getReplaceNullString(List<String> list, int index) {
         String s = list.get(index);
         return s.equalsIgnoreCase("null")?null:s;
