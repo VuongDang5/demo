@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import vn.vccorp.servicemonitoring.entity.Service;
 import vn.vccorp.servicemonitoring.logic.repository.ConfigurationRepository;
 import vn.vccorp.servicemonitoring.logic.repository.ServiceRepository;
+import vn.vccorp.servicemonitoring.logic.service.ConfirmIssue;
 import vn.vccorp.servicemonitoring.logic.service.HealthCheckService;
 
 @Component
@@ -33,11 +34,16 @@ public class HealthCheckScheduler implements SchedulingConfigurer {
     private String defaultCron;
     @Autowired
     private ServiceRepository serviceRepository;
-
+    @Autowired
+    private ConfirmIssue confirmIssue;
     /**
      * This function is called frequently to check services' health including resources usage, logging status, service status
      */
     void frequentlyCheck() {
+        //Issue resolve
+        confirmIssue.issueResolve();
+
+        //health check service
         Page<Service> services;
         do {
             //get all services
