@@ -25,6 +25,8 @@
 
 <#assign aDateTime = .now>
 <#assign aTime = aDateTime?time>
+<#assign system = statics["java.lang.System"]>
+<#assign str = service.detail?replace("(${system.lineSeparator()})", "</p><p>",'r')>
 
 <h5>Server information, time: ${aTime}</h5>
 <table>
@@ -41,7 +43,7 @@
         <td><strong>${service.deployedServer}</strong></td>
         <td><strong>${service.status}</strong></td>
         <td><strong>${service.problem}</strong></td>
-        <td><strong>${service.detail}</strong></td>
+        <td><strong>${str}</strong></td>
         <td><strong>${service.linkOnTool}</strong></td>
     </tr>
 </table>

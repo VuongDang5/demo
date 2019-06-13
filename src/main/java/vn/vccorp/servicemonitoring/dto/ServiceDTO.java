@@ -82,7 +82,6 @@ public class ServiceDTO {
     @Enumerated(EnumType.STRING)
     private Status status;
 
-    @NotNull
     private Date startTime;
 
     private Date lastCheckTime;

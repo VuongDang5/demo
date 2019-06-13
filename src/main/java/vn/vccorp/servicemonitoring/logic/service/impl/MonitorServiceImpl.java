@@ -23,9 +23,7 @@ import vn.vccorp.servicemonitoring.dto.LogServiceDTO;
 import vn.vccorp.servicemonitoring.dto.ServiceDTO;
 import vn.vccorp.servicemonitoring.dto.ServiceInfoDTO;
 import vn.vccorp.servicemonitoring.entity.Server;
-import vn.vccorp.servicemonitoring.entity.User;
 import vn.vccorp.servicemonitoring.entity.UserService;
-import vn.vccorp.servicemonitoring.enumtype.ApplicationError;
 import vn.vccorp.servicemonitoring.enumtype.Role;
 import vn.vccorp.servicemonitoring.exception.ApplicationException;
 import vn.vccorp.servicemonitoring.logic.repository.ServerRepository;
@@ -144,10 +142,11 @@ public class MonitorServiceImpl implements MonitorService {
         //check if service is existed in db
         vn.vccorp.servicemonitoring.entity.Service service = serviceRepository.findById(serviceId).orElseThrow(() -> new ApplicationException(messages.get("service.id.not-found")));
 
-        //check if service is already run then we do nothing
+        //check if service pid is already run then we do nothing
         if (AppUtils.isProcessAlive(service.getServer().getIp(), service.getPid(), sshPort, sshUsername)) {
             return;
         } else {
+            //check if service is still running on it's port then update pid
             String newPid = AppUtils.getPidFromPort(service.getServer().getIp(), service.getServerPort(), sshPort, sshUsername);
             if (!org.apache.commons.lang3.StringUtils.isEmpty(newPid)) { //if we can not get pid from port, then service is died
                 service.setPid(newPid);
@@ -162,17 +161,18 @@ public class MonitorServiceImpl implements MonitorService {
         AppUtils.executeCommand(startCommand);
 
         String getPidCommand = "ssh -p " + sshPort + " " + sshUsername + "@" + service.getServer().getIp() + " -t 'cat " + service.getDeployDir() + "pid'";
+
         List<String> out = AppUtils.executeCommand(getPidCommand);
         if (out.isEmpty()) {
             throw new ApplicationException(messages.get("service.error.starting"));
         } else {
             service.setPid(out.get(0));
-            String port = AppUtils.getPortFromPid(service.getServer().getIp(), service.getPid(), sshPort, sshUsername);
-            if (StringUtils.isEmpty(port)) {
-                LOGGER.error(messages.get("service.port.not-available", new String[]{service.getPid(), service.getServer().getIp()}));
-            } else {
-                service.setServerPort(port);
-            }
+//            String port = AppUtils.getPortFromPid(service.getServer().getIp(), service.getPid(), sshPort, sshUsername);
+//            if (StringUtils.isEmpty(port)) {
+//                LOGGER.error(messages.get("service.port.not-available", new String[]{service.getPid(), service.getServer().getIp()}));
+//            } else {
+//                service.setServerPort(port);
+//            }
             serviceRepository.save(service);
         }
     }
@@ -233,9 +233,12 @@ public class MonitorServiceImpl implements MonitorService {
         serviceRepository.save(service);
 
         //save UserService
-        List<UserService> userServices = serviceDTO.getMaintainerIds()
-                .parallelStream().map(id -> new UserService(id, service.getId(), Role.MAINTAINER)).collect(Collectors.toList());
+        List<UserService> userServices = new ArrayList<>();
         userServices.add(new UserService(serviceDTO.getOwnerId(), service.getId(), Role.OWNER));
+        if (!CollectionUtils.isEmpty(serviceDTO.getMaintainerIds())) {
+            userServices = serviceDTO.getMaintainerIds()
+                    .parallelStream().map(id -> new UserService(id, service.getId(), Role.MAINTAINER)).collect(Collectors.toList());
+        }
         userServiceRepository.saveAll(userServices);
 
         //start service
@@ -257,6 +260,7 @@ public class MonitorServiceImpl implements MonitorService {
             String deployCommand = "#!/bin/bash \n";
             deployCommand += "cd " + serviceDTO.getDeployDir() + " \n";
             deployCommand += serviceDTO.getDeployCommand() + "\n";
+            deployCommand += "sleep 0.1 \n";
             deployCommand += "echo $! > pid";
             File upload = new File(uploadDir);
             if (!upload.exists()) {
@@ -385,24 +389,24 @@ public class MonitorServiceImpl implements MonitorService {
         //Kieu tra ve la Entity
         return service;
     }
-    
+
     @Override
     public void addServiceOwner(int userId, int serviceId, Role role) {
-    	UserService userService = userServiceRepository.findByUserIdAndServiceId(userId, serviceId);
-    	if (userService != null) {
-    		// update role
-    		List<UserService> user = userServiceRepository.findAllByRoleAndServiceId(Role.OWNER, serviceId);
-        	//Check Unique Owner
-            if(user.size() == 1 && user.get(0).getUser().getId() == userId && role == Role.MAINTAINER) {
+        UserService userService = userServiceRepository.findByUserIdAndServiceId(userId, serviceId);
+        if (userService != null) {
+            // update role
+            List<UserService> user = userServiceRepository.findAllByRoleAndServiceId(Role.OWNER, serviceId);
+            //Check Unique Owner
+            if (user.size() == 1 && user.get(0).getUser().getId() == userId && role == Role.MAINTAINER) {
                 throw new ApplicationException(messages.get("error.cannot.change.owner"));
             } else {
-            	userService.setRole(role);
-            	userServiceRepository.save(userService);
+                userService.setRole(role);
+                userServiceRepository.save(userService);
             }
         } else {
-        	// add role
-        	userService = new UserService(userId, serviceId, role);
-        	userServiceRepository.save(userService);
+            // add role
+            userService = new UserService(userId, serviceId, role);
+            userServiceRepository.save(userService);
         }
     }
 

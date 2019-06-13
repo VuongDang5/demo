@@ -17,6 +17,12 @@ public class PathValidator implements ConstraintValidator<Path, String> {
 
     @Override
     public boolean isValid(String path, ConstraintValidatorContext constraintValidatorContext) {
-        return path.startsWith(prefix);
+        String[] lPrefix = prefix.split(";");
+        for (String prefix : lPrefix) {
+            if (path.startsWith(prefix)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
