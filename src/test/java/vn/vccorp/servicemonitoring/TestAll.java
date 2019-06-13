@@ -10,12 +10,10 @@ import org.springframework.test.context.junit4.SpringRunner;
 import vn.vccorp.servicemonitoring.dto.ServerDTO;
 import vn.vccorp.servicemonitoring.dto.ServiceDTO;
 import vn.vccorp.servicemonitoring.dto.ServiceErrorDTO;
+import vn.vccorp.servicemonitoring.entity.UserServer;
 import vn.vccorp.servicemonitoring.enumtype.Language;
 import vn.vccorp.servicemonitoring.enumtype.Status;
-import vn.vccorp.servicemonitoring.logic.service.EmailService;
-import vn.vccorp.servicemonitoring.logic.service.HealthCheckService;
-import vn.vccorp.servicemonitoring.logic.service.MonitorServer;
-import vn.vccorp.servicemonitoring.logic.service.MonitorService;
+import vn.vccorp.servicemonitoring.logic.service.*;
 import vn.vccorp.servicemonitoring.utils.AppUtils;
 import vn.vccorp.servicemonitoring.utils.BeanUtils;
 
@@ -112,5 +110,10 @@ public class TestAll {
     @Test
     public void testGetAllServer(){
         BeanUtils.getBean(MonitorServer.class).getAllServer(PageRequest.of(1, 10));
+    }
+
+    @Test
+    public void testGetAllUser(){
+        BeanUtils.getBean(UserService.class).listAllUser(1, 10);
     }
 }
