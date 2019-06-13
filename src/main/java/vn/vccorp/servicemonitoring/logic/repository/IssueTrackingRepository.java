@@ -15,6 +15,5 @@ import java.util.Optional;
 
 public interface IssueTrackingRepository extends JpaRepository<IssueTracking, Integer> {
     Optional<IssueTracking> findByIssueType(IssueType issueType);
-
-    List<IssueTracking> findByDate(Date trackingTime);
+    List<IssueTracking> findByIssueTypeAndTrackingTime(IssueType issueType, Date trackingTime);
 }

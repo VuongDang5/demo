@@ -8,6 +8,8 @@ import vn.vccorp.servicemonitoring.enumtype.IssueType;
 import vn.vccorp.servicemonitoring.logic.repository.IssueTrackingRepository;
 import vn.vccorp.servicemonitoring.logic.service.ConfirmIssue;
 
+import java.util.Optional;
+
 
 @Service
 public class ConfirmIssueImpl implements ConfirmIssue {
@@ -17,13 +19,19 @@ public class ConfirmIssueImpl implements ConfirmIssue {
 
     @Override
     public void issueResolve(){
-        //First
-        if (!issueTrackingRepository.findByIssueType(IssueType.RECOVERY).isPresent()
-            && !issueTrackingRepository.findByIssueType(IssueType.ERROR).isPresent()){
+        Optional<IssueTracking> lastRecovery = issueTrackingRepository.findByIssueType(IssueType.RECOVERY);
+        //First confirm
+        if (!lastRecovery.isPresent()){
+            if(!issueTrackingRepository.findByIssueType(IssueType.ERROR).isPresent()){
+                createIssueRecovery(IssueType.RECOVERY);
+                return;
+            }
+            return;
+        }
+        //Have confirm yet
+        if (!issueTrackingRepository.findByIssueTypeAndTrackingTime(IssueType.ERROR, lastRecovery.get().getTrackingTime()).isEmpty()){
             createIssueRecovery(IssueType.RECOVERY);
         }
-        //
-
     }
 
     @Override
