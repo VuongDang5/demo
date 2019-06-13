@@ -4,14 +4,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.joda.time.LocalDateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import vn.vccorp.servicemonitoring.exception.ApplicationException;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.io.*;
+import java.util.*;
 
 /**
  * Name: tuyennta
@@ -80,29 +76,93 @@ public class AppUtils {
 
     /**
      * Get listened ports of a pid from a remote server via ssh connection
-     * @param serverIP  destination server
-     * @param pid   pid to get ports
-     * @param sshPort   ssh port to connect to destination server
-     * @param sshUsername   ssh user to connect to destination server
-     * @return  all ports being listened by pid, each port separated by a semi-colon
+     *
+     * @param serverIP    destination server
+     * @param pid         pid to get ports
+     * @param sshPort     ssh port to connect to destination server
+     * @param sshUsername ssh user to connect to destination server
+     * @return all ports being listened by pid, each port separated by a semi-colon
      */
     public static String getPortFromPid(String serverIP, String pid, String sshPort, String sshUsername) {
-        String command = String.format("ssh -p %s %s@%s -t 'sudo lsof -aPi -p %s | grep LISTEN'", sshPort, sshUsername, serverIP, pid);
+//        String command = String.format("ssh -p %s %s@%s -t 'sudo lsof -aPi -p %s | grep LISTEN'", sshPort, sshUsername, serverIP, pid);
+//        String subCommand = String.format("sudo ss -l -p -n | grep 'pid=%s'", pid);
+        String subCommand = String.format("sudo lsof -aPi -p %s | grep LISTEN", pid);
+        String command = String.format("ssh -p %s %s@%s -t '%s'", sshPort, sshUsername, serverIP, subCommand);
+
+//        List<String> out = executeCommand(sshUsername, sshPort, serverIP, subCommand);
+
         List<String> out = executeCommand(command);
         String ports = "";
         for (String line : out) {
             ports = ports.concat(StringUtils.substringBetween(line, ":", " (LISTEN)")).concat(";");
         }
+        if (ports.isEmpty()) {
+            throw new ApplicationException("Can not found listened port of pid: " + pid);
+        }
         return ports.substring(0, ports.length() - 1);
     }
 
+//    public static List<String> executeCommand(String sshUsername, String sshPort, String serverIp, String command) {
+//        StringBuffer sbi = null;
+//        StringBuffer sbe = null;
+//        try {
+//            Properties config = new Properties();
+//            config.put("StrictHostKeyChecking", "no");
+//            config.put("PreferredAuthentications", "publickey");
+//            JSch jsch = new JSch();
+//            jsch.setKnownHosts("~/.ssh/known_hosts");
+//            jsch.addIdentity("~/.ssh/id_rsa");
+//            // Create a JSch session to connect to the server
+//            Session session = jsch.getSession(sshUsername, serverIp, Integer.parseInt(sshPort));
+//            session.setConfig(config);
+//            // Establish the connection
+//            session.connect();
+//            System.out.println("Connected...");
+//
+//            ChannelExec channel = (ChannelExec) session.openChannel("exec");
+//            channel.setCommand(command);
+//            channel.setErrStream(System.err);
+//            channel.setInputStream(null);
+//            InputStream in = channel.getInputStream();
+//            channel.connect();
+//            sbi = new StringBuffer();
+//            sbe = new StringBuffer();
+//            List<String> out = new ArrayList<>();
+//            List<String> err = new ArrayList<>();
+//            byte[] tmp = new byte[1024];
+//            while (true) {
+//                BufferedReader reader = new BufferedReader(new InputStreamReader(channel.getInputStream()));
+//                String line;
+//                while ((line = reader.readLine()) != null) {
+//                    out.add(line);
+//                }
+//                BufferedReader reader1 = new BufferedReader(new InputStreamReader(channel.getErrStream()));
+//                while ((line = reader1.readLine()) != null) {
+//                    err.add(line);
+//                }
+//                if (channel.isClosed()) {
+//                    System.out.println("Exit Status: " + channel.getExitStatus());
+//                    break;
+//                }
+//                Thread.sleep(1000);
+//            }
+//            channel.disconnect();
+//            session.disconnect();
+//            System.out.println("DONE!!!");
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//        return Arrays.asList(sbi.toString().split("\n"));
+//    }
+
     /**
      * Get pid of a process which is listened on a specific port on a remote server
-     * @param serverIP  remote server
-     * @param port  port which service is listening on
-     * @param sshPort   ssh port to connect to destination server
-     * @param sshUsername   ssh username to connect to destination server
-     * @return  pid of service which is listening that port
+     *
+     * @param serverIP    remote server
+     * @param port        port which service is listening on
+     * @param sshPort     ssh port to connect to destination server
+     * @param sshUsername ssh username to connect to destination server
+     * @return pid of service which is listening that port
      */
     public static String getPidFromPort(String serverIP, String port, String sshPort, String sshUsername) {
         String command = String.format("ssh -p %s %s@%s -t 'sudo ss -ntpl 'sport = :%s''", sshPort, sshUsername, serverIP, port);
@@ -255,8 +315,9 @@ public class AppUtils {
      */
     public static List<String> executeCommand(String command) {
         List<String> out = new ArrayList<>();
-        String[] args = new String[]{"/bin/bash", "-c", command, "with", "args"};
-        ProcessBuilder pb = new ProcessBuilder(args);
+        String[] args = new String[]{"/bin/bash", "-c", command};
+        ProcessBuilder pb = new ProcessBuilder();
+        pb.command(args);
         try {
             out = execute(pb);
         } catch (IOException e) {
@@ -265,6 +326,26 @@ public class AppUtils {
             e.printStackTrace();
         }
         return out;
+    }
+
+    private static List<String> executeCommand1(String command) {
+        Process p;
+        List<String> output = new ArrayList<>();
+        try {
+            p = Runtime.getRuntime().exec(command);
+            PrintStream out = new PrintStream(p.getOutputStream());
+            BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            while (in.ready()) {
+                String s = in.readLine();
+                output.add(s);
+            }
+            out.println("exit");
+
+            p.waitFor();
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
+        return output;
     }
 
     /**
@@ -294,7 +375,10 @@ public class AppUtils {
         while ((line = reader.readLine()) != null) {
             out.add(line);
         }
-        proc.waitFor();
+        int exitCode = proc.waitFor();
+        if (exitCode != 0) {
+            System.out.println(String.format("Execute command failed. Command: %s \nExit code: %s \nOutput: %s", pb.command(), exitCode, out));
+        }
         return out;
     }
 
@@ -327,11 +411,11 @@ public class AppUtils {
      * @param sshUsername
      * @return if user exist return groups user else null
      */
-    public static String getGroupUser(String serverIP, String userName, String sshPort, String sshUsername){
+    public static String getGroupUser(String serverIP, String userName, String sshPort, String sshUsername) {
         String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIP + " -t 'groups " + userName + "'";
         List<String> out = AppUtils.executeCommand(command);
         if (out.isEmpty()) {
-            return  null;
+            return null;
         }
         return out.get(0).split(userName + " : ", 2)[1].replace(" ", ",");
     }

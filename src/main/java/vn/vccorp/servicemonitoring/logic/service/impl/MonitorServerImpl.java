@@ -138,8 +138,8 @@ public class MonitorServerImpl implements MonitorServer {
         if (outRam.isEmpty()) {
             throw new ApplicationException(messages.get("server.get-ram.error", new String[]{server.getIp()}));
         }
-        monitorServer.put("ramFree", outRam.get(0));
-        monitorServer.put("ramUsed", outRam.get(1));
+        monitorServer.put("ramUsed", outRam.get(0));
+        monitorServer.put("ramFree", outRam.get(1));
 
         //get disk: df -h
         String commandDisk = "ssh -p " + sshPort + " " + sshUsername + "@" + server.getIp() + " -t 'df -hT "+ server.getRootPath() +"' | awk '{if ($1 == \"df:\") print \"-1\"; print $4; print $5}'";

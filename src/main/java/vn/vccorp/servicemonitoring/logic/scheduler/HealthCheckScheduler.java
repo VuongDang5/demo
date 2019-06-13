@@ -50,14 +50,14 @@ public class HealthCheckScheduler implements SchedulingConfigurer {
             for (Service service : services.getContent()) {
 
                 //health check 1: check service status
-                healthCheckService.checkServiceStatus(service);
+                if (healthCheckService.checkServiceStatus(service)) {
 
-                //health check 2: check service log
-                healthCheckService.checkLogService(service);
+                    //health check 2: check service log
+                    healthCheckService.checkLogService(service);
 
-                //health check 3: checking for usage resources
-                healthCheckService.checkResourcesUsage(service);
-
+                    //health check 3: checking for usage resources
+                    healthCheckService.checkResourcesUsage(service);
+                }
             }
         } while (services.hasNext());
     }
