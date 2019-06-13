@@ -25,7 +25,6 @@ public class UserRepositoryCustomImpl implements UserRepositoryCustom {
 
     @Override
     public PageImpl<UserInfoDTO> getAllUser(Pageable page) {
-
         @Getter
         @Setter
         @NoArgsConstructor
@@ -39,24 +38,53 @@ public class UserRepositoryCustomImpl implements UserRepositoryCustom {
             String servers;
         }
 
-        String queryStr = "SELECT u.name, u.username, u.email, u.phone, " +
-                "GROUP_CONCAT( " +
-                "CONCAT_WS(',', IFNULL(service.name, 'null'), IFNULL(service.pid, 'null'), IFNULL(user_service.role, 'null'), IFNULL(service.description, 'null'), IFNULL(service.status, 'null')) " +
-                "ORDER BY service.pid " +
-                "SEPARATOR ';' " +
-                ") AS serviceInfo, " +
-                "GROUP_CONCAT(DISTINCT " +
-                "CONCAT_WS(',', IFNULL(server.name, 'null'), IFNULL(server.ip, 'null'), IFNULL(user_server.groups, 'null'), IFNULL(server.description, 'null'), IFNULL(server.status, 'null')) " +
-                "ORDER BY server.ip " +
-                "SEPARATOR ';' " +
-                ") AS serverInfo " +
-                "FROM user u " +
-                "JOIN user_service ON u.id = user_service.user_id " +
-                "JOIN service ON service.id = user_service.service_id " +
-                "JOIN user_server ON (u.id = user_server.user_id AND service.server_id = user_server.server_id) " +
-                "JOIN server ON server.id = user_server.server_id " +
-                "WHERE user_service.role = 'OWNER' " +
-                "OR user_service.role = 'MAINTAINER' ";
+        String queryStr = "SELECT \n" +
+                "    u.name,\n" +
+                "    u.username,\n" +
+                "    u.email,\n" +
+                "    u.phone,\n" +
+                "    CASE\n" +
+                "        WHEN\n" +
+                "            GROUP_CONCAT(DISTINCT CONCAT_WS(',',\n" +
+                "                        IFNULL(service.name, 'NULL'),\n" +
+                "                        IFNULL(service.pid, 'NULL'),\n" +
+                "                        IFNULL(user_service.role, 'NULL'),\n" +
+                "                        IFNULL(service.description, 'NULL'),\n" +
+                "                        IFNULL(service.status, 'NULL'))\n" +
+                "                ORDER BY service.pid\n" +
+                "                SEPARATOR ';') = 'NULL,NULL,NULL,NULL,NULL'\n" +
+                "        THEN\n" +
+                "            NULL\n" +
+                "        ELSE GROUP_CONCAT(DISTINCT CONCAT_WS(',',\n" +
+                "                    IFNULL(service.name, 'NULL'),\n" +
+                "                    IFNULL(service.pid, 'NULL'),\n" +
+                "                    IFNULL(user_service.role, 'NULL'),\n" +
+                "                    IFNULL(service.description, 'NULL'),\n" +
+                "                    IFNULL(service.status, 'NULL'))\n" +
+                "            ORDER BY service.pid\n" +
+                "            SEPARATOR ';')\n" +
+                "    END AS services,\n" +
+                "    GROUP_CONCAT(DISTINCT CONCAT_WS(',',\n" +
+                "                IFNULL(server.name, 'NULL'),\n" +
+                "                IFNULL(server.ip, 'NULL'),\n" +
+                "                IFNULL(user_server.groups, 'NULL'),\n" +
+                "                IFNULL(server.description, 'NULL'),\n" +
+                "                IFNULL(server.status, 'NULL'))\n" +
+                "        ORDER BY server.ip\n" +
+                "        SEPARATOR ';') AS servers\n" +
+                "FROM\n" +
+                "    user u\n" +
+                "        LEFT JOIN\n" +
+                "    user_service ON u.id = user_service.user_id\n" +
+                "       AND (user_service.role = 'MAINTAINER'" +
+                "       OR user_service.role = 'OWNER')" +
+                "        LEFT JOIN\n" +
+                "    service ON service.id = user_service.service_id\n" +
+                "        JOIN\n" +
+                "    user_server ON u.id = user_server.user_id\n" +
+                "        JOIN\n" +
+                "    server ON server.id = user_server.server_id\n" +
+                "GROUP BY u.name , u.username , u.email , u.phone\n";
 
         Query query = entityManager.createNativeQuery(queryStr)
                 //Sets the offset position in the result set to start pagination
@@ -64,68 +92,75 @@ public class UserRepositoryCustomImpl implements UserRepositoryCustom {
                 //Sets the maximum number of entities that should be included in the page
                 .setMaxResults(page.getPageSize());
         List<Object[]> resultList = query.getResultList();
-        List<ReturnedQueryResult> convertedResultList = new ArrayList<>(resultList.size());
-
-        //Unwind the list returned from query, convert each obj into returnQueryResult and add them into a list
-        for(Object [] row: resultList) {
-            convertedResultList.add(
-                    new
-                    ReturnedQueryResult(
-                            (String) row[0], // name
-                            (String) row[1], // username
-                            (String) row[2], // email
-                            (String) row[3], // phone
-                            (String) row[4], // services
-                            (String) row[5]  // servers
-                    )
-            );
-        }
-
         List<UserInfoDTO> finalResultList = new ArrayList<>();
-        for(ReturnedQueryResult r: convertedResultList) {
-                UserInfoDTO dto = new UserInfoDTO();
-                List<ServiceInfo> serviceInfoList = new ArrayList<>();
-                List<ServerInfo> serverInfoList = new ArrayList<>();
+        if (!resultList.isEmpty()) {
+            List<ReturnedQueryResult> convertedResultList = new ArrayList<>(resultList.size());
+            //Unwind the list returned from query, convert each obj into returnQueryResult and add them into a list
+            for (Object[] row : resultList) {
+                convertedResultList.add(
+                        new
+                                ReturnedQueryResult(
+                                (String) row[0], // name
+                                (String) row[1], // username
+                                (String) row[2], // email
+                                (String) row[3], // phone
+                                (String) row[4], // services
+                                (String) row[5]  // servers
+                        )
+                );
+            }
 
+            for (ReturnedQueryResult r : convertedResultList) {
+                UserInfoDTO dto = new UserInfoDTO();
+
+                //user info
                 dto.setName(r.getName());
                 dto.setUsername(r.getUsername());
                 dto.setEmail(r.getEmail());
                 dto.setPhone(r.getPhone());
 
-                List<String> serviceList = Arrays.asList(r.getServices().split(";", -1));
-                List<String> serverList = Arrays.asList(r.getServers().split(";", -1));
-
-                for(String s: serviceList) {
-                    ServiceInfo serviceInfo = new ServiceInfo();
-                    List<String> info = Arrays.asList(s.split(",",-1));
-
-                    serviceInfo.setName(getReplaceNullString(info, 0));
-                    serviceInfo.setPid(getReplaceNullString(info, 1));
-                    serviceInfo.setRole(getReplaceNullString(info, 2));
-                    serviceInfo.setDescription(getReplaceNullString(info, 3));
-                    serviceInfo.setStatus(getReplaceNullString(info, 4));
-                    serviceInfoList.add(serviceInfo);
+                //user server info
+                List<ServerInfo> serverInfoList = new ArrayList<>();
+                if (r.getServers() != null) {
+                    List<String> serverList = Arrays.asList(r.getServers().split(";", -1));
+                    for (String s : serverList) {
+                        ServerInfo serverInfo = new ServerInfo();
+                        List<String> info = Arrays.asList(s.split(",", -1));
+                        serverInfo.setName(getReplaceNullString(info, 0));
+                        serverInfo.setIp(getReplaceNullString(info, 1));
+                        serverInfo.setGroups(getReplaceNullString(info, 2));
+                        serverInfo.setDescription(getReplaceNullString(info, 3));
+                        serverInfo.setStatus(getReplaceNullString(info, 4));
+                        serverInfoList.add(serverInfo);
+                    }
                 }
 
-                for(String s: serverList) {
-                    ServerInfo serverInfo = new ServerInfo();
-                    List<String> info = Arrays.asList(s.split(",", -1));
-                    serverInfo.setName(getReplaceNullString(info, 0));
-                    serverInfo.setIp(getReplaceNullString(info, 1));
-                    serverInfo.setGroups(getReplaceNullString(info, 2));
-                    serverInfo.setDescription(getReplaceNullString(info, 3));
-                    serverInfo.setStatus(getReplaceNullString(info, 4));
-                    serverInfoList.add(serverInfo);
+                //user service info
+                List<ServiceInfo> serviceInfoList = new ArrayList<>();
+                if (r.getServices() != null) {
+                    List<String> serviceList = Arrays.asList(r.getServices().split(";", -1));
+                    for (String s : serviceList) {
+                        List<String> info = Arrays.asList(s.split(",", -1));
+                        if (!info.get(1).equalsIgnoreCase("null")) {
+                            ServiceInfo serviceInfo = new ServiceInfo();
+                            serviceInfo.setName(getReplaceNullString(info, 0));
+                            serviceInfo.setPid(getReplaceNullString(info, 1));
+                            serviceInfo.setRole(getReplaceNullString(info, 2));
+                            serviceInfo.setDescription(getReplaceNullString(info, 3));
+                            serviceInfo.setStatus(getReplaceNullString(info, 4));
+                            serviceInfoList.add(serviceInfo);
+                        }
+                    }
                 }
 
-                dto.setServices(serviceInfoList);
                 dto.setServers(serverInfoList);
+                dto.setServices(serviceInfoList);
                 finalResultList.add(dto);
+            }
         }
-
         return new PageImpl<>(finalResultList, page, page.getPageSize());
     }
-    
+
     private String getReplaceNullString(List<String> list, int index) {
         String s = list.get(index);
         return s.equalsIgnoreCase("null")?null:s;
