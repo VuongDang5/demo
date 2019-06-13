@@ -43,35 +43,22 @@ public class UserRepositoryCustomImpl implements UserRepositoryCustom {
                 "    u.username,\n" +
                 "    u.email,\n" +
                 "    u.phone,\n" +
-                "    CASE\n" +
-                "        WHEN\n" +
-                "            GROUP_CONCAT(DISTINCT CONCAT_WS(',',\n" +
-                "                        IFNULL(service.name, 'NULL'),\n" +
-                "                        IFNULL(service.pid, 'NULL'),\n" +
-                "                        IFNULL(user_service.role, 'NULL'),\n" +
-                "                        IFNULL(service.description, 'NULL'),\n" +
-                "                        IFNULL(service.status, 'NULL'))\n" +
-                "                ORDER BY service.pid\n" +
-                "                SEPARATOR ';') = 'NULL,NULL,NULL,NULL,NULL'\n" +
-                "        THEN\n" +
-                "            NULL\n" +
-                "        ELSE GROUP_CONCAT(DISTINCT CONCAT_WS(',',\n" +
-                "                    IFNULL(service.name, 'NULL'),\n" +
-                "                    IFNULL(service.pid, 'NULL'),\n" +
-                "                    IFNULL(user_service.role, 'NULL'),\n" +
-                "                    IFNULL(service.description, 'NULL'),\n" +
-                "                    IFNULL(service.status, 'NULL'))\n" +
+                "    GROUP_CONCAT(DISTINCT CONCAT_WS(',,',\n" +
+                "               IFNULL(service.name, 'NULL'),\n" +
+                "               IFNULL(service.pid, 'NULL'),\n" +
+                "               IFNULL(user_service.role, 'NULL'),\n" +
+                "               IFNULL(service.description, 'NULL'),\n" +
+                "               IFNULL(service.status, 'NULL'))\n" +
                 "            ORDER BY service.pid\n" +
-                "            SEPARATOR ';')\n" +
-                "    END AS services,\n" +
-                "    GROUP_CONCAT(DISTINCT CONCAT_WS(',',\n" +
+                "            SEPARATOR ';;') AS services,\n" +
+                "    GROUP_CONCAT(DISTINCT CONCAT_WS(',,',\n" +
                 "                IFNULL(server.name, 'NULL'),\n" +
                 "                IFNULL(server.ip, 'NULL'),\n" +
                 "                IFNULL(user_server.groups, 'NULL'),\n" +
                 "                IFNULL(server.description, 'NULL'),\n" +
                 "                IFNULL(server.status, 'NULL'))\n" +
                 "        ORDER BY server.ip\n" +
-                "        SEPARATOR ';') AS servers\n" +
+                "        SEPARATOR ';;') AS servers\n" +
                 "FROM\n" +
                 "    user u\n" +
                 "        LEFT JOIN\n" +
@@ -121,11 +108,11 @@ public class UserRepositoryCustomImpl implements UserRepositoryCustom {
 
                 //user server info
                 List<ServerInfo> serverInfoList = new ArrayList<>();
-                if (r.getServers() != null) {
-                    List<String> serverList = Arrays.asList(r.getServers().split(";", -1));
+                if (!r.getServers().equals("NULL,,NULL,,NULL,,NULL,,NULL")) {
+                    List<String> serverList = Arrays.asList(r.getServers().split(";;", -1));
                     for (String s : serverList) {
                         ServerInfo serverInfo = new ServerInfo();
-                        List<String> info = Arrays.asList(s.split(",", -1));
+                        List<String> info = Arrays.asList(s.split(",,", -1));
                         serverInfo.setName(getReplaceNullString(info, 0));
                         serverInfo.setIp(getReplaceNullString(info, 1));
                         serverInfo.setGroups(getReplaceNullString(info, 2));
@@ -137,19 +124,17 @@ public class UserRepositoryCustomImpl implements UserRepositoryCustom {
 
                 //user service info
                 List<ServiceInfo> serviceInfoList = new ArrayList<>();
-                if (r.getServices() != null) {
-                    List<String> serviceList = Arrays.asList(r.getServices().split(";", -1));
+                if (!r.getServices().equals("NULL,,NULL,,NULL,,NULL,,NULL")) {
+                    List<String> serviceList = Arrays.asList(r.getServices().split(";;", -1));
                     for (String s : serviceList) {
-                        List<String> info = Arrays.asList(s.split(",", -1));
-                        if (!info.get(1).equalsIgnoreCase("null")) {
-                            ServiceInfo serviceInfo = new ServiceInfo();
-                            serviceInfo.setName(getReplaceNullString(info, 0));
-                            serviceInfo.setPid(getReplaceNullString(info, 1));
-                            serviceInfo.setRole(getReplaceNullString(info, 2));
-                            serviceInfo.setDescription(getReplaceNullString(info, 3));
-                            serviceInfo.setStatus(getReplaceNullString(info, 4));
-                            serviceInfoList.add(serviceInfo);
-                        }
+                        List<String> info = Arrays.asList(s.split(",,", -1));
+                        ServiceInfo serviceInfo = new ServiceInfo();
+                        serviceInfo.setName(getReplaceNullString(info, 0));
+                        serviceInfo.setPid(getReplaceNullString(info, 1));
+                        serviceInfo.setRole(getReplaceNullString(info, 2));
+                        serviceInfo.setDescription(getReplaceNullString(info, 3));
+                        serviceInfo.setStatus(getReplaceNullString(info, 4));
+                        serviceInfoList.add(serviceInfo);
                     }
                 }
 
