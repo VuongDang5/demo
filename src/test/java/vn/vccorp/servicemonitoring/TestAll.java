@@ -116,4 +116,9 @@ public class TestAll {
     public void testGetAllUser(){
         BeanUtils.getBean(UserService.class).listAllUser(1, 10);
     }
+
+    @Test
+    public void testIssueResolve(){
+        BeanUtils.getBean(ConfirmIssue.class).issueResolve();
+    }
 }

@@ -8,6 +8,7 @@ import vn.vccorp.servicemonitoring.enumtype.IssueType;
 import vn.vccorp.servicemonitoring.logic.repository.IssueTrackingRepository;
 import vn.vccorp.servicemonitoring.logic.service.ConfirmIssue;
 
+import java.util.List;
 import java.util.Optional;
 
 
@@ -19,19 +20,27 @@ public class ConfirmIssueImpl implements ConfirmIssue {
 
     @Override
     public void issueResolve(){
-        Optional<IssueTracking> lastRecovery = issueTrackingRepository.findByIssueType(IssueType.RECOVERY);
+        Optional<IssueTracking> lastRecovery = issueTrackingRepository.findTopByIssueTypeOrderByTrackingTimeDesc(IssueType.ERROR);
         //First confirm
         if (!lastRecovery.isPresent()){
-            if(!issueTrackingRepository.findByIssueType(IssueType.ERROR).isPresent()){
+            if(!issueTrackingRepository.findTopByIssueTypeOrderByTrackingTimeDesc(IssueType.ERROR).isPresent()){
                 createIssueRecovery(IssueType.RECOVERY);
                 return;
             }
             return;
         }
+
+        //
+        if (issueTrackingRepository.findTopByOrderByTrackingTimeDesc() == lastRecovery.get()){
+            return;
+        }
+
         //Have confirm yet
-        if (!issueTrackingRepository.findByIssueTypeAndTrackingTime(IssueType.ERROR, lastRecovery.get().getTrackingTime()).isEmpty()){
+        List<IssueTracking> test = issueTrackingRepository.findAllByIssueTypeAndTrackingTimeGreaterThanOrderByTrackingTimeDesc(IssueType.ERROR, lastRecovery.get().getTrackingTime());
+        if (test.isEmpty()){
             createIssueRecovery(IssueType.RECOVERY);
         }
+        return;
     }
 
     @Override

@@ -40,9 +40,6 @@ public class HealthCheckScheduler implements SchedulingConfigurer {
      * This function is called frequently to check services' health including resources usage, logging status, service status
      */
     void frequentlyCheck() {
-        //Issue resolve
-        confirmIssue.issueResolve();
-
         //health check service
         Page<Service> services;
         do {
