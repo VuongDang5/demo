@@ -8,4 +8,7 @@ public interface ConfigurationRepository extends JpaRepository<Configuration, In
 
     @Query("select c.healthCheckSchedule from Configuration c")
     String findHealthCheckScheduleCron();
+    
+    @Query("select c.reportSchedule from Configuration c")
+    String findReportScheduleCron();
 }

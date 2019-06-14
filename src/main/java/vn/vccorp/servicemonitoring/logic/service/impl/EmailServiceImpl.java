@@ -13,6 +13,7 @@ import org.springframework.util.StringUtils;
 import vn.vccorp.servicemonitoring.config.EmailConfig;
 import vn.vccorp.servicemonitoring.config.GMailAuthenticator;
 import vn.vccorp.servicemonitoring.dto.ServiceErrorDTO;
+import vn.vccorp.servicemonitoring.dto.ServiceInfoDTO;
 import vn.vccorp.servicemonitoring.logic.service.EmailService;
 import vn.vccorp.servicemonitoring.message.Messages;
 
@@ -46,6 +47,16 @@ public class EmailServiceImpl implements EmailService {
         String body = createBodyEmailFromTemplate(ImmutableMap.of("service", serviceErrorDTO), "healthcheck-service-error-template.ftl");
         try {
             sendEmail(recipients, null, null, messages.get("service.error.report-title", new String[]{serviceErrorDTO.getServiceName(), serviceErrorDTO.getDeployedServer()}), body, null);
+        } catch (Exception e) {
+            LOGGER.error("Exception while sending warning message");
+        }
+    }
+    
+    @Override
+    public void sendServiceReportMessage(List<ServiceInfoDTO> serviceInfoDTO, List<String> recipients) {
+        String body = createBodyEmailFromTemplate(ImmutableMap.of("service", serviceInfoDTO.get(0)), "frequently-report.ftl");
+        try {
+            sendEmail(recipients, null, null, messages.get("Frequently report for Admin"), body, null);
         } catch (Exception e) {
             LOGGER.error("Exception while sending warning message");
         }

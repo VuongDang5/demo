@@ -21,4 +21,6 @@ public interface ServiceRepositoryCustom {
 
     Service showService(int serviceId);
 
+    List<ServiceInfoDTO> reportService();
+
 }

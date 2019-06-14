@@ -1,6 +1,7 @@
 package vn.vccorp.servicemonitoring.logic.service;
 
 import vn.vccorp.servicemonitoring.dto.ServiceErrorDTO;
+import vn.vccorp.servicemonitoring.dto.ServiceInfoDTO;
 
 import java.io.File;
 import java.util.List;
@@ -13,4 +14,6 @@ public interface EmailService {
     String createBodyEmailFromTemplate(Map<String, Object> model, String emailTemplateName);
 
     void sendServiceErrorMessage(ServiceErrorDTO serviceErrorDTO, List<String> recipients);
+
+	void sendServiceReportMessage(List<ServiceInfoDTO> serviceInfoDTO, List<String> recipients);
 }

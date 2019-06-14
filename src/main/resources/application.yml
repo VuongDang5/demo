@@ -34,7 +34,7 @@ default:
     cpuLimit: 0
     gpuLimit: 0
     diskLimit: 0
-    reportSchedule: 0 0 12 * * ?
+    reportSchedule: 0 * * ? * *
     healthCheckSchedule: 0 * * ? * *
 
 path:
