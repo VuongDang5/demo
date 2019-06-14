@@ -9,6 +9,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.web.multipart.MultipartFile;
 import vn.vccorp.servicemonitoring.dto.LogServiceDTO;
 import vn.vccorp.servicemonitoring.dto.ServiceDTO;
+import vn.vccorp.servicemonitoring.dto.ServiceDetailsDTO.ServiceDetailsDTO;
+import vn.vccorp.servicemonitoring.dto.ServiceDetailsDTO.ServiceInfo;
 import vn.vccorp.servicemonitoring.dto.ServiceInfoDTO;
 import vn.vccorp.servicemonitoring.entity.Service;
 import vn.vccorp.servicemonitoring.enumtype.Role;
@@ -28,7 +30,7 @@ public interface MonitorService {
     //Page<ServiceInfoDTO> showAllService(int currentPage, int pageSize);
     Page<ServiceInfoDTO> showAllService(int currentPage, int pageSize);
 
-    Service showService(int serviceId);
+    ServiceDetailsDTO showService(int serviceId);
     
     void addServiceOwner(int userId,int serviceId, Role role);
 

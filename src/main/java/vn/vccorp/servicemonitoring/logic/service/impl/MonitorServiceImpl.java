@@ -21,6 +21,8 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 import vn.vccorp.servicemonitoring.dto.LogServiceDTO;
 import vn.vccorp.servicemonitoring.dto.ServiceDTO;
+import vn.vccorp.servicemonitoring.dto.ServiceDetailsDTO.ServiceDetailsDTO;
+import vn.vccorp.servicemonitoring.dto.ServiceDetailsDTO.ServiceInfo;
 import vn.vccorp.servicemonitoring.dto.ServiceInfoDTO;
 import vn.vccorp.servicemonitoring.entity.Server;
 import vn.vccorp.servicemonitoring.entity.User;
@@ -379,11 +381,11 @@ public class MonitorServiceImpl implements MonitorService {
     }
 
     @Override
-    public vn.vccorp.servicemonitoring.entity.Service showService(int serviceId) {
+    public ServiceDetailsDTO showService(int serviceId) {
         //Hien thi Detail cua service theo serviceId
-        vn.vccorp.servicemonitoring.entity.Service service = ServiceRepositoryCustom.showService(serviceId);
+        ServiceDetailsDTO s = ServiceRepositoryCustom.showService(serviceId);
         //Kieu tra ve la Entity
-        return service;
+        return s;
     }
     
     @Override

@@ -7,6 +7,7 @@ package vn.vccorp.servicemonitoring.entity;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.test.context.jdbc.Sql;
 import vn.vccorp.servicemonitoring.enumtype.Language;
 import vn.vccorp.servicemonitoring.enumtype.Status;
 
@@ -36,6 +37,95 @@ import java.util.List;
                         "name"
                 })
         })
+@SqlResultSetMappings(
+        {@SqlResultSetMapping(
+                name = "ServiceInfoMapping",
+                classes = @ConstructorResult(
+                        targetClass = vn.vccorp.servicemonitoring.dto.ServiceDetailsDTO.ServiceInfo.class,
+                        columns = {
+                                @ColumnResult(name = "name", type = String.class),
+                                @ColumnResult(name = "description", type = String.class),
+                                @ColumnResult(name = "serverPort", type = String.class),
+                                @ColumnResult(name = "pid", type = String.class),
+                                @ColumnResult(name = "deployDir", type = String.class),
+                                @ColumnResult(name = "logDir", type = String.class),
+                                @ColumnResult(name = "logFile", type = String.class),
+                                @ColumnResult(name = "language", type = String.class),
+                                @ColumnResult(name = "deployCommand", type = String.class),
+                                @ColumnResult(name = "ramLimit", type = Float.class),
+                                @ColumnResult(name = "cpuLimit", type = Float.class),
+                                @ColumnResult(name = "gpuLimit", type = Float.class),
+                                @ColumnResult(name = "diskLimit", type = Float.class),
+                                @ColumnResult(name = "status", type = String.class),
+                                @ColumnResult(name = "startTime", type = Date.class),
+                                @ColumnResult(name = "lastCheckTime", type = Date.class),
+                                @ColumnResult(name = "project", type = String.class),
+                                @ColumnResult(name = "apiEndpoint", type = String.class),
+                                @ColumnResult(name = "kongMapping", type = String.class),
+                                @ColumnResult(name = "note", type = String.class)
+                        }
+                )
+        ),
+                @SqlResultSetMapping(
+                        name = "ServerInfoMapping",
+                        classes = @ConstructorResult(
+                                targetClass = vn.vccorp.servicemonitoring.dto.ServiceDetailsDTO.ServerInfo.class,
+                                columns = {
+                                        @ColumnResult(name = "ip", type = String.class),
+                                        @ColumnResult(name = "name", type = String.class),
+                                        @ColumnResult(name = "description", type = String.class),
+                                        @ColumnResult(name = "rootPath", type = String.class),
+                                        @ColumnResult(name = "status", type = String.class)
+                                }
+                        )
+                )
+                ,
+                @SqlResultSetMapping(
+                        name = "UserInfoMapping",
+                        classes = @ConstructorResult(
+                                targetClass = vn.vccorp.servicemonitoring.dto.ServiceDetailsDTO.UserInfo.class,
+                                columns = {
+                                        @ColumnResult(name = "name", type = String.class),
+                                        @ColumnResult(name = "username", type = String.class),
+                                        @ColumnResult(name = "email", type = String.class),
+                                        @ColumnResult(name = "phone", type = String.class),
+                                        @ColumnResult(name = "role", type = String.class)
+                                }
+                        )
+                )
+                ,
+                @SqlResultSetMapping(
+                        name = "SnapshotInfoMapping",
+                        classes = @ConstructorResult(
+                                targetClass = vn.vccorp.servicemonitoring.dto.ServiceDetailsDTO.SnapshotInfo.class,
+                                columns = {
+                                        @ColumnResult(name = "time", type = Date.class),
+                                        @ColumnResult(name = "ramFree", type = Float.class),
+                                        @ColumnResult(name = "ramUsed", type = Float.class),
+                                        @ColumnResult(name = "cpuFree", type = Float.class),
+                                        @ColumnResult(name = "cpuUsed", type = Float.class),
+                                        @ColumnResult(name = "gpuFree", type = Float.class),
+                                        @ColumnResult(name = "gpuUsed", type = Float.class),
+                                        @ColumnResult(name = "diskFree", type = Float.class),
+                                        @ColumnResult(name = "diskUsed", type = Float.class)
+                                }
+                        )
+                )
+                ,
+                @SqlResultSetMapping(
+                        name = "IssueInfoMapping",
+                        classes = @ConstructorResult(
+                                targetClass = vn.vccorp.servicemonitoring.dto.ServiceDetailsDTO.IssueInfo.class,
+                                columns = {
+                                        @ColumnResult(name = "detail", type = String.class),
+                                        @ColumnResult(name = "issueType", type = String.class),
+                                        @ColumnResult(name = "trackingTime", type = Date.class),
+                                        @ColumnResult(name = "userAction", type = String.class),
+                                        @ColumnResult(name = "name", type = String.class),
+                                        @ColumnResult(name = "email", type = String.class)
+                                }
+                        )
+                )})
 public class Service {
 
     @Id
