@@ -225,7 +225,7 @@ public class ServiceRepositoryCustomImpl implements ServiceRepositoryCustom {
                     "    issue_tracking.user_action AS userAction,\n" +
                     "    user.name,\n" +
                     "    user.email\n" +
-                    "FROM issue_tracking JOIN user ON issue_tracking.user_id = user.id\n" +
+                    "FROM issue_tracking LEFT JOIN user ON issue_tracking.user_id = user.id\n" +
                     "WHERE issue_tracking.service_id = ?1";
             q = entityManager.createNativeQuery(queryStr, "IssueInfoMapping");
             q.setParameter(1, serviceId);
