@@ -134,7 +134,7 @@ public class MonitorServerImpl implements MonitorServer {
 
     @Override
     public String checkIfPortIsBeingUsed(PortDTO info) {
-        boolean result = AppUtils.isPortUsed(info.getPort(),info.getServerIP(),info.getSshPort(),info.getSshUsername());
+        boolean result = AppUtils.isPortUsed(info.getPort(),info.getServerIP(), sshPort, sshUsername);
         if(result) {
             return "Port " + info.getPort() + " is being used";
         }
@@ -145,7 +145,7 @@ public class MonitorServerImpl implements MonitorServer {
 
     @Override
     public List<String> getAllPort(PortDTO info) {
-        return AppUtils.getAllListeningPort(info.getServerIP(), info.getSshPort(), info.getSshUsername());
+        return AppUtils.getAllListeningPort(info.getServerIP(), sshPort, sshUsername);
     }
 
     private Map<String, String> monitorServer(Server server, String sshPort, String sshUsername) throws InterruptedException {
