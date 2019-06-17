@@ -449,9 +449,6 @@ public class AppUtils {
         String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIP +
                 " -t 'sudo ss -tuln | egrep -o :[0-9]+[[:space:]] | sed 's/[[:space:]]*$//' | cut -c 2- | sort -u'";
         List<String> out = AppUtils.executeCommand(command);
-        if(out.isEmpty()) {
-            return null;
-        }
         return out;
     }
 }
