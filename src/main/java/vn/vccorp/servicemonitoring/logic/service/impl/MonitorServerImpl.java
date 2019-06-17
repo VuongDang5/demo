@@ -9,6 +9,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import vn.vccorp.servicemonitoring.dto.PortDTO;
 import vn.vccorp.servicemonitoring.dto.ServerDTO;
 import vn.vccorp.servicemonitoring.dto.ShowServerDTO;
 import vn.vccorp.servicemonitoring.entity.Server;
@@ -23,6 +24,7 @@ import vn.vccorp.servicemonitoring.logic.service.MonitorServer;
 import vn.vccorp.servicemonitoring.message.Messages;
 import vn.vccorp.servicemonitoring.utils.AppUtils;
 
+import javax.sound.sampled.Port;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -128,6 +130,22 @@ public class MonitorServerImpl implements MonitorServer {
         }
 
         return new PageImpl<>(listInfoServer, page, page.getPageSize());
+    }
+
+    @Override
+    public String checkIfPortIsBeingUsed(PortDTO info) {
+        boolean result = AppUtils.isPortUsed(info.getPort(),info.getServerIP(),info.getSshPort(),info.getSshUsername());
+        if(result) {
+            return "Port " + info.getPort() + " is being used";
+        }
+        else {
+            return "Port " + info.getPort() + " is not being used";
+        }
+    }
+
+    @Override
+    public List<String> getAllPort(PortDTO info) {
+        return AppUtils.getAllListeningPort(info.getServerIP(), info.getSshPort(), info.getSshUsername());
     }
 
     private Map<String, String> monitorServer(Server server, String sshPort, String sshUsername) throws InterruptedException {
