@@ -1,9 +1,17 @@
 package vn.vccorp.servicemonitoring.logic.service;
 
-import vn.vccorp.servicemonitoring.entity.Service;
+import vn.vccorp.servicemonitoring.dto.IssueTrackingDTO;
+import vn.vccorp.servicemonitoring.dto.ServiceDTO;
+
+import java.util.Date;
+import java.util.List;
 
 public interface ConfirmIssue {
-    void issueResolve();
-    void userConfirmIssue();
-    void disableIssue();
+    List<IssueTrackingDTO> getAllIssueError();
+
+    List<ServiceDTO> getAllServiceError();
+
+    void userConfirmIssue(int serviceId);
+
+    void disableIssue(int serviceId, String date);
 }

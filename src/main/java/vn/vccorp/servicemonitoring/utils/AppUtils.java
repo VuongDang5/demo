@@ -86,7 +86,7 @@ public class AppUtils {
     public static String getPortFromPid(String serverIP, String pid, String sshPort, String sshUsername) {
 //        String command = String.format("ssh -p %s %s@%s -t 'sudo lsof -aPi -p %s | grep LISTEN'", sshPort, sshUsername, serverIP, pid);
 //        String subCommand = String.format("sudo ss -l -p -n | grep 'pid=%s'", pid);
-        String subCommand = String.format("sudo lsof -aPi -p %s | grep LISTEN", pid);
+        String subCommand = String.format("lsof -aPi -p %s | grep LISTEN", pid);
         String command = String.format("ssh -p %s %s@%s -t '%s'", sshPort, sshUsername, serverIP, subCommand);
 
 //        List<String> out = executeCommand(sshUsername, sshPort, serverIP, subCommand);

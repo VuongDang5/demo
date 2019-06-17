@@ -17,6 +17,7 @@ import vn.vccorp.servicemonitoring.dto.ServiceErrorDTO;
 import vn.vccorp.servicemonitoring.entity.*;
 import vn.vccorp.servicemonitoring.enumtype.IssueType;
 import vn.vccorp.servicemonitoring.enumtype.Role;
+import vn.vccorp.servicemonitoring.enumtype.Status;
 import vn.vccorp.servicemonitoring.exception.ApplicationException;
 import vn.vccorp.servicemonitoring.logic.repository.*;
 import vn.vccorp.servicemonitoring.logic.service.EmailService;
@@ -29,8 +30,12 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -64,8 +69,7 @@ public class HealthCheckServiceImpl implements HealthCheckService {
     private ServiceRepository serviceRepository;
 
     @Override
-    public void checkResourcesUsage(Service service) {
-
+    public boolean checkResourcesUsage(Service service) {
         //get cpu,ram usage
         Snapshot snapshot = getCpuAndMemUsage(service.getPid(), service.getServer().getIp());
         snapshot.setService(service);
@@ -77,12 +81,12 @@ public class HealthCheckServiceImpl implements HealthCheckService {
         snapshotRepository.save(snapshot);
 
         //check if limit threshold is over
-        checkLimitResource(service, snapshot);
-
+        return checkLimitResource(service, snapshot);
     }
 
     @Override
-    public void checkLogService(Service service) {
+    public boolean checkLogService(Service service) {
+        boolean isIssue = false;
         //Create new LogService if it = null
         LogService logService = logServiceRepository.findByServiceId(service.getId()).orElse(
                 LogService.builder()
@@ -123,17 +127,20 @@ public class HealthCheckServiceImpl implements HealthCheckService {
         if (lassErr.length() != 0) {
             String detailMessage = String.format("Service is running with error: %s", lassErr);
             addingIssueTrackingAndSendReport(service, detailMessage, IssueType.ERROR, problemAt);
+            isIssue = true;
         }
 
         if (lassWarn.length() != 0) {
             String detailMessage = String.format("Service is running with warning: %s", lassWarn);
             addingIssueTrackingAndSendReport(service, detailMessage, IssueType.WARNING, problemAt);
+            isIssue = true;
         }
 
         //save last check
         logService.setCheckedLine(lastLineRemote);
         //save log service
         logServiceRepository.save(logService);
+        return isIssue;
     }
 
     /**
@@ -142,19 +149,24 @@ public class HealthCheckServiceImpl implements HealthCheckService {
      * @param service  service to check
      * @param snapshot current snapshot of service to compare
      */
-    private void checkLimitResource(Service service, Snapshot snapshot) {
+    private boolean checkLimitResource(Service service, Snapshot snapshot) {
+        boolean isIssue = false;
         if (service.getRamLimit() != null && service.getRamLimit() > 0 && service.getRamLimit() <= snapshot.getRamUsed()) {
             String detailMessage = String.format("Your service has bean reached RAM limited. Current percent of RAM used: %s, limit: %s", snapshot.getRamUsed(), service.getRamLimit());
             addingIssueTrackingAndSendReport(service, detailMessage, IssueType.WARNING, null);
+            isIssue = true;
         }
         if (service.getCpuLimit() != null && service.getCpuLimit() > 0 && service.getCpuLimit() <= snapshot.getCpuUsed()) {
             String detailMessage = String.format("Your service has bean reached CPU limited. Current percent of CPU used: %s, limit: %s", snapshot.getCpuUsed(), service.getCpuLimit());
             addingIssueTrackingAndSendReport(service, detailMessage, IssueType.WARNING, null);
+            isIssue = true;
         }
         if (service.getDiskLimit() != null && service.getDiskLimit() > 0 && service.getDiskLimit() >= snapshot.getDiskUsed()) {
             String detailMessage = String.format("Your service has bean reached disk limited. Current percent of disk used: %s, limit: %s", snapshot.getDiskUsed(), service.getDiskLimit());
             addingIssueTrackingAndSendReport(service, detailMessage, IssueType.WARNING, null);
+            isIssue = true;
         }
+        return isIssue;
     }
 
     /**
@@ -165,7 +177,7 @@ public class HealthCheckServiceImpl implements HealthCheckService {
      * @param issueType     type of issue
      * @param problemAt     line number in log file where problem happen
      */
-    private void addingIssueTrackingAndSendReport(Service service, String detailMessage, IssueType issueType, Long problemAt) {
+    public void addingIssueTrackingAndSendReport(Service service, String detailMessage, IssueType issueType, Long problemAt) {
         //create a new record for issue_tracking
         IssueTracking issueTracking = new IssueTracking();
         issueTracking.setIssueType(issueType);
@@ -179,7 +191,19 @@ public class HealthCheckServiceImpl implements HealthCheckService {
         }
         issueTracking.setService(service);
         issueTracking.setTrackingTime(LocalDateTime.now().toDate());
+        boolean isDisable = isServiceDisable(service, issueTracking);
         issueTrackingRepository.save(issueTracking);
+        //update service status
+        if (issueType == IssueType.RECOVERY){
+            service.setStatus(Status.ACTIVE);
+        } else {
+            service.setStatus(Status.valueOf(issueType.name()));
+        }
+
+        //Don't send mail if disable
+        if(isDisable){
+            return;
+        }
 
         //build error object to send warning email
         ServiceErrorDTO errorDTO = ServiceErrorDTO.builder()
@@ -283,5 +307,29 @@ public class HealthCheckServiceImpl implements HealthCheckService {
             }
         }
         return isAlive;
+    }
+
+    private boolean isServiceDisable(Service service, IssueTracking issueTracking){
+        //find issue disable recent
+        Optional<IssueTracking> lastIssue = issueTrackingRepository.findTopByServiceOrderByTrackingTimeDesc(service);
+        if (!lastIssue.isPresent())
+            return false;
+
+        String[] detail = lastIssue.get().getDetail().split("::", 3);
+        if (detail[0].equals("Disable")){
+            Date dateDisable = null;
+            try {
+                dateDisable = new SimpleDateFormat("E MMM dd HH:mm:ss zzz yyyy").parse(detail[1]);
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
+            //Date now before date disable
+            if (dateDisable.compareTo(LocalDateTime.now().toDate()) > 0){
+                //save issue disable
+                issueTracking.setDetail("Disable::" + dateDisable.toString() +"::\n" + issueTracking.getDetail());
+                return true;
+            }
+        }
+        return false;
     }
 }
