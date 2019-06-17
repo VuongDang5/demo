@@ -7,7 +7,6 @@ package vn.vccorp.servicemonitoring.logic.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import vn.vccorp.servicemonitoring.entity.IssueTracking;
-import vn.vccorp.servicemonitoring.entity.Server;
 import vn.vccorp.servicemonitoring.entity.Service;
 import vn.vccorp.servicemonitoring.enumtype.IssueType;
 
