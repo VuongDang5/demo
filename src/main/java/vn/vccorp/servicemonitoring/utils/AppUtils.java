@@ -419,4 +419,36 @@ public class AppUtils {
         }
         return out.get(0).split(userName + " : ", 2)[1].replace(" ", ",");
     }
+
+    /**
+     * SSH into the server then check if a certain port is being used.
+     * @param port          The port to check
+     * @param serverIP      IP of the server you SSH into
+     * @param sshPort       SSH port
+     * @param sshUsername   SSH username
+     * @return
+     */
+    public static boolean isPortUsed(String port, String serverIP, String sshPort, String sshUsername) {
+        String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIP +
+                " -t 'sudo ss -tuln | grep -q :" + port + "[[:space:]]; echo $?'";
+        List<String> out = AppUtils.executeCommand(command);
+        if (out.get(0).equals("0")) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * SSH into server then get all port currently in used.
+     * @param serverIP
+     * @param sshPort
+     * @param sshUsername
+     * @return
+     */
+    public static List<String> getAllListeningPort(String serverIP, String sshPort, String sshUsername) {
+        String command = "ssh -p " + sshPort + " " + sshUsername + "@" + serverIP +
+                " -t 'sudo ss -tuln | egrep -o :[0-9]+[[:space:]] | sed 's/[[:space:]]*$//' | cut -c 2- | sort -u'";
+        List<String> out = AppUtils.executeCommand(command);
+        return out;
+    }
 }
