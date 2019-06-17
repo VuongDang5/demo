@@ -60,7 +60,7 @@ public class ServerController {
     }
 
     @RequestMapping(value = "/get-all-port", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    @ApiOperation(value = "Check if server port is being used", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @ApiOperation(value = "Get all server's listening ports", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @UserAuthorize
     public ResponseEntity<Object> getAllPort(@RequestBody @Valid PortDTO PortDTO) {
         LOGGER.info("Get ports on " + PortDTO.getServerIP());

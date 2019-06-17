@@ -11,7 +11,5 @@ import lombok.Setter;
 @NoArgsConstructor
 public class PortDTO {
     String serverIP;
-    String sshPort;
-    String sshUsername;
     String port;
 }
