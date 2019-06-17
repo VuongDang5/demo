@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -21,9 +22,13 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 import vn.vccorp.servicemonitoring.dto.LogServiceDTO;
 import vn.vccorp.servicemonitoring.dto.ServiceDTO;
+import vn.vccorp.servicemonitoring.dto.ServiceDetailsDTO.*;
 import vn.vccorp.servicemonitoring.dto.ServiceInfoDTO;
 import vn.vccorp.servicemonitoring.entity.Server;
+import vn.vccorp.servicemonitoring.entity.User;
 import vn.vccorp.servicemonitoring.entity.UserService;
+import vn.vccorp.servicemonitoring.enumtype.ApplicationError;
+import vn.vccorp.servicemonitoring.enumtype.IssueType;
 import vn.vccorp.servicemonitoring.enumtype.Role;
 import vn.vccorp.servicemonitoring.exception.ApplicationException;
 import vn.vccorp.servicemonitoring.logic.repository.ServerRepository;
@@ -383,13 +388,127 @@ public class MonitorServiceImpl implements MonitorService {
     }
 
     @Override
-    public vn.vccorp.servicemonitoring.entity.Service showService(int serviceId) {
-        //Hien thi Detail cua service theo serviceId
-        vn.vccorp.servicemonitoring.entity.Service service = ServiceRepositoryCustom.showService(serviceId);
-        //Kieu tra ve la Entity
-        return service;
-    }
+    public ServiceDetailsDTO showService(int serviceId) {
+        ServiceDetailsDTO s = new ServiceDetailsDTO();
+        ServiceInfo serviceInfo = ServiceRepositoryCustom.getServiceInfo(serviceId);
+        if(serviceInfo!=null) {
+            ServerInfo serverInfo = ServiceRepositoryCustom.getServerInfo(serviceId);
+            List<UserInfo> userInfo = ServiceRepositoryCustom.getAllUser(serviceId);
 
+            Page<SnapshotInfo> snapshotInfoPage = ServiceRepositoryCustom.getAllSnapshot(serviceId, new Pageable() {
+                @Override
+                public int getPageNumber() {
+                    return 0;
+                }
+
+                @Override
+                public int getPageSize() {
+                    return 10;
+                }
+
+                @Override
+                public long getOffset() {
+                    return 0;
+                }
+
+                @Override
+                public Sort getSort() {
+                    return null;
+                }
+
+                @Override
+                public Pageable next() {
+                    return null;
+                }
+
+                @Override
+                public Pageable previousOrFirst() {
+                    return null;
+                }
+
+                @Override
+                public Pageable first() {
+                    return null;
+                }
+
+                @Override
+                public boolean hasPrevious() {
+                    return false;
+                }
+            });
+            List<SnapshotInfo> snapshotInfo = snapshotInfoPage.getContent();
+
+            Page<IssueInfo> issueInfoPage = ServiceRepositoryCustom.getAllIssue(serviceId, new Pageable() {
+                @Override
+                public int getPageNumber() {
+                    return 0;
+                }
+
+                @Override
+                public int getPageSize() {
+                    return 10;
+                }
+
+                @Override
+                public long getOffset() {
+                    return 0;
+                }
+
+                @Override
+                public Sort getSort() {
+                    return null;
+                }
+
+                @Override
+                public Pageable next() {
+                    return null;
+                }
+
+                @Override
+                public Pageable previousOrFirst() {
+                    return null;
+                }
+
+                @Override
+                public Pageable first() {
+                    return null;
+                }
+
+                @Override
+                public boolean hasPrevious() {
+                    return false;
+                }
+            });
+            List<IssueInfo> issueInfo = issueInfoPage.getContent();
+            s.setName(serviceInfo.getName());
+            s.setDescription(serviceInfo.getDescription());
+            s.setServerPort(serviceInfo.getServerPort());
+            s.setPid(serviceInfo.getPid());
+            s.setDeployDir(serviceInfo.getDeployDir());
+            s.setLogDir(serviceInfo.getLogDir());
+            s.setLogFile(serviceInfo.getLogFile());
+            s.setLanguage(serviceInfo.getLanguage());
+            s.setDeployCommand(serviceInfo.getDeployCommand());
+            s.setRamLimit(serviceInfo.getRamLimit());
+            s.setCpuLimit(serviceInfo.getCpuLimit());
+            s.setGpuLimit(serviceInfo.getGpuLimit());
+            s.setDiskLimit(serviceInfo.getDiskLimit());
+            s.setStatus(serviceInfo.getStatus());
+            s.setStartTime(serviceInfo.getStartTime());
+            s.setLastCheckTime(serviceInfo.getLastCheckTime());
+            s.setProject(serviceInfo.getProject());
+            s.setApiEndpoint(serviceInfo.getApiEndpoint());
+            s.setKongMapping(serviceInfo.getKongMapping());
+            s.setNote(serviceInfo.getNote());
+
+            s.setServerInfo(serverInfo);
+            s.setUserInfo(userInfo);
+            s.setSnapshotInfo(snapshotInfo);
+            s.setIssueInfo(issueInfo);
+        }
+        return s;
+    }
+    
     @Override
     public void addServiceOwner(int userId, int serviceId, Role role) {
         UserService userService = userServiceRepository.findByUserIdAndServiceId(userId, serviceId);

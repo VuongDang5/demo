@@ -5,20 +5,24 @@
 
 package vn.vccorp.servicemonitoring.logic.repository;
 
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.Query;
-import vn.vccorp.servicemonitoring.dto.ServiceDTO;
-import vn.vccorp.servicemonitoring.entity.Service;
-import vn.vccorp.servicemonitoring.entity.UserService;
+import vn.vccorp.servicemonitoring.dto.ServiceDetailsDTO.*;
 import vn.vccorp.servicemonitoring.dto.ServiceInfoDTO;
+import vn.vccorp.servicemonitoring.entity.IssueTracking;
+import vn.vccorp.servicemonitoring.entity.Snapshot;
 
 import java.util.List;
 
 public interface ServiceRepositoryCustom {
     PageImpl<ServiceInfoDTO> showAllService(Pageable firstPageWithFourElements);
 
-    Service showService(int serviceId);
+    List<UserInfo> getAllUser(int serviceId);
+    List<UserInfo> getAllOwner(int serviceId);
+    List<UserInfo> getAllMaintainer(int serviceId);
 
+    ServiceInfo getServiceInfo(int serviceId);
+    ServerInfo getServerInfo(int serviceId);
+    PageImpl<IssueInfo> getAllIssue(int serviceId, Pageable page);
+    PageImpl<SnapshotInfo> getAllSnapshot(int serviceId, Pageable page);
 }
