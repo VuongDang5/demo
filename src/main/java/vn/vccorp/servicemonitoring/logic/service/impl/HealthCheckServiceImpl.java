@@ -5,12 +5,14 @@
 
 package vn.vccorp.servicemonitoring.logic.service.impl;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.joda.time.LocalDateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.util.CollectionUtils;
 import vn.vccorp.servicemonitoring.dto.ServiceErrorDTO;
 import vn.vccorp.servicemonitoring.entity.*;
 import vn.vccorp.servicemonitoring.enumtype.IssueType;
@@ -23,6 +25,7 @@ import vn.vccorp.servicemonitoring.message.Messages;
 import vn.vccorp.servicemonitoring.utils.AppConstants;
 import vn.vccorp.servicemonitoring.utils.AppUtils;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -100,8 +103,8 @@ public class HealthCheckServiceImpl implements HealthCheckService {
         //get log
         List<String> logs = AppUtils.getLog(service.getServer().getIp(), service.getLogDir() + service.getLogFile(), limit, sshPort, sshUsername);
 
-        List<String> lassErr = new ArrayList<>();
-        List<String> lassWarn = new ArrayList<>();
+        StringBuffer lassErr = new StringBuffer();
+        StringBuffer lassWarn = new StringBuffer();
 
         //check log file service
         String line;
@@ -109,20 +112,20 @@ public class HealthCheckServiceImpl implements HealthCheckService {
         for (int i = 0; i < logs.size(); i++) {
             line = logs.get(i);
             if (StringUtils.containsIgnoreCase(line, AppConstants.ERROR_REGEX)) {
-                lassErr.add(line);
+                lassErr.append(line).append(System.lineSeparator());
                 problemAt = logService.getCheckedLine() + i;
             } else if (StringUtils.containsIgnoreCase(line, AppConstants.WARN_REGEX)) {
-                lassWarn.add(line);
+                lassWarn.append(line).append(System.lineSeparator());
                 problemAt = logService.getCheckedLine() + i;
             }
         }
 
-        if (!lassErr.isEmpty()) {
+        if (lassErr.length() != 0) {
             String detailMessage = String.format("Service is running with error: %s", lassErr);
             addingIssueTrackingAndSendReport(service, detailMessage, IssueType.ERROR, problemAt);
         }
 
-        if (!lassWarn.isEmpty()) {
+        if (lassWarn.length() != 0) {
             String detailMessage = String.format("Service is running with warning: %s", lassWarn);
             addingIssueTrackingAndSendReport(service, detailMessage, IssueType.WARNING, problemAt);
         }
@@ -167,7 +170,7 @@ public class HealthCheckServiceImpl implements HealthCheckService {
         IssueTracking issueTracking = new IssueTracking();
         issueTracking.setIssueType(issueType);
         if (problemAt != null) {
-            detailMessage = String.format("Your service has problem in log file at line: %s. \r\n Detail message: %s", problemAt, detailMessage);
+            detailMessage = String.format("Your service has problem in log file at line: %s. \n Detail message: %s", problemAt, detailMessage);
         }
         if (detailMessage.length() > 1000) {
             issueTracking.setDetail(detailMessage.substring(0, 1000));
@@ -252,17 +255,33 @@ public class HealthCheckServiceImpl implements HealthCheckService {
         }
     }
 
-    public void checkServiceStatus(Service service) {
+    public boolean checkServiceStatus(Service service) {
+        boolean isAlive = true;
         if (!AppUtils.isProcessAlive(service.getServer().getIp(), service.getPid(), sshPort, sshUsername)) {
             //if the old pid is not alive, then we would try to get a new pid from service's port
             String newPid = AppUtils.getPidFromPort(service.getServer().getIp(), service.getServerPort(), sshPort, sshUsername);
             if (StringUtils.isEmpty(newPid)) { //if we can not get pid from port, then service is died
                 String detailMessage = "Your service has died";
                 addingIssueTrackingAndSendReport(service, detailMessage, IssueType.ERROR, null);
+                isAlive = false;
             } else {
+                String updatePid = String.format("ssh -p %s %s@%s -t 'echo \"%s\" > %spid'", sshPort, sshUsername, service.getServer().getIp(), newPid, service.getDeployDir());
+                AppUtils.executeCommand(updatePid);
                 service.setPid(newPid);
                 serviceRepository.save(service);
             }
+        } else {
+            if (StringUtils.isEmpty(service.getServerPort())) {
+                String port = AppUtils.getPortFromPid(service.getServer().getIp(), service.getPid(), sshPort, sshUsername);
+                if (StringUtils.isEmpty(port)) {
+                    LOGGER.error(messages.get("service.port.not-available", new String[]{service.getPid(), service.getServer().getIp()}));
+                    isAlive = false;
+                } else {
+                    service.setServerPort(port);
+                }
+                serviceRepository.save(service);
+            }
         }
+        return isAlive;
     }
 }
