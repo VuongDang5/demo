@@ -199,7 +199,7 @@ public class HealthCheckServiceImpl implements HealthCheckService {
         } else {
             service.setStatus(Status.valueOf(issueType.name()));
         }
-
+        serviceRepository.save(service);
         //Don't send mail if disable
         if(isDisable){
             return;

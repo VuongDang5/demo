@@ -68,7 +68,7 @@ public class HealthCheckScheduler implements SchedulingConfigurer {
                     //resolve Issue
                     if (!isIssueLog && !isIssueUsage && !(service.getStatus() == Status.ACTIVE)){
                         //create a new record for issue_tracking
-                        String detailMessage = String.format("Service is Recovery");
+                        String detailMessage = String.format("Service is Recovery Auto");
                         healthCheckService.addingIssueTrackingAndSendReport(service, detailMessage, IssueType.RECOVERY, null);
                     }
                 }

@@ -12,7 +12,6 @@ import vn.vccorp.servicemonitoring.dto.ServiceDTO;
 import vn.vccorp.servicemonitoring.dto.ServiceErrorDTO;
 import vn.vccorp.servicemonitoring.enumtype.Language;
 import vn.vccorp.servicemonitoring.enumtype.Status;
-import vn.vccorp.servicemonitoring.logic.scheduler.HealthCheckScheduler;
 import vn.vccorp.servicemonitoring.logic.service.*;
 import vn.vccorp.servicemonitoring.utils.AppUtils;
 import vn.vccorp.servicemonitoring.utils.BeanUtils;
@@ -41,10 +40,10 @@ public class TestAll {
                 .name("test1")
                 .status(Status.ACTIVE)
                 .deployCommand("nohup java -jar target/tdcd-crawler-service.jar > out.log &")
-                .deployDir("/home/test/Downloads/test/")
+                .deployDir("/home/kibou/Downloads/test/")
                 .description("test")
                 .language(Language.JAVA.name())
-                .logDir("/home/test/Downloads/test/test")
+                .logDir("/home/kibou/Downloads/test/test")
                 .logFile("test")
                 .pid("3863")
                 .project("test")

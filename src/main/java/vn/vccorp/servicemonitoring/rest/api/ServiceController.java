@@ -13,6 +13,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import vn.vccorp.servicemonitoring.dto.DisableServiceDTO;
 import vn.vccorp.servicemonitoring.dto.LogServiceDTO;
 import vn.vccorp.servicemonitoring.dto.ServiceDTO;
 import vn.vccorp.servicemonitoring.dto.UserServiceDTO;
@@ -168,7 +169,7 @@ public class ServiceController {
         return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
     }
 
-    @RequestMapping(value = "/show-all-service-error/", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @RequestMapping(value = "/show-all-service-error", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ApiOperation(value = "Show all service error", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @MaintainerAuthorize(serviceId = "#serviceId")
     public ResponseEntity<Object> showAllServiceError() {
@@ -177,8 +178,8 @@ public class ServiceController {
         return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
     }
 
-    @RequestMapping(value = "/confirm/", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    @ApiOperation(value = "Show all service error", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @RequestMapping(value = "/confirm", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @ApiOperation(value = "user confirm ", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @MaintainerAuthorize(serviceId = "#serviceId")
     public ResponseEntity<Object> confirmIssue(@RequestBody int serviceId) {
         BaseResponse.Builder builder = new BaseResponse.Builder();
@@ -187,12 +188,12 @@ public class ServiceController {
         return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
     }
 
-    @RequestMapping(value = "/disable/", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    @ApiOperation(value = "Show all service error", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @RequestMapping(value = "/disable", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @ApiOperation(value = "disable serivce send mail", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @UserAuthorize
-    public ResponseEntity<Object> diableIssue(@RequestParam int serviceId, @RequestParam String date) {
+    public ResponseEntity<Object> diableIssue(@RequestBody DisableServiceDTO disableServiceDTO) {
         BaseResponse.Builder builder = new BaseResponse.Builder();
-        confirmIssue.disableIssue(serviceId, date);
+        confirmIssue.disableIssue(disableServiceDTO.getServiceId(), disableServiceDTO.getExpDate());
         builder.setSuccessObject(true);
         return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
     }
