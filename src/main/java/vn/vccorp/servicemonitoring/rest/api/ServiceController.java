@@ -171,7 +171,7 @@ public class ServiceController {
 
     @RequestMapping(value = "/show-all-service-error", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ApiOperation(value = "Show all service error", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    @MaintainerAuthorize(serviceId = "#serviceId")
+    @UserAuthorize
     public ResponseEntity<Object> showAllServiceError() {
         BaseResponse.Builder builder = new BaseResponse.Builder();
         builder.setSuccessObject(confirmIssue.getAllServiceError());
@@ -188,10 +188,10 @@ public class ServiceController {
         return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
     }
 
-    @RequestMapping(value = "/disable", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    @ApiOperation(value = "disable serivce send mail", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    @UserAuthorize
-    public ResponseEntity<Object> diableIssue(@RequestBody DisableServiceDTO disableServiceDTO) {
+    @RequestMapping(value = "/disable/{serviceId}", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @ApiOperation(value = "disable   service send mail", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @MaintainerAuthorize(serviceId = "#serviceId")
+    public ResponseEntity<Object> disableIssue(@PathVariable int serviceId, @RequestBody @Valid DisableServiceDTO disableServiceDTO) {
         BaseResponse.Builder builder = new BaseResponse.Builder();
         confirmIssue.disableIssue(disableServiceDTO.getServiceId(), disableServiceDTO.getExpDate());
         builder.setSuccessObject(true);
