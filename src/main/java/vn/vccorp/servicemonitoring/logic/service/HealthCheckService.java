@@ -6,13 +6,15 @@
 package vn.vccorp.servicemonitoring.logic.service;
 
 import vn.vccorp.servicemonitoring.entity.Service;
+import vn.vccorp.servicemonitoring.enumtype.IssueType;
 
 public interface HealthCheckService {
 
-     void checkResourcesUsage(Service service);
+    boolean checkResourcesUsage(Service service);
 
     boolean checkServiceStatus(Service service);
     
-    void checkLogService(Service service);
+    boolean checkLogService(Service service);
 
+    void addingIssueTrackingAndSendReport(Service service, String detailMessage, IssueType issueType, Long problemAt);
 }
