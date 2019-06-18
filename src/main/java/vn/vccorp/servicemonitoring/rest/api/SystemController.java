@@ -56,9 +56,9 @@ public class SystemController {
 
     @RequestMapping(value = "/login", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ApiOperation(value = "Login account", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity<Object> login(@RequestParam String email, @RequestParam String password, HttpServletRequest req, HttpServletResponse res) {
-        LOGGER.info("Receive request to login with email: {}, password: ******", email);
-        if (StringUtils.isEmpty(email) || StringUtils.isEmpty(password)) {
+    public ResponseEntity<Object> login(@RequestBody UserDTO userDTO, HttpServletRequest req, HttpServletResponse res) {
+        LOGGER.info("Receive request to login with email: {}, password: ******", userDTO.getEmail());
+        if (StringUtils.isEmpty(userDTO.getEmail()) || StringUtils.isEmpty(userDTO.getPassword())) {
             throw new ApplicationException(ApplicationError.INVALID_EMAIL_OR_PASSWORD);
         }
         BaseResponse.Builder builder = new BaseResponse.Builder();
@@ -66,8 +66,8 @@ public class SystemController {
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
-                            email,
-                            password
+                            userDTO.getEmail(),
+                            userDTO.getPassword()
                     )
             );
             SecurityContextHolder.getContext().setAuthentication(authentication);
@@ -131,14 +131,6 @@ public class SystemController {
         BaseResponse.Builder builder = new BaseResponse.Builder();
         builder.setSuccessObject(userService.listAllUser(currentPage, pageSize));
         return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
-    }
-
-    @RequestMapping(value = "/test", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    @ApiOperation(value = "Delete user", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-//    @PreAuthorize("@CustomPermissionEvaluator.forService(#currentUser, #serviceId)")
-    @OwnerAuthorize(serviceId = "#serviceId")
-    public ResponseEntity<Object> test(@P("currentUserId") @RequestParam int currentUserId, @P("serviceId") @RequestParam int serviceId) {
-        return null;
     }
 
     @RequestMapping(value = "/change-role", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
