@@ -192,9 +192,9 @@ public class ServiceController {
     @RequestMapping(value = "/disable/{serviceId}", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ApiOperation(value = "disable   service send mail", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @MaintainerAuthorize(serviceId = "#serviceId")
-    public ResponseEntity<Object> disableIssue(@RequestParam int serviceId, @RequestParam Date date) {
+    public ResponseEntity<Object> disableIssue(@PathVariable int serviceId, @RequestBody DisableServiceDTO disableServiceDTO) {
         BaseResponse.Builder builder = new BaseResponse.Builder();
-        confirmIssue.disableIssue(serviceId, date);
+        confirmIssue.disableIssue(serviceId, disableServiceDTO.getExpDate());
         builder.setSuccessObject(true);
         return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
     }
