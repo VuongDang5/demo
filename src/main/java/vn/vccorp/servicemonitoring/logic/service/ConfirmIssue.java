@@ -13,5 +13,5 @@ public interface ConfirmIssue {
 
     void userConfirmIssue(int serviceId);
 
-    void disableIssue(int serviceId, String date);
+    void disableIssue(int serviceId, Date date);
 }

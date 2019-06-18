@@ -118,6 +118,6 @@ public class TestAll {
     @Test
     public void testConfirmIssue() { BeanUtils.getBean(ConfirmIssue.class).userConfirmIssue(9);}
 
-    @Test
-    public void testDisableService() { BeanUtils.getBean(ConfirmIssue.class).disableIssue(9, "Mon Jun 17 15:30:52 ICT 2019");}
+    //@Test
+    //public void testDisableService() { BeanUtils.getBean(ConfirmIssue.class).disableIssue(9, "Mon Jun 17 15:30:52 ICT 2019");}
 }

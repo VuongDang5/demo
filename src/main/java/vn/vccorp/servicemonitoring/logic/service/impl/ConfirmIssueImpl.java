@@ -23,6 +23,7 @@ import vn.vccorp.servicemonitoring.logic.service.HealthCheckService;
 import vn.vccorp.servicemonitoring.message.Messages;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -98,7 +99,7 @@ public class ConfirmIssueImpl implements ConfirmIssue {
     }
 
     @Override
-    public void disableIssue(int serviceId, String date){
+    public void disableIssue(int serviceId, Date date){
         Service service = serviceRepository.findById(serviceId).orElseThrow(() -> new ApplicationException(messages.get("service.id.not-found")));
         //find last issue
         Optional<IssueTracking> lastIssue = issueTrackingRepository.findTopByServiceOrderByTrackingTimeDesc(service);
@@ -113,10 +114,10 @@ public class ConfirmIssueImpl implements ConfirmIssue {
         //if had disable service
         String[] disableDetail = issueDetail.split("::", 3);
         if (disableDetail[0].equals("Disable")){
-            issueDetail = "Disable::" + date +"::" + disableDetail[2];
+            issueDetail = "Disable::" + date.toString() +"::" + disableDetail[2];
         }
         else{
-            issueDetail = "Disable::" + date +"::\n" + issueDetail;
+            issueDetail = "Disable::" + date.toString() +"::\n" + issueDetail;
         }
 
         lastIssue.get().setDetail(issueDetail);
@@ -126,7 +127,7 @@ public class ConfirmIssueImpl implements ConfirmIssue {
         ServiceErrorDTO errorDTO = ServiceErrorDTO.builder()
                 .serviceName(service.getName())
                 .deployedServer(service.getServer().getIp())
-                .detail("Your service is disable to date: "+ date)
+                .detail("Your service is disable to date: "+ date.toString())
                 .linkOnTool("will be updated")
                 .problem(lastIssue.get().getIssueType().name())
                 .status(service.getStatus().name())

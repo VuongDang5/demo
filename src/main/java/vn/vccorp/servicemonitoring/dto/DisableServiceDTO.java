@@ -3,6 +3,7 @@ package vn.vccorp.servicemonitoring.dto;
 import lombok.*;
 
 import javax.validation.constraints.NotBlank;
+import java.util.Date;
 
 @Getter
 @Setter
@@ -10,7 +11,6 @@ import javax.validation.constraints.NotBlank;
 @AllArgsConstructor
 @Builder
 public class DisableServiceDTO {
-    private Integer serviceId;
     @NotBlank
-    private String expDate;
+    private Date expDate;
 }
