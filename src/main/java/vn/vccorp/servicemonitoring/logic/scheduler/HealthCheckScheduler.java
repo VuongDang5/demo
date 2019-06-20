@@ -84,11 +84,11 @@ public class HealthCheckScheduler implements SchedulingConfigurer {
 
     @Override
     public void configureTasks(ScheduledTaskRegistrar taskRegistrar) {
-        taskRegistrar.addTriggerTask(this::frequentlyCheck, triggerContext -> {
-            String cron = getCronExpression();
-            CronTrigger trigger = new CronTrigger(cron);
-            return trigger.nextExecutionTime(triggerContext);
-        });
+//        taskRegistrar.addTriggerTask(this::frequentlyCheck, triggerContext -> {
+//            String cron = getCronExpression();
+//            CronTrigger trigger = new CronTrigger(cron);
+//            return trigger.nextExecutionTime(triggerContext);
+//        });
     }
 
 }

@@ -83,7 +83,7 @@ public class SystemController {
             }
 
         } catch (Exception e) {
-            LOGGER.info("Login fail");
+            LOGGER.error("Login fail", e);
             builder.setCode(HttpStatus.UNAUTHORIZED.value());
             builder.setErrorMessage(e.getMessage());
             builder.setFailObject(ImmutableMap.of("success", false));
