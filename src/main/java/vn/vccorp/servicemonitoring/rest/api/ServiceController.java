@@ -13,10 +13,12 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import vn.vccorp.servicemonitoring.dto.DisableServiceDTO;
 import vn.vccorp.servicemonitoring.dto.LogServiceDTO;
 import vn.vccorp.servicemonitoring.dto.ServiceDTO;
 import vn.vccorp.servicemonitoring.dto.UserServiceDTO;
 import vn.vccorp.servicemonitoring.enumtype.Role;
+import vn.vccorp.servicemonitoring.logic.service.ConfirmIssue;
 import vn.vccorp.servicemonitoring.logic.service.MonitorService;
 import vn.vccorp.servicemonitoring.message.Messages;
 import vn.vccorp.servicemonitoring.rest.response.BaseResponse;
@@ -26,6 +28,7 @@ import vn.vccorp.servicemonitoring.utils.AppConstants;
 
 import javax.validation.Valid;
 import java.io.IOException;
+import java.util.Date;
 
 @RequestMapping(value = AppConstants.API_MAPPING + "/service")
 @RestController
@@ -37,6 +40,8 @@ public class ServiceController {
     private Messages messages;
     @Autowired
     private MonitorService monitorService;
+    @Autowired
+    private ConfirmIssue confirmIssue;
 
     @RequestMapping(value = "/register", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ApiOperation(value = "Register old service to monitor on this system", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
@@ -162,6 +167,35 @@ public class ServiceController {
             builder.setFailObject(e);
             builder.setErrorMessage(messages.get("service.edit.fail"));
         }
+        return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
+    }
+
+    @RequestMapping(value = "/show-all-service-error", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @ApiOperation(value = "Show all service error", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @UserAuthorize
+    public ResponseEntity<Object> showAllServiceError() {
+        BaseResponse.Builder builder = new BaseResponse.Builder();
+        builder.setSuccessObject(confirmIssue.getAllServiceError());
+        return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
+    }
+
+    @RequestMapping(value = "/confirm", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @ApiOperation(value = "user confirm ", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @MaintainerAuthorize(serviceId = "#serviceId")
+    public ResponseEntity<Object> confirmIssue(@RequestBody int serviceId) {
+        BaseResponse.Builder builder = new BaseResponse.Builder();
+        confirmIssue.userConfirmIssue(serviceId);
+        builder.setSuccessObject(true);
+        return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
+    }
+
+    @RequestMapping(value = "/disable/{serviceId}", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @ApiOperation(value = "disable   service send mail", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @MaintainerAuthorize(serviceId = "#serviceId")
+    public ResponseEntity<Object> disableIssue(@PathVariable int serviceId, @RequestBody DisableServiceDTO disableServiceDTO) {
+        BaseResponse.Builder builder = new BaseResponse.Builder();
+        confirmIssue.disableIssue(serviceId, disableServiceDTO.getExpDate());
+        builder.setSuccessObject(true);
         return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
     }
 }

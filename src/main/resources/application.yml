@@ -39,7 +39,7 @@ default:
 
 path:
   upload: ./uploads/
-  server-prefix: /data
+  server-prefix: /data;/var
 
 service:
   last-update-log:

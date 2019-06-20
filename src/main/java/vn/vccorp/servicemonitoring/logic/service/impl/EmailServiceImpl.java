@@ -1,10 +1,13 @@
 package vn.vccorp.servicemonitoring.logic.service.impl;
 
 import com.google.common.collect.ImmutableMap;
+import freemarker.ext.beans.BeansWrapper;
 import freemarker.template.Configuration;
+import freemarker.template.TemplateModelException;
 import org.apache.commons.validator.routines.EmailValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.ui.freemarker.FreeMarkerTemplateUtils;
@@ -45,9 +48,14 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     public void sendServiceErrorMessage(ServiceErrorDTO serviceErrorDTO, List<String> recipients) {
-        String body = createBodyEmailFromTemplate(ImmutableMap.of("service", serviceErrorDTO), "healthcheck-service-error-template.ftl");
+        Map<String, Object> model = new HashMap<>();
+        model.put("service", serviceErrorDTO);
+        model.put("statics", BeansWrapper.getDefaultInstance().getStaticModels());
+        String body = createBodyEmailFromTemplate(model, "healthcheck-service-error-template.ftl");
         try {
-            sendEmail(recipients, null, null, messages.get("service.error.report-title", new String[]{serviceErrorDTO.getServiceName(), serviceErrorDTO.getDeployedServer()}), body, null);
+            sendEmail(recipients, null, null,
+                    messages.get("service.error.report-title", new String[]{serviceErrorDTO.getServiceName(), serviceErrorDTO.getDeployedServer()}),
+                    body, null);
         } catch (Exception e) {
             LOGGER.error("Exception while sending warning message");
         }

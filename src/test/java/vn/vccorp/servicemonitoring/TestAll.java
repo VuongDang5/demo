@@ -10,16 +10,14 @@ import org.springframework.test.context.junit4.SpringRunner;
 import vn.vccorp.servicemonitoring.dto.ServerDTO;
 import vn.vccorp.servicemonitoring.dto.ServiceDTO;
 import vn.vccorp.servicemonitoring.dto.ServiceErrorDTO;
-import vn.vccorp.servicemonitoring.entity.UserServer;
 import vn.vccorp.servicemonitoring.enumtype.Language;
 import vn.vccorp.servicemonitoring.enumtype.Status;
 import vn.vccorp.servicemonitoring.logic.service.*;
 import vn.vccorp.servicemonitoring.utils.AppUtils;
 import vn.vccorp.servicemonitoring.utils.BeanUtils;
 
+
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 
 /**
  * Name:
@@ -39,20 +37,20 @@ public class TestAll {
     @Test
     public void testRegisterService(){
         ServiceDTO serviceDTO = ServiceDTO.builder()
-                .name("test")
+                .name("test1")
                 .status(Status.ACTIVE)
                 .deployCommand("nohup java -jar target/tdcd-crawler-service.jar > out.log &")
-                .deployDir("/home/tuyennta/test/freelance/blogcrawler")
+                .deployDir("/home/kibou/Downloads/test/")
                 .description("test")
                 .language(Language.JAVA.name())
-                .logDir("/home/tuyennta/test/freelance/blogcrawler/")
-                .logFile("out.log")
-                .pid("6218")
+                .logDir("/home/kibou/Downloads/test/test")
+                .logFile("test")
+                .pid("3863")
                 .project("test")
-                .serverId(1)
-//                .serverIp("localhost")
-                .maintainerIds(Collections.singletonList(1))
-                .ownerId(1)
+                .serverId(35)
+                .serverPort("26346")
+                //.maintainerIds(Collections.singletonList(0))
+                .ownerId(4)
                 .build();
         BeanUtils.getBean(MonitorService.class).registerService(serviceDTO);
     }
@@ -102,7 +100,7 @@ public class TestAll {
                 .name("testlocal")
                 .ip("127.0.0.1")
                 .description("test1")
-                .rootPath("/home/kibou")
+                .rootPath("/home/")
                 .build();
         BeanUtils.getBean(MonitorServer.class).registerServer(serverDTO);
     }
@@ -116,4 +114,10 @@ public class TestAll {
     public void testGetAllUser(){
         BeanUtils.getBean(UserService.class).listAllUser(1, 10);
     }
+
+    @Test
+    public void testConfirmIssue() { BeanUtils.getBean(ConfirmIssue.class).userConfirmIssue(9);}
+
+    //@Test
+    //public void testDisableService() { BeanUtils.getBean(ConfirmIssue.class).disableIssue(9, "Mon Jun 17 15:30:52 ICT 2019");}
 }

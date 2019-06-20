@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -21,11 +22,13 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 import vn.vccorp.servicemonitoring.dto.LogServiceDTO;
 import vn.vccorp.servicemonitoring.dto.ServiceDTO;
+import vn.vccorp.servicemonitoring.dto.ServiceDetailsDTO.*;
 import vn.vccorp.servicemonitoring.dto.ServiceInfoDTO;
 import vn.vccorp.servicemonitoring.entity.Server;
 import vn.vccorp.servicemonitoring.entity.User;
 import vn.vccorp.servicemonitoring.entity.UserService;
 import vn.vccorp.servicemonitoring.enumtype.ApplicationError;
+import vn.vccorp.servicemonitoring.enumtype.IssueType;
 import vn.vccorp.servicemonitoring.enumtype.Role;
 import vn.vccorp.servicemonitoring.exception.ApplicationException;
 import vn.vccorp.servicemonitoring.logic.repository.ServerRepository;
@@ -144,10 +147,11 @@ public class MonitorServiceImpl implements MonitorService {
         //check if service is existed in db
         vn.vccorp.servicemonitoring.entity.Service service = serviceRepository.findById(serviceId).orElseThrow(() -> new ApplicationException(messages.get("service.id.not-found")));
 
-        //check if service is already run then we do nothing
+        //check if service pid is already run then we do nothing
         if (AppUtils.isProcessAlive(service.getServer().getIp(), service.getPid(), sshPort, sshUsername)) {
             return;
         } else {
+            //check if service is still running on it's port then update pid
             String newPid = AppUtils.getPidFromPort(service.getServer().getIp(), service.getServerPort(), sshPort, sshUsername);
             if (!org.apache.commons.lang3.StringUtils.isEmpty(newPid)) { //if we can not get pid from port, then service is died
                 service.setPid(newPid);
@@ -162,17 +166,18 @@ public class MonitorServiceImpl implements MonitorService {
         AppUtils.executeCommand(startCommand);
 
         String getPidCommand = "ssh -p " + sshPort + " " + sshUsername + "@" + service.getServer().getIp() + " -t 'cat " + service.getDeployDir() + "pid'";
+
         List<String> out = AppUtils.executeCommand(getPidCommand);
         if (out.isEmpty()) {
             throw new ApplicationException(messages.get("service.error.starting"));
         } else {
             service.setPid(out.get(0));
-            String port = AppUtils.getPortFromPid(service.getServer().getIp(), service.getPid(), sshPort, sshUsername);
-            if (StringUtils.isEmpty(port)) {
-                LOGGER.error(messages.get("service.port.not-available", new String[]{service.getPid(), service.getServer().getIp()}));
-            } else {
-                service.setServerPort(port);
-            }
+//            String port = AppUtils.getPortFromPid(service.getServer().getIp(), service.getPid(), sshPort, sshUsername);
+//            if (StringUtils.isEmpty(port)) {
+//                LOGGER.error(messages.get("service.port.not-available", new String[]{service.getPid(), service.getServer().getIp()}));
+//            } else {
+//                service.setServerPort(port);
+//            }
             serviceRepository.save(service);
         }
     }
@@ -233,9 +238,12 @@ public class MonitorServiceImpl implements MonitorService {
         serviceRepository.save(service);
 
         //save UserService
-        List<UserService> userServices = serviceDTO.getMaintainerIds()
-                .parallelStream().map(id -> new UserService(id, service.getId(), Role.MAINTAINER)).collect(Collectors.toList());
+        List<UserService> userServices = new ArrayList<>();
         userServices.add(new UserService(serviceDTO.getOwnerId(), service.getId(), Role.OWNER));
+        if (!CollectionUtils.isEmpty(serviceDTO.getMaintainerIds())) {
+            userServices = serviceDTO.getMaintainerIds()
+                    .parallelStream().map(id -> new UserService(id, service.getId(), Role.MAINTAINER)).collect(Collectors.toList());
+        }
         userServiceRepository.saveAll(userServices);
 
         //start service
@@ -257,6 +265,7 @@ public class MonitorServiceImpl implements MonitorService {
             String deployCommand = "#!/bin/bash \n";
             deployCommand += "cd " + serviceDTO.getDeployDir() + " \n";
             deployCommand += serviceDTO.getDeployCommand() + "\n";
+            deployCommand += "sleep 0.1 \n";
             deployCommand += "echo $! > pid";
             File upload = new File(uploadDir);
             if (!upload.exists()) {
@@ -379,30 +388,144 @@ public class MonitorServiceImpl implements MonitorService {
     }
 
     @Override
-    public vn.vccorp.servicemonitoring.entity.Service showService(int serviceId) {
-        //Hien thi Detail cua service theo serviceId
-        vn.vccorp.servicemonitoring.entity.Service service = ServiceRepositoryCustom.showService(serviceId);
-        //Kieu tra ve la Entity
-        return service;
+    public ServiceDetailsDTO showService(int serviceId) {
+        ServiceDetailsDTO s = new ServiceDetailsDTO();
+        ServiceInfo serviceInfo = ServiceRepositoryCustom.getServiceInfo(serviceId);
+        if(serviceInfo!=null) {
+            ServerInfo serverInfo = ServiceRepositoryCustom.getServerInfo(serviceId);
+            List<UserInfo> userInfo = ServiceRepositoryCustom.getAllUser(serviceId);
+
+            Page<SnapshotInfo> snapshotInfoPage = ServiceRepositoryCustom.getAllSnapshot(serviceId, new Pageable() {
+                @Override
+                public int getPageNumber() {
+                    return 0;
+                }
+
+                @Override
+                public int getPageSize() {
+                    return 10;
+                }
+
+                @Override
+                public long getOffset() {
+                    return 0;
+                }
+
+                @Override
+                public Sort getSort() {
+                    return null;
+                }
+
+                @Override
+                public Pageable next() {
+                    return null;
+                }
+
+                @Override
+                public Pageable previousOrFirst() {
+                    return null;
+                }
+
+                @Override
+                public Pageable first() {
+                    return null;
+                }
+
+                @Override
+                public boolean hasPrevious() {
+                    return false;
+                }
+            });
+            List<SnapshotInfo> snapshotInfo = snapshotInfoPage.getContent();
+
+            Page<IssueInfo> issueInfoPage = ServiceRepositoryCustom.getAllIssue(serviceId, new Pageable() {
+                @Override
+                public int getPageNumber() {
+                    return 0;
+                }
+
+                @Override
+                public int getPageSize() {
+                    return 10;
+                }
+
+                @Override
+                public long getOffset() {
+                    return 0;
+                }
+
+                @Override
+                public Sort getSort() {
+                    return null;
+                }
+
+                @Override
+                public Pageable next() {
+                    return null;
+                }
+
+                @Override
+                public Pageable previousOrFirst() {
+                    return null;
+                }
+
+                @Override
+                public Pageable first() {
+                    return null;
+                }
+
+                @Override
+                public boolean hasPrevious() {
+                    return false;
+                }
+            });
+            List<IssueInfo> issueInfo = issueInfoPage.getContent();
+            s.setName(serviceInfo.getName());
+            s.setDescription(serviceInfo.getDescription());
+            s.setServerPort(serviceInfo.getServerPort());
+            s.setPid(serviceInfo.getPid());
+            s.setDeployDir(serviceInfo.getDeployDir());
+            s.setLogDir(serviceInfo.getLogDir());
+            s.setLogFile(serviceInfo.getLogFile());
+            s.setLanguage(serviceInfo.getLanguage());
+            s.setDeployCommand(serviceInfo.getDeployCommand());
+            s.setRamLimit(serviceInfo.getRamLimit());
+            s.setCpuLimit(serviceInfo.getCpuLimit());
+            s.setGpuLimit(serviceInfo.getGpuLimit());
+            s.setDiskLimit(serviceInfo.getDiskLimit());
+            s.setStatus(serviceInfo.getStatus());
+            s.setStartTime(serviceInfo.getStartTime());
+            s.setLastCheckTime(serviceInfo.getLastCheckTime());
+            s.setProject(serviceInfo.getProject());
+            s.setApiEndpoint(serviceInfo.getApiEndpoint());
+            s.setKongMapping(serviceInfo.getKongMapping());
+            s.setNote(serviceInfo.getNote());
+
+            s.setServerInfo(serverInfo);
+            s.setUserInfo(userInfo);
+            s.setSnapshotInfo(snapshotInfo);
+            s.setIssueInfo(issueInfo);
+        }
+        return s;
     }
     
     @Override
     public void addServiceOwner(int userId, int serviceId, Role role) {
-    	UserService userService = userServiceRepository.findByUserIdAndServiceId(userId, serviceId);
-    	if (userService != null) {
-    		// update role
-    		List<UserService> user = userServiceRepository.findAllByRoleAndServiceId(Role.OWNER, serviceId);
-        	//Check Unique Owner
-            if(user.size() == 1 && user.get(0).getUser().getId() == userId && role == Role.MAINTAINER) {
+        UserService userService = userServiceRepository.findByUserIdAndServiceId(userId, serviceId);
+        if (userService != null) {
+            // update role
+            List<UserService> user = userServiceRepository.findAllByRoleAndServiceId(Role.OWNER, serviceId);
+            //Check Unique Owner
+            if (user.size() == 1 && user.get(0).getUser().getId() == userId && role == Role.MAINTAINER) {
                 throw new ApplicationException(messages.get("error.cannot.change.owner"));
             } else {
-            	userService.setRole(role);
-            	userServiceRepository.save(userService);
+                userService.setRole(role);
+                userServiceRepository.save(userService);
             }
         } else {
-        	// add role
-        	userService = new UserService(userId, serviceId, role);
-        	userServiceRepository.save(userService);
+            // add role
+            userService = new UserService(userId, serviceId, role);
+            userServiceRepository.save(userService);
         }
     }
 

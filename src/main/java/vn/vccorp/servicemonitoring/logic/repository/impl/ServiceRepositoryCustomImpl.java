@@ -9,15 +9,18 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.repository.query.Param;
 
 import vn.vccorp.servicemonitoring.dto.*;
+import vn.vccorp.servicemonitoring.dto.ServiceDetailsDTO.*;
+import vn.vccorp.servicemonitoring.dto.ServiceDetailsDTO.ServerInfo;
+import vn.vccorp.servicemonitoring.dto.ServiceDetailsDTO.ServiceInfo;
+import vn.vccorp.servicemonitoring.entity.IssueTracking;
 import vn.vccorp.servicemonitoring.entity.Service;
-import vn.vccorp.servicemonitoring.entity.UserService;
-import vn.vccorp.servicemonitoring.enumtype.Role;
-import vn.vccorp.servicemonitoring.enumtype.Status;
+import vn.vccorp.servicemonitoring.entity.Snapshot;
 import vn.vccorp.servicemonitoring.logic.repository.ServiceRepositoryCustom;
 
 import javax.persistence.EntityManager;
@@ -26,8 +29,8 @@ import javax.persistence.Query;
 import java.lang.invoke.SerializedLambda;
 import java.math.BigInteger;
 import java.time.LocalDate;
+
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -39,7 +42,6 @@ public class ServiceRepositoryCustomImpl implements ServiceRepositoryCustom {
     
     @Override
     public PageImpl<ServiceInfoDTO> showAllService(Pageable page) {
-
         @Getter
         @Setter
         @NoArgsConstructor
@@ -146,12 +148,61 @@ public class ServiceRepositoryCustomImpl implements ServiceRepositoryCustom {
     }
 
     @Override
-    public Service showService(int serviceId) {
-        //Tim kiem va hien thi thong tin service dua tren serviceId
-        Service service = entityManager.find(Service.class, serviceId);
-        //Ket qua tra ve la Entity
-        return service;
+    public List<UserInfo> getAllUser(int serviceId) {
+            String queryStr = "SELECT \n" +
+                    "    user.name, user.username, user.email, user.phone, user_service.role\n" +
+                    "FROM\n" +
+                    "    user\n" +
+                    "        JOIN\n" +
+                    "    user_service ON user.id = user_service.user_id\n" +
+                    "WHERE\n" +
+                    "    user_service.service_id = ?1 AND (user_service.role = 'MAINTAINER' OR user_service.role = 'OWNER')";
+            Query q = entityManager.createNativeQuery(queryStr, "UserInfoMapping");
+            q.setParameter(1, serviceId);
+            List<UserInfo> userInfo = q.getResultList();
+            return userInfo;
+    }
 
+    @Override
+    public List<UserInfo> getAllOwner(int serviceId) {
+        return null;
+    }
+
+    @Override
+    public List<UserInfo> getAllMaintainer(int serviceId) {
+        return null;
+    }
+
+    @Override
+    public ServiceInfo getServiceInfo(int serviceId) {
+        String queryStr = "SELECT \n" +
+                "    service.name,\n" +
+                "    service.description,\n" +
+                "    service.server_port AS serverPort,\n" +
+                "    service.pid,\n" +
+                "    service.deploy_dir AS deployDir,\n" +
+                "    service.log_dir AS logDir,\n" +
+                "    service.log_file AS logFile,\n" +
+                "    service.language,\n" +
+                "    service.deploy_command AS deployCommand,\n" +
+                "    service.ram_limit AS ramLimit,\n" +
+                "    service.cpu_limit AS cpuLimit,\n" +
+                "    service.gpu_limit AS gpuLimit,\n" +
+                "    service.disk_limit AS diskLimit,\n" +
+                "    service.status,\n" +
+                "    service.start_time AS startTime,\n" +
+                "    service.last_check_time AS lastCheckTime,\n" +
+                "    service.project,\n" +
+                "    service.api_endpoint AS apiEndpoint,\n" +
+                "    service.kong_mapping AS kongMapping,\n" +
+                "    service.note\n" +
+                "FROM\n" +
+                "    service\n" +
+                "WHERE\n" +
+                "    service.id = ?1";
+        Query q = entityManager.createNativeQuery(queryStr, "ServiceInfoMapping");
+        q.setParameter(1, serviceId);
+        return (ServiceInfo) q.getResultList().get(0);
     }
 
 	@Override
@@ -300,4 +351,66 @@ public class ServiceRepositoryCustomImpl implements ServiceRepositoryCustom {
 		return finalResultList;
 	}
 	
+
+    @Override
+    public ServerInfo getServerInfo(int serviceId) {
+        String queryStr = "SELECT \n" +
+                    "    server.ip,\n" +
+                    "    server.name,\n" +
+                    "    server.description,\n" +
+                    "    server.root_path AS rootPath,\n" +
+                    "    server.status\n" +
+                    "FROM\n" +
+                    "    server JOIN service ON server.id = service.server_id\n" +
+                    "WHERE\n" +
+                    "    service.id = ?1\n";
+            Query q = entityManager.createNativeQuery(queryStr, "ServerInfoMapping");
+            q.setParameter(1, serviceId);
+            ServerInfo serverInfo = (ServerInfo) q.getResultList().get(0);
+            return serverInfo;
+    }
+
+    @Override
+    public PageImpl<IssueInfo> getAllIssue(int serviceId, Pageable page) {
+            String queryStr = "SELECT \n" +
+                    "    issue_tracking.detail,\n" +
+                    "    issue_tracking.issue_type AS issueType,\n" +
+                    "    issue_tracking.tracking_time AS trackingTime,\n" +
+                    "    issue_tracking.user_action AS userAction,\n" +
+                    "    user.name,\n" +
+                    "    user.email\n" +
+                    "FROM issue_tracking LEFT JOIN user ON issue_tracking.user_id = user.id\n" +
+                    "WHERE issue_tracking.service_id = ?1";
+            Query q = entityManager.createNativeQuery(queryStr, "IssueInfoMapping")
+                .setFirstResult(page.getPageSize() * (page.getPageNumber() - 1))
+                .setMaxResults(page.getPageSize());
+            q.setParameter(1, serviceId);
+            List<IssueInfo> issueInfo = q.getResultList();
+            return new PageImpl<>(issueInfo, page, page.getPageSize());
+    }
+
+    @Override
+    public PageImpl<SnapshotInfo> getAllSnapshot(int serviceId, Pageable page) {
+        String queryStr = "SELECT \n" +
+                "    snapshot.time,\n" +
+                "    snapshot.ram_free AS ramFree,\n" +
+                "    snapshot.ram_used AS ramUsed,\n" +
+                "    snapshot.cpu_free AS cpuFree,\n" +
+                "    snapshot.cpu_used AS cpuUsed,\n" +
+                "    snapshot.gpu_free AS gpuFree,\n" +
+                "    snapshot.gpu_used AS gpuUsed,\n" +
+                "    snapshot.disk_free AS diskFree,\n" +
+                "    snapshot.disk_used AS diskUsed\n" +
+                "FROM\n" +
+                "    snapshot\n" +
+                "WHERE\n" +
+                "    snapshot.service_id = ?1";
+        Query q = entityManager.createNativeQuery(queryStr, "SnapshotInfoMapping")
+                .setFirstResult(page.getPageSize() * (page.getPageNumber() - 1))
+                .setMaxResults(page.getPageSize());
+        q.setParameter(1, serviceId);
+        List<SnapshotInfo> snapshotInfo = q.getResultList();
+        return new PageImpl<>(snapshotInfo, page, page.getPageSize());
+    }
+
 }
