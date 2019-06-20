@@ -4,6 +4,7 @@ import lombok.*;
 import vn.vccorp.servicemonitoring.enumtype.Role;
 import vn.vccorp.servicemonitoring.enumtype.Status;
 
+import java.math.BigInteger;
 import java.util.Date;
 import java.util.List;
 
@@ -12,7 +13,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class ServiceInfoDTO {
+public class ServiceReportDTO {
 
     private Integer id;
 
@@ -47,5 +48,9 @@ public class ServiceInfoDTO {
     private Double diskUsed;
 
     private String owner;
+    
+    private BigInteger totalWarning;
+    
+    private BigInteger totalError;
 
 }
