@@ -1,6 +1,6 @@
 server:
   host: localhost
-  port: 8082
+  port: 8081
 spring:
   example:
     cookie:
@@ -19,3 +19,7 @@ spring:
     datasource:
       connectionProperties: useUnicode=true;characterEncoding=utf-8;
     driver-class-name: com.mysql.cj.jdbc.Driver
+
+ssh:
+  port: 22
+  username: monitoring

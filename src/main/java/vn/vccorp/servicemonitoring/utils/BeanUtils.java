@@ -3,7 +3,10 @@ package vn.vccorp.servicemonitoring.utils;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import vn.vccorp.servicemonitoring.security.UserPrincipal;
 
 /**
  * Name: tuyennta
@@ -23,4 +26,7 @@ public class BeanUtils implements ApplicationContextAware {
         return context.getBean(beanClass);
     }
 
+    public static UserPrincipal getAuthorizedUser(){
+        return (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    }
 }

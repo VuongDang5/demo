@@ -1,3 +1,9 @@
+*-local.yml
+**/application-local.yml
+application-local.yml
+src/main/resources/application-local.yml
+uploads
+*.log
 .idea/
 target/
 *.iml
@@ -8,3 +14,4 @@ classes/
 node_modules/
 log/
 logImg/
+/bin/

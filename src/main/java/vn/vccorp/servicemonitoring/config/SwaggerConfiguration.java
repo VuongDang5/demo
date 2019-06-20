@@ -35,8 +35,8 @@ public class SwaggerConfiguration {
                 .apis(RequestHandlerSelectors.basePackage("vn.vccorp.servicemonitoring.rest.api"))
                 .paths(PathSelectors.any()).build()
                 .apiInfo(apiInfo())
-                .pathMapping(environment.getProperty("example.api.basePath"));
-//                .securitySchemes(Arrays.asList(apiKey()));
+                .pathMapping(environment.getProperty("example.api.basePath"))
+                .securitySchemes(Arrays.asList(apiKey()));
     }
 
     private ApiInfo apiInfo() {

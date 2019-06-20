@@ -20,7 +20,15 @@ import java.util.List;
 @Table(indexes = {
         @Index(columnList = "ip"),
         @Index(columnList = "name")
-})
+        },
+        uniqueConstraints = {
+                @UniqueConstraint(columnNames = {
+                        "ip"
+                }),
+                @UniqueConstraint(columnNames = {
+                        "name"
+                })
+        })
 public class Server {
 
     @Id
@@ -40,12 +48,16 @@ public class Server {
     private String description;
 
     @NotBlank
-    @Size(max = 10)
+    private String rootPath;
+
     @Enumerated(EnumType.STRING)
     private Status status;
 
     @OneToMany(mappedBy = "server")
-    private List<ServerManagement> managers;
+    private List<UserServer> userServers;
+
+    @OneToMany(mappedBy = "server")
+    private List<Service> services;
 
     @OneToMany(mappedBy = "server")
     private List<Snapshot> snapshots;

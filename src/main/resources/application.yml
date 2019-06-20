@@ -27,3 +27,33 @@ default:
     password: root
     role: ADMIN
     phone: 0357990xxx
+    
+  config:
+    id: 1
+    ramLimit: 0
+    cpuLimit: 0
+    gpuLimit: 0
+    diskLimit: 0
+    reportSchedule: 0 * * ? * *
+    healthCheckSchedule: 0 * * ? * *
+
+path:
+  upload: ./uploads/
+  server-prefix: /data;/var
+
+service:
+  last-update-log:
+    max: 24
+  log-folder:
+    name: LogService
+
+smtp:
+  host: smtp.gmail.com
+  port: 587
+  user: notify.adtech@gmail.com
+  password: Cuong123456789
+  authentication: true
+  sender:
+    email: notify.adtech@gmail.com
+  cc:
+    email: tuyennguyenthanhanh@admicro.vn

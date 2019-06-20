@@ -12,13 +12,17 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.parameters.P;
 import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
 import org.springframework.security.web.savedrequest.RequestCache;
 import org.springframework.security.web.savedrequest.SavedRequest;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
+import vn.vccorp.servicemonitoring.dto.RoleDTO;
 import vn.vccorp.servicemonitoring.dto.UserDTO;
+import vn.vccorp.servicemonitoring.dto.ConfigurationDTO;
 import vn.vccorp.servicemonitoring.enumtype.ApplicationError;
+import vn.vccorp.servicemonitoring.enumtype.Role;
 import vn.vccorp.servicemonitoring.exception.ApplicationException;
 import vn.vccorp.servicemonitoring.logic.service.UserService;
 import vn.vccorp.servicemonitoring.message.Messages;
@@ -52,9 +56,9 @@ public class SystemController {
 
     @RequestMapping(value = "/login", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     @ApiOperation(value = "Login account", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity<Object> login(@RequestParam String email, @RequestParam String password, HttpServletRequest req, HttpServletResponse res) {
-        LOGGER.info("Receive request to login with email: {}, password: ******", email);
-        if (StringUtils.isEmpty(email) || StringUtils.isEmpty(password)) {
+    public ResponseEntity<Object> login(@RequestBody UserDTO userDTO, HttpServletRequest req, HttpServletResponse res) {
+        LOGGER.info("Receive request to login with email: {}, password: ******", userDTO.getEmail());
+        if (StringUtils.isEmpty(userDTO.getEmail()) || StringUtils.isEmpty(userDTO.getPassword())) {
             throw new ApplicationException(ApplicationError.INVALID_EMAIL_OR_PASSWORD);
         }
         BaseResponse.Builder builder = new BaseResponse.Builder();
@@ -62,8 +66,8 @@ public class SystemController {
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
-                            email,
-                            password
+                            userDTO.getEmail(),
+                            userDTO.getPassword()
                     )
             );
             SecurityContextHolder.getContext().setAuthentication(authentication);
@@ -79,7 +83,7 @@ public class SystemController {
             }
 
         } catch (Exception e) {
-            LOGGER.info("Login fail");
+            LOGGER.error("Login fail", e);
             builder.setCode(HttpStatus.UNAUTHORIZED.value());
             builder.setErrorMessage(e.getMessage());
             builder.setFailObject(ImmutableMap.of("success", false));
@@ -117,4 +121,36 @@ public class SystemController {
         userService.deleteAccount(deleteUserId);
         return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
     }
+
+
+    @RequestMapping(value = "list-all-user", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @ApiOperation(value = "List all user and relevant information", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @AdminAuthorize
+    public ResponseEntity<Object> listAllUser(@CurrentUser UserPrincipal currentUser, @RequestParam int currentPage, @RequestParam int pageSize) {
+        LOGGER.info("Receive request of user: {}, mail: {}, role: {}", currentUser.getName(), currentUser.getEmail(), currentUser.getAuthorities());
+        BaseResponse.Builder builder = new BaseResponse.Builder();
+        builder.setSuccessObject(userService.listAllUser(currentPage, pageSize));
+        return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
+    }
+
+    @RequestMapping(value = "/change-role", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @ApiOperation(value = "Change Role", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @AdminAuthorize
+    public ResponseEntity<Object> updateRole(@CurrentUser UserPrincipal currentUser, @RequestBody @Valid RoleDTO roleDTO) {
+        LOGGER.info("Receive request of user: {}, mail: {}, role: {}", currentUser.getName(), currentUser.getEmail(), currentUser.getAuthorities());
+        BaseResponse.Builder builder = new BaseResponse.Builder();
+        userService.updateRole(roleDTO.getId(), Role.valueOf(roleDTO.getRole()));
+        return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
+    }
+    
+    @RequestMapping(value = "/update-configuration", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @ApiOperation(value = "Update Configuration", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @AdminAuthorize
+    public ResponseEntity<Object> updateConfig(@CurrentUser UserPrincipal currentUser, @RequestBody ConfigurationDTO configurationDTO) {
+        LOGGER.info("Receive request of user: {}, mail: {}, role: {}", currentUser.getName(), currentUser.getEmail(), currentUser.getAuthorities());
+        BaseResponse.Builder builder = new BaseResponse.Builder();
+        userService.updateConfig(configurationDTO);
+        return RestResponseBuilder.buildSuccessObjectResponse(builder.build());
+    }
+
 }

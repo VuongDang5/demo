@@ -1,6 +1,6 @@
 server:
   host: localhost
-  port: 8081
+  port: 8082
 spring:
   example:
     cookie:
@@ -8,8 +8,18 @@ spring:
       secure: false
   jpa:
     hibernate:
-      ddl-auto: create
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL5InnoDBDialect
   datasource:
-    url: jdbc:mysql://10.5.36.99:3306/service_monitoring
+    url: jdbc:mysql://localhost:3306/service_monitoring?autoReconnect=true&useSSL=false&useUnicode=yes&characterEncoding=UTF-8
     username: root
-    password: root
+    password: root95
+    datasource:
+      connectionProperties: useUnicode=true;characterEncoding=utf-8;
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+ssh:
+  port: 2395
+  username: monitoring

@@ -5,11 +5,9 @@
 
 package vn.vccorp.servicemonitoring.entity;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import javax.persistence.*;
-import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
 import java.io.Serializable;
 
@@ -17,10 +15,21 @@ import java.io.Serializable;
 @Setter
 @Entity
 @Table
-public class ServerManagement {
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class UserServer {
 
     @EmbeddedId
     private ServerManagementKey id;
+
+    public UserServer(Integer serverId, String userName, Integer userId, String group){
+        this.id = new ServerManagementKey();
+        this.id.setUserId(userId);
+        this.id.setServerId(serverId);
+        this.username = userName;
+        this.groups = group;
+    }
 
     @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "serverId", insertable = false, updatable = false)
@@ -30,15 +39,16 @@ public class ServerManagement {
     @JoinColumn(name = "userId", insertable = false, updatable = false)
     private User user;
 
-    @Size(max = 10)
-    @NotBlank
+    @Size(max = 100)
     private String username;
 
     @Size(max = 1000)
     private String groups;
 
+    @Getter
+    @Setter
     @Embeddable
-    public class ServerManagementKey implements Serializable {
+    public static class ServerManagementKey implements Serializable {
         private Integer userId;
         private Integer serverId;
     }
