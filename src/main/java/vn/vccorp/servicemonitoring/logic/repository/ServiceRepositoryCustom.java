@@ -13,7 +13,9 @@ import vn.vccorp.servicemonitoring.dto.ServiceDTO;
 import vn.vccorp.servicemonitoring.entity.Service;
 import vn.vccorp.servicemonitoring.entity.UserService;
 import vn.vccorp.servicemonitoring.dto.ServiceInfoDTO;
+import vn.vccorp.servicemonitoring.dto.ServiceReportDTO;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public interface ServiceRepositoryCustom {
@@ -21,6 +23,6 @@ public interface ServiceRepositoryCustom {
 
     Service showService(int serviceId);
 
-    List<ServiceInfoDTO> reportService();
+	List<ServiceReportDTO> reportService(LocalDate datePre);
 
 }

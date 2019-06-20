@@ -13,13 +13,14 @@ import org.springframework.util.StringUtils;
 import vn.vccorp.servicemonitoring.config.EmailConfig;
 import vn.vccorp.servicemonitoring.config.GMailAuthenticator;
 import vn.vccorp.servicemonitoring.dto.ServiceErrorDTO;
-import vn.vccorp.servicemonitoring.dto.ServiceInfoDTO;
+import vn.vccorp.servicemonitoring.dto.ServiceReportDTO;
 import vn.vccorp.servicemonitoring.logic.service.EmailService;
 import vn.vccorp.servicemonitoring.message.Messages;
 
 import javax.mail.*;
 import javax.mail.internet.*;
 import java.io.File;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -53,8 +54,10 @@ public class EmailServiceImpl implements EmailService {
     }
     
     @Override
-    public void sendServiceReportMessage(List<ServiceInfoDTO> serviceInfoDTO, List<String> recipients) {
-        String body = createBodyEmailFromTemplate(ImmutableMap.of("service", serviceInfoDTO.get(0)), "frequently-report.ftl");
+    public void sendServiceReportMessage(List<ServiceReportDTO> serviceReportDTO, List<String> recipients) {
+    	Map<String, Object> map = new HashMap<String, Object>(); 
+    	map.put("serviceInfo", serviceReportDTO);
+        String body = createBodyEmailFromTemplate(map, "frequently-report.ftl");
         try {
             sendEmail(recipients, null, null, messages.get("Frequently report for Admin"), body, null);
         } catch (Exception e) {

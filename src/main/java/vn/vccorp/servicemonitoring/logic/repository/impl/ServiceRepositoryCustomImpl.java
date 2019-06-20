@@ -24,6 +24,8 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 import java.lang.invoke.SerializedLambda;
+import java.math.BigInteger;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -76,7 +78,7 @@ public class ServiceRepositoryCustomImpl implements ServiceRepositoryCustom {
                 "JOIN user u ON us.user_id = u.id " +
                 "JOIN snapshot ON s.id = snapshot.service_id " +
                 "JOIN server sv ON s.server_id = sv.id " +
-                "WHERE us.role = 'OWNER'" +
+                "WHERE us.role = 'OWNER' " +
                 "GROUP BY s.id ";
 
         Query query = entityManager.createNativeQuery(queryStr)
@@ -153,7 +155,7 @@ public class ServiceRepositoryCustomImpl implements ServiceRepositoryCustom {
     }
 
 	@Override
-	public List<ServiceInfoDTO> reportService() {
+	public List<ServiceReportDTO> reportService(LocalDate datePre) {
 		
 		@Getter
         @Setter
@@ -177,26 +179,68 @@ public class ServiceRepositoryCustomImpl implements ServiceRepositoryCustom {
             Double diskUsed;
             Double gpuUsed;
             Double ramUsed;
+            BigInteger totalWarning;
+            BigInteger totalError;
         }
 		
-		String queryStr = "SELECT s.id, s.pid, s.name, " +
-                "GROUP_CONCAT(DISTINCT CONCAT_WS(',', " +
-                        "IFNULL(u.username, 'NULL')) " +
-                //Khoang cach giua cac username
-                        "SEPARATOR '; ' ) AS userInfo, " +
-                "s.api_endpoint, s.description, s.project, s.kong_mapping, " +
-                "s.note, sv.ip, s.server_port, s.start_time, s.status, " +
-                "AVG(snapshot.cpu_used), AVG(snapshot.disk_used), AVG(snapshot.gpu_used), AVG(snapshot.ram_used) " +
-                "FROM service s " +
-                "JOIN user_service us ON s.id = us.service_id " +
-                "JOIN user u ON us.user_id = u.id " +
-                "JOIN snapshot ON s.id = snapshot.service_id " +
-                "JOIN server sv ON s.server_id = sv.id " +
-                "WHERE us.role = 'OWNER'" +
-                "GROUP BY s.id ";
+		String queryStr = "SELECT \r\n" + 
+				"    s.id,\r\n" + 
+				"    s.pid,\r\n" + 
+				"    s.name,\r\n" + 
+				"    GROUP_CONCAT(DISTINCT CONCAT_WS(',', IFNULL(u.username, 'NULL'))\r\n" + 
+				"        SEPARATOR '; ') AS userInfo,\r\n" + 
+				"    s.api_endpoint,\r\n" + 
+				"    s.description,\r\n" + 
+				"    s.project,\r\n" + 
+				"    s.kong_mapping,\r\n" + 
+				"    s.note,\r\n" + 
+				"    sv.ip,\r\n" + 
+				"    s.server_port,\r\n" + 
+				"    s.start_time,\r\n" + 
+				"    s.status,\r\n" + 
+				"    AVG(snapshot.cpu_used),\r\n" + 
+				"    AVG(snapshot.disk_used),\r\n" + 
+				"    AVG(snapshot.gpu_used),\r\n" + 
+				"    AVG(snapshot.ram_used),\r\n" + 
+				"    e.err,\r\n" + 
+				"    w.war\r\n" + 
+				"FROM\r\n" + 
+				"    service s\r\n" + 
+				"        JOIN\r\n" + 
+				"    user_service us ON s.id = us.service_id\r\n" + 
+				"        JOIN\r\n" + 
+				"    user u ON us.user_id = u.id\r\n" + 
+				"        JOIN\r\n" + 
+				"    snapshot ON s.id = snapshot.service_id\r\n" + 
+				"        JOIN\r\n" + 
+				"    server sv ON s.server_id = sv.id\r\n" + 
+				"        LEFT OUTER JOIN\r\n" + 
+				"    (SELECT \r\n" + 
+				"        service_id,\r\n" + 
+				"            COUNT(CASE issue_type\r\n" + 
+				"                WHEN 'ERROR' THEN 1\r\n" + 
+				"                ELSE NULL\r\n" + 
+				"            END) AS err\r\n" + 
+				"    FROM\r\n" + 
+				"        issue_tracking\r\n" + 
+				"    GROUP BY service_id) AS e ON e.service_id = s.id\r\n" + 
+				"        LEFT OUTER JOIN\r\n" + 
+				"    (SELECT \r\n" + 
+				"        service_id,\r\n" + 
+				"            COUNT(CASE issue_type\r\n" + 
+				"                WHEN 'WARNING' THEN 1\r\n" + 
+				"                ELSE NULL\r\n" + 
+				"            END) AS war\r\n" + 
+				"    FROM\r\n" + 
+				"        issue_tracking\r\n" + 
+				"    GROUP BY service_id) AS w ON w.service_id = s.id\r\n" + 
+				"WHERE\r\n" + 
+				"    (us.role = 'OWNER')\r\n" + 
+				"        AND (snapshot.time > '" + datePre + "')\r\n" + 
+				"GROUP BY s.id";
 		
 		Query query = entityManager.createNativeQuery(queryStr);
-		
+				
 		List<Object[]> resultList = query.getResultList();
         //Dung 1 List moi de key vao cho tung value
         List<ReturnedQueryResult> convertedResultList = new ArrayList<>(resultList.size());
@@ -220,14 +264,16 @@ public class ServiceRepositoryCustomImpl implements ServiceRepositoryCustom {
                             (Double) row[13], //CPU
                             (Double) row[14], //Disk
                             (Double) row[15], //GPU
-                            (Double) row[16] //Ram
+                            (Double) row[16], //Ram
+                            (BigInteger) row[17], //Waning
+                            (BigInteger) row[18] //Error
                             )
             );
         }
         
-        List<ServiceInfoDTO> finalResultList = new ArrayList<>();
+        List<ServiceReportDTO> finalResultList = new ArrayList<>();
         for(ReturnedQueryResult r: convertedResultList) {
-            ServiceInfoDTO dto = new ServiceInfoDTO();
+            ServiceReportDTO dto = new ServiceReportDTO();
 
             dto.setId(r.getId());
             dto.setPid(r.getPid());
@@ -246,7 +292,8 @@ public class ServiceRepositoryCustomImpl implements ServiceRepositoryCustom {
             dto.setDiskUsed(r.getDiskUsed());
             dto.setGpuUsed(r.getGpuUsed());
             dto.setRamUsed(r.getRamUsed());
-
+            dto.setTotalError(r.getTotalWarning());
+            dto.setTotalWarning(r.getTotalError());
             finalResultList.add(dto);
         }
        
