@@ -15,9 +15,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import vn.vccorp.servicemonitoring.dto.UserInfoDTO;
-import vn.vccorp.servicemonitoring.dto.UserDTO;
+import vn.vccorp.servicemonitoring.config.RootConfig;
 import vn.vccorp.servicemonitoring.dto.ConfigurationDTO;
+import vn.vccorp.servicemonitoring.dto.UserDTO;
+import vn.vccorp.servicemonitoring.dto.UserInfoDTO;
 import vn.vccorp.servicemonitoring.entity.Configuration;
 import vn.vccorp.servicemonitoring.entity.Server;
 import vn.vccorp.servicemonitoring.entity.User;
@@ -26,14 +27,13 @@ import vn.vccorp.servicemonitoring.enumtype.ApplicationError;
 import vn.vccorp.servicemonitoring.enumtype.Role;
 import vn.vccorp.servicemonitoring.exception.ApplicationException;
 import vn.vccorp.servicemonitoring.logic.repository.*;
+import vn.vccorp.servicemonitoring.logic.service.EmailService;
 import vn.vccorp.servicemonitoring.logic.service.UserService;
 import vn.vccorp.servicemonitoring.message.Messages;
-import vn.vccorp.servicemonitoring.config.RootConfig;
 import vn.vccorp.servicemonitoring.security.RootUser;
 import vn.vccorp.servicemonitoring.utils.AppUtils;
 import vn.vccorp.servicemonitoring.utils.BeanUtils;
 import vn.vccorp.servicemonitoring.utils.CronExpression;
-
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,6 +46,9 @@ public class UserServiceImpl implements UserService {
     private String sshPort;
     @Value("${ssh.username}")
     private String sshUsername;
+    @Value("${default.password}")
+    private String defaultPassword;
+
     @Autowired
     UserRepository userRepository;
     @Autowired
@@ -58,23 +61,28 @@ public class UserServiceImpl implements UserService {
     ServiceManagementRepository serviceManagementRepository;
     @Autowired
     ConfigurationRepository configurationRepository;
-	@Autowired
+    @Autowired
     private ServerRepository serverRepository;
     @Autowired
     private UserServerRepository userServerRepository;
+    @Autowired
+    private EmailService emailService;
 
     @Override
     public void addAccount(UserDTO userDTO) {
-        userDTO.setPassword(passwordEncoder.encode(userDTO.getPassword()));
+        userDTO.setPassword(passwordEncoder.encode(defaultPassword));
         User user = dozerBeanMapper.map(userDTO, User.class);
         userRepository.save(user);
+
+        //send email to new user
+        emailService.sendNotifyToNewUser(user.getEmail(), user.getEmail(), defaultPassword);
 
         //save UserService
         List<UserServer> userServer = new ArrayList<>();
         List<Server> allServer = serverRepository.findAll();
         for (Server server : allServer) {
             String groups = AppUtils.getGroupUser(server.getIp(), user.getUsername(), sshPort, sshUsername);
-            if (groups == null){
+            if (groups == null) {
                 continue;
             }
             userServer.add(new UserServer(server.getId(), user.getUsername(), user.getId(), groups));
@@ -90,12 +98,12 @@ public class UserServiceImpl implements UserService {
             userRepository.save(dozerBeanMapper.map(root, User.class));
         }
     }
-    
+
     @Override
     public void initRootConfig() {
         RootConfig root = BeanUtils.getBean(RootConfig.class);
-        if (!configurationRepository.findById(root.getId()).isPresent()) {            
-        	configurationRepository.save(dozerBeanMapper.map(root, Configuration.class));
+        if (!configurationRepository.findById(root.getId()).isPresent()) {
+            configurationRepository.save(dozerBeanMapper.map(root, Configuration.class));
         }
     }
 
@@ -136,7 +144,7 @@ public class UserServiceImpl implements UserService {
 
         //at least have an admin
         List<User> userAdmin = userRepository.findAllByRole(Role.ADMIN);
-        if(userAdmin.size() == 1 && userAdmin.get(0).getId() == userId && role == Role.USER) {
+        if (userAdmin.size() == 1 && userAdmin.get(0).getId() == userId && role == Role.USER) {
             throw new ApplicationException(messages.get("error.user.change.admin"));
         }
 
@@ -146,28 +154,27 @@ public class UserServiceImpl implements UserService {
 
     public void updateConfig(ConfigurationDTO configurationDTO) {
         Configuration config = configurationRepository.getOne(1);
-        if (configurationDTO.getCpuLimit()!=null) {
-        	config.setCpuLimit(configurationDTO.getCpuLimit());
+        if (configurationDTO.getCpuLimit() != null) {
+            config.setCpuLimit(configurationDTO.getCpuLimit());
         }
-        if (configurationDTO.getDiskLimit()!=null) {
-        	config.setDiskLimit(configurationDTO.getDiskLimit());
+        if (configurationDTO.getDiskLimit() != null) {
+            config.setDiskLimit(configurationDTO.getDiskLimit());
         }
-        if (configurationDTO.getGpuLimit()!=null) {
-        	config.setGpuLimit(configurationDTO.getGpuLimit());
+        if (configurationDTO.getGpuLimit() != null) {
+            config.setGpuLimit(configurationDTO.getGpuLimit());
         }
-        if (configurationDTO.getRamLimit()!=null) {
-        	config.setRamLimit(configurationDTO.getRamLimit());
+        if (configurationDTO.getRamLimit() != null) {
+            config.setRamLimit(configurationDTO.getRamLimit());
         }
-        if (configurationDTO.getHealthCheckSchedule() != null){
+        if (configurationDTO.getHealthCheckSchedule() != null) {
             config.setHealthCheckSchedule(configurationDTO.getHealthCheckSchedule());
         }
-        if (configurationDTO.getReportSchedule()!=null) {
-        	if (CronExpression.isValidExpression(configurationDTO.getReportSchedule())) {
-        		config.setReportSchedule(configurationDTO.getReportSchedule());
-        	}
-        	else {
-        		throw new ApplicationException(messages.get("error.cron.expression"));
-        	}
+        if (configurationDTO.getReportSchedule() != null) {
+            if (CronExpression.isValidExpression(configurationDTO.getReportSchedule())) {
+                config.setReportSchedule(configurationDTO.getReportSchedule());
+            } else {
+                throw new ApplicationException(messages.get("error.cron.expression"));
+            }
         }
         configurationRepository.save(config);
     }
