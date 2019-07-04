@@ -1,13 +1,10 @@
 package vn.vccorp.servicemonitoring.logic.service.impl;
 
-import com.google.common.collect.ImmutableMap;
 import freemarker.ext.beans.BeansWrapper;
 import freemarker.template.Configuration;
-import freemarker.template.TemplateModelException;
 import org.apache.commons.validator.routines.EmailValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.ui.freemarker.FreeMarkerTemplateUtils;
@@ -23,10 +20,7 @@ import vn.vccorp.servicemonitoring.message.Messages;
 import javax.mail.*;
 import javax.mail.internet.*;
 import java.io.File;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 @Service
 public class EmailServiceImpl implements EmailService {
@@ -68,6 +62,20 @@ public class EmailServiceImpl implements EmailService {
         String body = createBodyEmailFromTemplate(map, "frequently-report.ftl");
         try {
             sendEmail(recipients, null, null, messages.get("Frequently report for Admin"), body, null);
+        } catch (Exception e) {
+            LOGGER.error("Exception while sending warning message");
+        }
+    }
+
+    @Override
+    public void sendNotifyToNewUser(String email, String user, String password) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("user", user);
+        map.put("email", email);
+        map.put("password", password);
+        String body = createBodyEmailFromTemplate(map, "new-user-notify.ftl");
+        try {
+            sendEmail(Collections.singletonList(email), null, null, "Service Monitoring account info", body, null);
         } catch (Exception e) {
             LOGGER.error("Exception while sending warning message");
         }

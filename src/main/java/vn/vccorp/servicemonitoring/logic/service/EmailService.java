@@ -16,4 +16,6 @@ public interface EmailService {
     void sendServiceErrorMessage(ServiceErrorDTO serviceErrorDTO, List<String> recipients);
 
 	void sendServiceReportMessage(List<ServiceReportDTO> serviceInfoDTO, List<String> recipients);
+
+	void sendNotifyToNewUser(String email, String user, String password);
 }

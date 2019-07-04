@@ -53,7 +53,7 @@ public class JwtTokenProvider {
                 .parseClaimsJws(token)
                 .getBody();
 
-        return Integer.parseInt(claims.getSubject());
+        return claims.get("userId", Integer.class);
     }
 
     public boolean validateToken(String authToken) {
