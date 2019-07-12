@@ -374,7 +374,9 @@ public class MonitorServiceImpl implements MonitorService {
     @Override
     public void deleteLog(int id) {
         vn.vccorp.servicemonitoring.entity.Service service = serviceRepository.findById(id).orElseThrow(() -> new ApplicationException(messages.get("error.not.found.service")));
-        String command = "ssh -p " + sshPort + " " + sshUsername + "@" + service.getServer().getIp() + " 'rm " + service.getLogDir() + service.getLogFile() + "; touch " + service.getLogDir() + service.getLogFile() + "'";
+        String remove = "sudo rm " + service.getLogDir() + service.getLogFile();
+        String touch = "sudo touch " + service.getLogDir() + service.getLogFile() + " && sudo chmod 777 " + service.getLogDir() + service.getLogFile();
+        String command = "ssh -p " + sshPort + " " + sshUsername + "@" + service.getServer().getIp() + " -t '" + remove + " && " + touch + " || "+ touch + "'";
         AppUtils.executeCommand(command);
     }
 
